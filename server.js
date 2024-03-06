@@ -16,7 +16,9 @@ const servicesRouts = require("./routes/servicesRoutes");
 const technologyRouts = require("./routes/technologiesRoutes");
 const testimonialRouts = require("./routes/testimonialRoutes");
 const clientRouts=require("./routes/clientRoutes");
+const contactRouts=require("./routes/contactRoutes");
 const projectRouts=require("./routes/projectRoutes");
+
 connectDB();
 const app = express();
 // middleware
@@ -64,6 +66,12 @@ app.use("/api/v1/client", clientRouts);
 app.use(
   "/uploads/client",
   express.static(path.join(__dirname, "uploads/client"))
+);
+app.use("/api/v1/contact", contactRouts);
+
+app.use(
+  "/uploads/contact",
+  express.static(path.join(__dirname, "uploads/contact"))
 );
 app.use("/api/v1/project", projectRouts);
 

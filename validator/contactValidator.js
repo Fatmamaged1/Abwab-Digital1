@@ -2,36 +2,36 @@ const mongoose = require("mongoose");
 const { check, body, validationResult } = require("express-validator");
 const slugify = require("slugify");
 const validatorMiddleware = require("../middleware/validatorMiddleware");
-const  Client = require("../models/clientModel"); // Replace with the actual path to your schema file
+const  contact= require("../models/contactModel"); // Replace with the actual path to your schema file
 
-// Validation middleware for Client schema
-exports.createClientValidator = [
+
+
+
+// Validation middleware for Contact schema
+exports.createContactValidator = [
   check("name")
     .isLength({ min: 3 })
     .withMessage("Name must be at least 3 characters")
     .notEmpty()
     .withMessage("Name is required"),
-  check("profileImage")
+  check("email")
+    .isEmail()
+    .withMessage("Invalid email format")
+    .notEmpty()
+    .withMessage("Email is required"),
+  check("phone")
     .optional()
-    .isURL()
-    .withMessage("Invalid URL format for profile image"),
-  check("industry")
-    .optional()
-    .isLength({ min: 1 })
-    .withMessage("Industry must be specified"),
-  check("contacts")
-    .isArray({ min: 1 })
-    .withMessage("At least one contact must be specified"),
-  check("contacts.*").isMongoId().withMessage("Invalid contact ID format"),
-  check("projects.*").isMongoId().withMessage("Invalid project ID format"),
+    .isMobilePhone()
+    .withMessage("Invalid phone number format"),
   validatorMiddleware,
 ];
-exports.getClientValidator = [
+
+exports.getContactValidator = [
     check("id").isMongoId().withMessage("Invalid ID format"),
     validatorMiddleware,
   ];
   
-  exports.updateClientValidator = [
+  exports.updateContactValidator = [
     check("id").isMongoId().withMessage("Invalid ID format"),
     body("title")
       .optional()
@@ -42,7 +42,7 @@ exports.getClientValidator = [
     validatorMiddleware,
   ];
   
-  exports.deleteClientValidator = [
+  exports.deleteContactValidator = [
     check("id").isMongoId().withMessage("Invalid ID format"),
     validatorMiddleware,
   ];
