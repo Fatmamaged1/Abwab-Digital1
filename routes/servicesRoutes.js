@@ -44,8 +44,27 @@ router
     } catch (error) {
       next(error); // Pass the error to the global error handler
     }
-  })
-  .post(createServicesValidator, createServices);
+  }) 
+  
+  router.post(
+    "/",
+    upload.single("icon"),
+    async (req, res, next) => {
+      try {
+        // Extract profile image filename from the multer upload
+        req.body.icon = req.file ? req.file.filename : undefined;
+        console.log("req.body", req.body);
+        next();
+      } catch (error) {
+        res.status(500).json({
+          status: "error",
+          message: "Internal Server Error",
+        });
+      }
+    },
+    createServicesValidator,
+    createServices
+  )
 
 router
   .route("/:id")

@@ -72,62 +72,41 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", getProject, async (req, res) => {
+router.get("/:id", (req, res,next) =>{
+  console.log(req.params)
+  next();
+});
+
+router.put("/:id", async (req, res, next) => {
   try {
-    const project = await getProject(req.params.id);
-    if (!project) {
-      res.status(404).json({ status: "error", message: "Project not found" });
-      return;
+    const updatedProject = await updateProject(req.params.id, req.body);
+    
+    if (!updatedProject) {
+      const notFoundError = new Error("Project not found");
+      notFoundError.status = 404;
+      throw notFoundError;
     }
-    res.json(project);
+
+    res.json(updatedProject);
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      errors: [{ field: "general", message: error.message }],
-    });
+    next(error); // Pass the error to the global error handler
   }
 });
 
-router.put(
-  "/:id",
-  updateProjectValidator,
-  handleValidationErrors,
-  async (req, res) => {
-    try {
-      const updatedProject = await updateProject(req.params.id, req.body);
-      if (!updatedProject) {
-        res.status(404).json({ status: "error", message: "Project not found" });
-        return;
-      }
-      res.json(updatedProject);
-    } catch (error) {
-      res.status(400).json({
-        status: "error",
-        error: { statusCode: 400, message: error.message },
-      });
-    }
-  }
-);
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const deletedProject = await deleteProject(req.params.id);
 
-router.delete(
-  "/:id",
-  deleteProjectValidator,
-  handleValidationErrors,
-  async (req, res) => {
-    try {
-      const deletedProject = await deleteProject(req.params.id);
-      if (!deletedProject) {
-        res.status(404).json({ status: "error", message: "Project not found" });
-        return;
-      }
-      res.json({ status: "success", message: "Project deleted successfully" });
-    } catch (error) {
-      res.status(500).json({
-        status: "error",
-        error: { statusCode: 500, message: error.message },
-      });
+    if (!deletedProject) {
+      const notFoundError = new Error("Project not found");
+      notFoundError.status = 404;
+      throw notFoundError;
     }
+
+    res.json({ status: "success", message: "Project deleted successfully" });
+  } catch (error) {
+    next(error); // Pass the error to the global error handler
   }
-);
+});
 
 module.exports = router;

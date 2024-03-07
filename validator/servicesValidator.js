@@ -1,6 +1,8 @@
-const slugify = require("slugify");
+const mongoose = require("mongoose");
 const { check, body, validationResult } = require("express-validator");
+const slugify = require("slugify");
 const validatorMiddleware = require("../middleware/validatorMiddleware");
+const  service= require("../models/servicesModel"); 
 
 exports.createServicesValidator = [
   body("name")

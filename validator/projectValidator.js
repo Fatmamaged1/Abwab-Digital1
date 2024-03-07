@@ -77,7 +77,7 @@ exports.updateProjectValidator = [
 ];
 
 // Validation for getting a client
-exports.getClientValidator = [
+exports.getProjectValidator = [
   check("id").isMongoId().withMessage("Invalid ID format"),
   validatorMiddleware,
 ];
