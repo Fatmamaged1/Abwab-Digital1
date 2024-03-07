@@ -66,3 +66,17 @@ exports.deleteEmployeeValidator = [
   check("id").isMongoId().withMessage("Invalid ID format"),
   validatorMiddleware,
 ];
+exports.handleValidationErrors = (req, res, next) => {
+  console.error(req.body);
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const formattedErrors = errors.array().map((error) => ({
+      [error.param]: error.msg,
+    }));
+
+    return res.status(400).json({ errors: formattedErrors });
+  }
+
+  next();
+};

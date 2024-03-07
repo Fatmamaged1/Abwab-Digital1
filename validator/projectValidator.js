@@ -86,8 +86,9 @@ exports.getClientValidator = [
 exports.deleteProjectValidator = [
   body("id").isMongoId().withMessage("Invalid project ID"),
   validatorMiddleware,
-];exports.handleValidationErrors = (req, res, next) => {
-  console.log('Handling Validation Errors');
+];
+exports.handleValidationErrors = (req, res, next) => {
+  console.log("Handling Validation Errors");
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {

@@ -39,35 +39,25 @@ router.use((error, req, res, next) => {
 
 router.post(
   "/",
-  (req, res, next) => {
-    console.log("Request Body:", req.body);
-    next();
-  },
-  upload.single("projectImage"),
-  createProjectValidator,
-  handleValidationErrors,
-  async (req, res) => {
+  upload.array("images[0]", 10),
+
+  async (req, res, next) => {
     try {
-      const projectImage = req.file ? req.file.filename : undefined;
 
-      const newProject = await createProject({
-        ...req.body,
-        projectImage,
-      });
-
-      res.status(201).json({
-        status: "success",
-        data: {
-          project: newProject,
-        },
-      });
+      req.body.images = req.files.map(file => file.filename);
+      next();
     } catch (error) {
       res.status(500).json({
         status: "error",
         message: "Internal Server Error",
+        error: error.message,
+        stack: error.stack,
+        body: req.body,
       });
     }
-  }
+  },
+  createProjectValidator,
+  createProject
 );
 
 router.get("/", async (req, res) => {
@@ -111,12 +101,10 @@ router.put(
       }
       res.json(updatedProject);
     } catch (error) {
-      res
-        .status(400)
-        .json({
-          status: "error",
-          error: { statusCode: 400, message: error.message },
-        });
+      res.status(400).json({
+        status: "error",
+        error: { statusCode: 400, message: error.message },
+      });
     }
   }
 );
@@ -134,12 +122,10 @@ router.delete(
       }
       res.json({ status: "success", message: "Project deleted successfully" });
     } catch (error) {
-      res
-        .status(500)
-        .json({
-          status: "error",
-          error: { statusCode: 500, message: error.message },
-        });
+      res.status(500).json({
+        status: "error",
+        error: { statusCode: 500, message: error.message },
+      });
     }
   }
 );

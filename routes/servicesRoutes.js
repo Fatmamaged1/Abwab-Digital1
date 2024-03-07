@@ -45,17 +45,7 @@ router
       next(error); // Pass the error to the global error handler
     }
   })
-  .post(async (req, res, next) => {
-    try {
-      // Assuming createServices is an async function
-      createServicesValidator,
-        // await createClientValidator,
-        // await createContactValidator,
-        await createServices(req);
-    } catch (error) {
-      next(error); // Pass the error to the global error handler
-    }
-  });
+  .post(createServicesValidator, createServices);
 
 router
   .route("/:id")

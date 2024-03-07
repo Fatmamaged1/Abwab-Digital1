@@ -45,20 +45,7 @@ exports.createOne = (Model) => async (req, res, next) => {
       },
     });
   } catch (error) {
-    // Ensure that `res` is defined and has the expected structure
-    if (
-      res &&
-      typeof res.status === "function" &&
-      typeof res.json === "function"
-    ) {
-      res.status(500).json({
-        status: "error",
-        errors: [{ field: "general", message: error.message }],
-      });
-    } else {
-      // Log the error if `res` is not as expected
-      console.error("Error:", error);
-    }
+    handleErrors(error, next);
   }
 };
 

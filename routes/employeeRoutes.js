@@ -42,30 +42,18 @@ router.use((error, req, res, next) => {
 });
 
 // Create an employee with profile image upload
-router.post('/', upload.single('profileImage'), createEmployeeValidator, async (req, res) => {
+router.post('/', upload.single("profileImage"), async (req, res, next) => {
   try {
     // Extract profile image filename from the multer upload
-    const profileImage = req.file ? req.file.filename : undefined;
-
-    const newEmployee = await createEmployee({
-      ...req.body,
-      profileImage,
-    });
-
-    res.status(201).json({
-      status: 'success',
-      data: {
-        employee: newEmployee,
-      },
-    });
+    req.body.profileImage = req.file ? req.file.filename : undefined;
+    next();
   } catch (error) {
     res.status(500).json({
-      status: 'error',
-      message: 'Internal Server Error',
+      status: "error",
+      message: "Internal Server Error",
     });
   }
-});
-
+}, createEmployee, createEmployeeValidator);
 
 
 

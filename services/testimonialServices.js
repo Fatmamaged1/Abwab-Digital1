@@ -19,7 +19,7 @@ exports.resizeImage = asyncHandler(async (req, res, next) => {
     return next();
   }
 
-  const filename = `blog-${uuidv4()}-${Date.now()}.jpeg`;
+  const filename = `testimon-${uuidv4()}-${Date.now()}.jpeg`;
 
   // Resize and save the image
   await sharp(req.file.buffer)
