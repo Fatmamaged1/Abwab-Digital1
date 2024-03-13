@@ -84,8 +84,18 @@ exports.getProjectValidator = [
 
 // Validation for deleting a project
 exports.deleteProjectValidator = [
-  body("id").isMongoId().withMessage("Invalid project ID"),
+  check("id").isMongoId().withMessage("Invalid project ID"),
   validatorMiddleware,
+  (req, res, next) => {
+    // Check if id parameter exists
+    if (!req.params.id) {
+      return res.status(400).json({ error: "Project ID is required" });
+    }
+    
+    // Additional checks for id parameter
+    
+    next();
+  }
 ];
 exports.handleValidationErrors = (req, res, next) => {
   console.log("Handling Validation Errors");

@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
-
+const employeeModel = require('../models/employeeModel');
 
 const router = express.Router();
 const {
@@ -58,34 +58,77 @@ router.post('/', upload.single("profileImage"), async (req, res, next) => {
 
 
 // Get all technologies
-router.get('/', async (req, res) => {
+router.route("/:id").get(async (req, res, next) => {
+  const employeeId = req.params.id;
+
+  // Validate the employee ID format
+  if (!/^[0-9a-fA-F]{24}$/.test(employeeId)) {
+    return res.status(400).json({
+      status: "error",
+      errors: [{
+        type: 'field',
+        value: employeeId,
+        msg: 'Invalid employee ID format',
+        path: 'id',
+        location: 'params'
+      }],
+    });
+  }
+
   try {
-    const Employees = await getEmployees();
-    res.json(Employees);
+    // Fetch the employee based on the ID
+    const employee = await employeeModel.findById(employeeId);
+
+    if (!employee) {
+      return res.status(404).json({
+        status: "error",
+        errors: [{
+          type: 'field',
+          value: employeeId,
+          msg: 'Employee not found',
+          path: 'id',
+          location: 'params'
+        }],
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: employee,
+    });
   } catch (error) {
     res.status(500).json({
-      status: 'error',
-      errors: [{ field: 'general', message: error.message }],
+      status: "error",
+      errors: [{
+        type: 'field',
+        value: employeeId,
+        msg: `Error fetching employee: ${error.message}`,
+        path: 'id',
+        location: 'params'
+      }],
+    });
+  }
+})
+
+.put(updateEmployeeValidator, updateEmployee)
+.delete(deleteEmployeeValidator, deleteEmployee);
+
+// Get All Employees
+router.route("/").get(async (req, res, next) => {
+  try {
+    const employees = await employeeModel.find();
+    res.status(200).json({
+      status: "success",
+      data: employees,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      errors: [{ field: "general", message: error.message }],
     });
   }
 });
 
-// Get a specific employee by ID
-router.get('/:id', getEmployee ,async (req, res) => {
-  try {
-    const  getEmployee = await getEmployee(req.params.id);
-    if (!getEmployee) {
-      res.status(404).json({ status: 'error', message: 'Employee not found' });
-      return;
-    }
-    res.json(getEmployee);
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      errors: [{ field: 'general', message: error.message }],
-    });
-  }
-});
 
 // Update a Employee by ID
 router.put('/:id',updateEmployeeValidator, async (req, res) => {
@@ -101,18 +144,47 @@ router.put('/:id',updateEmployeeValidator, async (req, res) => {
   }
 });
 
-// Delete a technology by ID
-router.delete('/:id',deleteEmployeeValidator, async (req, res) => {
+
+// Delete an employee by ID
+router.delete('/:id', deleteEmployeeValidator, async (req, res) => {
+  const employeeId = req.params.id;
+
   try {
-    const deletedEmployee = await deleteEmployee(req.params.id);
-    if (!deletedEmployee) {
-      res.status(404).json({ status: 'error', message: 'Employee not found' });
-      return;
+    // Validate the employee ID format
+    if (!/^[0-9a-fA-F]{24}$/.test(employeeId)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid employee ID format',
+      });
     }
-    res.json({ status: 'success', message: 'Employee deleted successfully' });
+
+    // Delete the employee
+    const deletedEmployee = await deleteEmployee(employeeId);
+
+    // Check if the employee was not found
+    if (!deletedEmployee) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Employee not found',
+      });
+    }
+
+    // Send success message as a response
+    res.json({
+      status: 'success',
+      message: 'Employee deleted successfully',
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', error: { statusCode: 500, message: error.message } });
+    // Handle other errors
+    res.status(500).json({
+      status: 'error',
+      error: {
+        statusCode: 500,
+        message: error.message,
+      },
+    });
   }
 });
+
 
 module.exports = router;

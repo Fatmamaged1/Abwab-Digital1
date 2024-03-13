@@ -1,7 +1,11 @@
 const express = require("express");
 const path = require("path");
 const multer = require("multer");
+const { validationResult } = require('express-validator');
+const ContactModel = require("../models/contactModel.js");
+
 const {
+  getContactValidator,
   createContactValidator,
   updateContactValidator,
   deleteContactValidator,
@@ -47,10 +51,13 @@ router.post(
 );
 
 // Get all contacts
-router.get("/", async (req, res) => {
+router.route("/").get(async (req, res, next) => {
   try {
-    const contacts = await getContacts();
-    res.json(contacts);
+    const contacts= await ContactModel.find();
+    res.status(200).json({
+      status: "success",
+      data: contacts,
+    });
   } catch (error) {
     res.status(500).json({
       status: "error",
@@ -60,21 +67,55 @@ router.get("/", async (req, res) => {
 });
 
 // Get a specific contact by ID
-router.get("/:id", getContact, async (req, res) => {
-  try {
-    const contact = await getContact(req.params.id);
-    if (!contact) {
-      res.status(404).json({ status: "error", message: "Contact not found" });
-      return;
+router.route("/:id").get(
+  getContactValidator, // Assuming getContactValidator is your validation middleware
+  async (req, res, next) => {
+    // Check for validation errors from previous middleware
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "error",
+        errors: errors.array(),
+      });
     }
-    res.json(contact);
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      errors: [{ field: "general", message: error.message }],
-    });
+
+    const contactId = req.params.id;
+
+    try {
+      // Fetch the contact based on the ID
+      const contact = await ContactModel.findById(contactId);
+
+      if (!contact) {
+        return res.status(404).json({
+          status: "error",
+          errors: [{
+            type: 'not_found',
+            msg: 'Contact not found',
+            path: 'id',
+            value: contactId,
+          }],
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        data: contact,
+      });
+    } catch (error) {
+      console.error("Error fetching contact:", error);
+      res.status(500).json({
+        status: "error",
+        errors: [{
+          type: 'server_error',
+          msg: `Error fetching contact: ${error.message}`,
+          path: 'id',
+          value: contactId,
+        }],
+      });
+    }
   }
-});
+);
+
 
 // Update a contact by ID
 router.put("/:id", updateContactValidator, async (req, res) => {

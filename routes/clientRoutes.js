@@ -1,7 +1,10 @@
 const express = require("express");
 const path = require("path");
 const multer = require("multer");
+const { validationResult } = require('express-validator');
+const ClientModel =require("../models/clientModel");
 const {
+  getClientValidator,
   createClientValidator,
   updateClientValidator,
   deleteClientValidator,
@@ -59,10 +62,13 @@ router.post(
 );
 
 // Get all clients
-router.get("/", async (req, res) => {
+router.route("/").get(async (req, res, next) => {
   try {
-    const clients = await getClients();
-    res.json(clients);
+    const clients = await ClientModel.find();
+    res.status(200).json({
+      status: "success",
+      data: clients,
+    });
   } catch (error) {
     res.status(500).json({
       status: "error",
@@ -72,21 +78,55 @@ router.get("/", async (req, res) => {
 });
 
 // Get a specific client by ID
-router.get("/:id", getClient, async (req, res) => {
-  try {
-    const client = await getClient(req.params.id);
-    if (!client) {
-      res.status(404).json({ status: "error", message: "Client not found" });
-      return;
+router.route("/:id").get(
+  getClientValidator, // Assuming getClientValidator is your validation middleware
+  async (req, res, next) => {
+    // Check for validation errors from previous middleware
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "error",
+        errors: errors.array(),
+      });
     }
-    res.json(client);
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      errors: [{ field: "general", message: error.message }],
-    });
+
+    const clientId = req.params.id;
+
+    try {
+      // Fetch the client based on the ID
+      const client = await ClientModel.findById(clientId);
+
+      if (!client) {
+        return res.status(404).json({
+          status: "error",
+          errors: [{
+            type: 'not_found',
+            msg: 'Client not found',
+            path: 'id',
+            value: clientId,
+          }],
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        data: client,
+      });
+    } catch (error) {
+      console.error("Error fetching client:", error);
+      res.status(500).json({
+        status: "error",
+        errors: [{
+          type: 'server_error',
+          msg: `Error fetching client: ${error.message}`,
+          path: 'id',
+          value: clientId,
+        }],
+      });
+    }
   }
-});
+);
+
 
 // Update a client by ID
 router.put("/:id", updateClientValidator, async (req, res) => {

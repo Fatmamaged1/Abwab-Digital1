@@ -1,7 +1,10 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
+const { validationResult } = require('express-validator');
+const TestimonialModel = require("../models/testimonialModel.js");
 const {
+  getTestimonialValidator,
   createTestimonialValidator,
   updateTestimonialValidator,
   deleteTestimonialValidator,
@@ -61,10 +64,13 @@ router.post(
 );
 
 // Get all testimonials
-router.get("/", async (req, res) => {
+router.route("/").get(async (req, res, next) => {
   try {
-    const testimonials = await getTestimonials();
-    res.json(testimonials);
+    const testimonials= await TestimonialModel.find();
+    res.status(200).json({
+      status: "success",
+      data: testimonials,
+    });
   } catch (error) {
     res.status(500).json({
       status: "error",
@@ -74,23 +80,55 @@ router.get("/", async (req, res) => {
 });
 
 // Get a specific testimonial by ID
-router.get("/:id", getTestimonial, async (req, res) => {
-  try {
-    const testimonial = await getTestimonial(req.params.id);
-    if (!testimonial) {
-      res
-        .status(404)
-        .json({ status: "error", message: "Testimonial not found" });
-      return;
+router.route("/:id").get(
+  getTestimonialValidator, // Assuming getTestimonialValidator is your validation middleware
+  async (req, res, next) => {
+    // Check for validation errors from previous middleware
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "error",
+        errors: errors.array(),
+      });
     }
-    res.json(testimonial);
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      errors: [{ field: "general", message: error.message }],
-    });
+
+    const testimonialId = req.params.id;
+
+    try {
+      // Fetch the testimonial based on the ID
+      const testimonial = await TestimonialModel.findById(testimonialId);
+
+      if (!testimonial) {
+        return res.status(404).json({
+          status: "error",
+          errors: [{
+            type: 'not_found',
+            msg: 'Testimonial not found',
+            path: 'id',
+            value: testimonialId,
+          }],
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        data: testimonial,
+      });
+    } catch (error) {
+      console.error("Error fetching testimonial:", error);
+      res.status(500).json({
+        status: "error",
+        errors: [{
+          type: 'server_error',
+          msg: `Error fetching testimonial: ${error.message}`,
+          path: 'id',
+          value: testimonialId,
+        }],
+      });
+    }
   }
-});
+);
+
 
 // Update a testimonial by ID
 router.put("/:id", updateTestimonialValidator, async (req, res) => {

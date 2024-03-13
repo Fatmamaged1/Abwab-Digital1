@@ -64,6 +64,10 @@ exports.updateTestimonialValidator = [
   body("icon").optional().isURL().withMessage("Invalid URL for icon"),
   validatorMiddleware,
 ];
+exports.getTestimonialValidator = [
+  check("id").isMongoId().withMessage("Invalid Testimonial ID format"),
+];
+
 
 exports.deleteTestimonialValidator = [
   check("id").isMongoId().withMessage("Invalid Testimonial ID format"),
