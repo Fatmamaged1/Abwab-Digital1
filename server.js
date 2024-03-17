@@ -15,9 +15,11 @@ const blogRouts = require("./routes/blogRoutes");
 const servicesRouts = require("./routes/servicesRoutes");
 const technologyRouts = require("./routes/technologiesRoutes");
 const testimonialRouts = require("./routes/testimonialRoutes");
-const clientRouts=require("./routes/clientRoutes");
-const contactRouts=require("./routes/contactRoutes");
-const projectRouts=require("./routes/projectRoutes");
+const clientRouts = require("./routes/clientRoutes");
+const contactRouts = require("./routes/contactRoutes");
+const projectRouts = require("./routes/projectRoutes");
+const userRouts = require("./routes/userRoutes");
+const authRouts= require("./routes/authRoutes");
 
 connectDB();
 const app = express();
@@ -78,6 +80,17 @@ app.use("/api/v1/project", projectRouts);
 app.use(
   "/uploads/project",
   express.static(path.join(__dirname, "uploads/project"))
+);
+app.use("/api/v1/user", userRouts);
+
+app.use("/uploads/user",
+ express.static(path.join(__dirname, "uploads/user")));
+
+app.use("/api/v1/auth", authRouts);
+
+app.use(
+  "/uploads/auth",
+  express.static(path.join(__dirname, "uploads/auth"))
 );
 
 // Handling unhandled routes

@@ -5,12 +5,12 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/ApiError.js");
 const factory = require("./handlerFactory.js");
 const EmployeeModel = require("../models/employeeModel.js");
-//const blogModel = require("../models/blogModel.js"); // This line is unnecessary if not used
+
 
 // Assume you have a 'ServicesModel' imported from somewhere
  // Replace with the correct path and file name
 
-// Middleware to upload blog image
+// Middleware to upload employee image
 exports.uploadServicesImage = uploadSingleImage("image");
 
 // Middleware to resize the uploaded image
