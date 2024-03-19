@@ -7,6 +7,7 @@ const validator = require("validator");
 const multer = require("multer");
 const path = require("path");
 dotenv.config("./config.env");
+const swagger = require('./swagger');
 
 const globalError = require("./middleware/errorMiddleware");
 const connectDB = require("./config/database");
@@ -19,10 +20,13 @@ const clientRouts = require("./routes/clientRoutes");
 const contactRouts = require("./routes/contactRoutes");
 const projectRouts = require("./routes/projectRoutes");
 const userRouts = require("./routes/userRoutes");
-const authRouts= require("./routes/authRoutes");
+const authRouts = require("./routes/authRoutes");
 
 connectDB();
 const app = express();
+// Add Swagger middleware
+swagger(app);
+
 // middleware
 app.use(express.json());
 app.use(morgan("dev"));
@@ -83,15 +87,11 @@ app.use(
 );
 app.use("/api/v1/user", userRouts);
 
-app.use("/uploads/user",
- express.static(path.join(__dirname, "uploads/user")));
+app.use("/uploads/user", express.static(path.join(__dirname, "uploads/user")));
 
 app.use("/api/v1/auth", authRouts);
 
-app.use(
-  "/uploads/auth",
-  express.static(path.join(__dirname, "uploads/auth"))
-);
+app.use("/uploads/auth", express.static(path.join(__dirname, "uploads/auth")));
 
 // Handling unhandled routes
 app.all("*", (req, res, next) => {
