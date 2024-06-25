@@ -7,7 +7,7 @@ const validator = require("validator");
 const multer = require("multer");
 const path = require("path");
 dotenv.config("./config.env");
-const swagger = require('./swagger');
+const swagger = require("./swagger");
 
 const globalError = require("./middleware/errorMiddleware");
 const connectDB = require("./config/database");
@@ -103,7 +103,7 @@ app.all("*", (req, res, next) => {
 // Error handling middleware
 app.use(globalError);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });

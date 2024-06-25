@@ -1,9 +1,11 @@
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
-
+const { validationResult } = require('express-validator');
+const technologyModel=require("../models/technologiesModel")
 const router = express.Router();
 const {
+  getTechnologyValidator,
   createTechnologyValidator,
   updateTechnologyValidator,
   deleteTechnologyValidator,
@@ -15,6 +17,7 @@ const {
   updateTechnology,
   deleteTechnology,
 } = require('../services/technologiesServices');
+//const technologiesModel = require('../models/technologiesModel');
 
 // Set up multer to handle file uploads
 const storage = multer.diskStorage({
@@ -45,35 +48,62 @@ router.use((error, req, res, next) => {
 // Create a technology
 router.post('/', createTechnologyValidator,createTechnology );
 
-// Get all technologies
-router.get('/', async (req, res) => {
+// Get a technology by ID
+router.get("/:id", getTechnologyValidator, async (req, res, next) => {
   try {
-    const technologies = await getTechnologies();
-    res.json(technologies);
+    const technologyId = req.params.id;
+    // Fetch the technology based on the ID
+    const technology = await technologyModel.findById(technologyId);
+    if (!technology) {
+      return res.status(404).json({
+        status: "error",
+        errors: [{
+          type: 'not_found',
+          msg: 'Technology not found',
+          path: 'id',
+          value: technologyId,
+        }],
+      });
+    }
+    res.status(200).json({
+      status: "success",
+      data: technology,
+    });
   } catch (error) {
+    console.error("Error fetching technology:", error);
     res.status(500).json({
-      status: 'error',
-      errors: [{ field: 'general', message: error.message }],
+      status: "error",
+      errors: [{
+        type: 'server_error',
+        msg: `Error fetching technology: ${error.message}`,
+        path: 'id',
+        value: req.params.id,
+      }],
     });
   }
 });
 
-// Get a specific technology by ID
-router.get('/:id', async (req, res) => {
+// Get all technologies
+router.get("/", async (req, res, next) => {
   try {
-    const technology = await getTechnology(req.params.id);
-    if (!technology) {
-      res.status(404).json({ status: 'error', message: 'Technology not found' });
-      return;
-    }
-    res.json(technology);
+    const technologies = await technologyModel.find();
+    res.status(200).json({
+      status: "success",
+      data: technologies,
+    });
   } catch (error) {
+    console.error("Error fetching technologies:", error);
     res.status(500).json({
-      status: 'error',
-      errors: [{ field: 'general', message: error.message }],
+      status: "error",
+      errors: [{
+        type: 'server_error',
+        msg: `Error fetching technologies: ${error.message}`,
+      }],
     });
   }
 });
+
+
 
 // Update a technology by ID
 router.put('/:id',  updateTechnologyValidator, async (req, res) => {
