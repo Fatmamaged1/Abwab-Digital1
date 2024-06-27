@@ -1,4 +1,4 @@
-const swaggerUi = require('swagger-ui-express');
+/*const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const path = require('path');
 
@@ -19,4 +19,4 @@ const swaggerSpec = swaggerJsdoc(options);
 
 module.exports = function (app) {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-};
+};*/

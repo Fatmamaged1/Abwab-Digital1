@@ -7,7 +7,7 @@ const validator = require("validator");
 const multer = require("multer");
 const path = require("path");
 dotenv.config("./config.env");
-const swagger = require("./swagger");
+//const swagger = require("./swagger");
 
 const globalError = require("./middleware/errorMiddleware");
 const connectDB = require("./config/database");
@@ -25,7 +25,7 @@ const authRouts = require("./routes/authRoutes");
 connectDB();
 const app = express();
 // Add Swagger middleware
-swagger(app);
+//swagger(app);
 
 // middleware
 app.use(express.json());
