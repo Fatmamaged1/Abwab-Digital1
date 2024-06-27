@@ -7,8 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
+  
   "keywords": [],
   "author": "",
+  "engines": {
+    "node":"20.10.0"
+  },
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
