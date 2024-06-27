@@ -1,7 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const factory = require('./handlerFactory');
 const ApiError = require('../utils/apiError');
