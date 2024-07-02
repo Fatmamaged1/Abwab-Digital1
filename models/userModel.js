@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
+    isAdmin: { type: Boolean, default: true },
     phone: String,
     profileImg: String,
 
@@ -45,12 +46,22 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre('save', async function (next) {
+
+userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  // Hashing user password
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 const User = mongoose.model('User', userSchema);
 

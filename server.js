@@ -1,109 +1,81 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
-const ApiError = require("./utils/ApiError");
-const mongoose = require("mongoose");
-const validator = require("validator");
-const multer = require("multer");
 const path = require("path");
-dotenv.config("./config.env");
-//const swagger = require("./swagger");
+
+dotenv.config(); // Correct usage
 
 const globalError = require("./middleware/errorMiddleware");
 const connectDB = require("./config/database");
-const employeeRouts = require("./routes/employeeRoutes");
-const blogRouts = require("./routes/blogRoutes");
-const servicesRouts = require("./routes/servicesRoutes");
-const technologyRouts = require("./routes/technologiesRoutes");
-const testimonialRouts = require("./routes/testimonialRoutes");
-const clientRouts = require("./routes/clientRoutes");
-const contactRouts = require("./routes/contactRoutes");
-const projectRouts = require("./routes/projectRoutes");
-const userRouts = require("./routes/userRoutes");
-const authRouts = require("./routes/authRoutes");
+const ApiError = require("./utils/ApiError");
+const setupAdminJS = require("./admin");
 
+// Import routes
+const employeeRoutes = require("./routes/employeeRoutes");
+const blogRoutes = require("./routes/blogRoutes");
+const servicesRoutes = require("./routes/servicesRoutes");
+const technologyRoutes = require("./routes/technologiesRoutes");
+const testimonialRoutes = require("./routes/testimonialRoutes");
+const clientRoutes = require("./routes/clientRoutes");
+const contactRoutes = require("./routes/contactRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
+const mailingListRoutes = require("./routes/mailingListRoutes");
+
+// Connect to database
 connectDB();
-const app = express();
-// Add Swagger middleware
-//swagger(app);
 
-// middleware
+const app = express();
+
+// Middleware
 app.use(express.json());
 app.use(morgan("dev"));
 
-if (process.env.NODE_ENV === "development") {
-  console.log(`mode:${process.env.NODE_ENV}`);
-}
+// Set up routes
+app.use("/api/v1/blogs", blogRoutes);
+app.use("/api/v1/employee", employeeRoutes);
+app.use("/api/v1/services", servicesRoutes);
+app.use("/api/v1/technologies", technologyRoutes);
+app.use("/api/v1/testimonial", testimonialRoutes);
+app.use("/api/v1/client", clientRoutes);
+app.use("/api/v1/contact", contactRoutes);
+app.use("/api/v1/project", projectRoutes);
+app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/mailing-list", mailingListRoutes);
 
-// router
-app.use("/api/v1/blogs", blogRouts);
-
-app.use(
-  "/uploads/blogs",
-  express.static(path.join(__dirname, "uploads/blogs"))
-);
-app.use("/api/v1/employee", employeeRouts);
-
-app.use(
-  "/uploads/employee",
-  express.static(path.join(__dirname, "uploads/employee"))
-);
-app.use("/api/v1/services", servicesRouts);
-
-app.use(
-  "/uploads/services",
-  express.static(path.join(__dirname, "uploads/services"))
-);
-app.use("/api/v1/technologies", technologyRouts);
-
-app.use(
-  "/uploads/technology",
-  express.static(path.join(__dirname, "uploads/technology"))
-);
-
-app.use("/api/v1/testimonial", testimonialRouts);
-
-app.use(
-  "/uploads/testimonial",
-  express.static(path.join(__dirname, "uploads/testimonial"))
-);
-app.use("/api/v1/client", clientRouts);
-
-app.use(
-  "/uploads/client",
-  express.static(path.join(__dirname, "uploads/client"))
-);
-app.use("/api/v1/contact", contactRouts);
-
-app.use(
-  "/uploads/contact",
-  express.static(path.join(__dirname, "uploads/contact"))
-);
-app.use("/api/v1/project", projectRouts);
-
-app.use(
-  "/uploads/project",
-  express.static(path.join(__dirname, "uploads/project"))
-);
-app.use("/api/v1/user", userRouts);
-
+// Static file serving
+app.use("/uploads/blogs", express.static(path.join(__dirname, "uploads/blogs")));
+app.use("/uploads/employee", express.static(path.join(__dirname, "uploads/employee")));
+app.use("/uploads/services", express.static(path.join(__dirname, "uploads/services")));
+app.use("/uploads/technology", express.static(path.join(__dirname, "uploads/technology")));
+app.use("/uploads/testimonial", express.static(path.join(__dirname, "uploads/testimonial")));
+app.use("/uploads/client", express.static(path.join(__dirname, "uploads/client")));
+app.use("/uploads/contact", express.static(path.join(__dirname, "uploads/contact")));
+app.use("/uploads/project", express.static(path.join(__dirname, "uploads/project")));
 app.use("/uploads/user", express.static(path.join(__dirname, "uploads/user")));
-
-app.use("/api/v1/auth", authRouts);
-
 app.use("/uploads/auth", express.static(path.join(__dirname, "uploads/auth")));
 
-// Handling unhandled routes
-app.all("*", (req, res, next) => {
-  console.log("req.body", req.body);
-  console.log("req.originalUrl", req.originalUrl);
-  next(new ApiError(`Can't find ${req.originalUrl} on this server`, 404));
-});
+// Setup AdminJS
+setupAdminJS().then(({ adminJs, router }) => {
+  app.use(adminJs.options.rootPath, router);
 
-// Error handling middleware
-app.use(globalError);
+  // Handling unhandled routes
+  app.all("*", (req, res, next) => {
+    console.log("req.body", req.body);
+    console.log("req.originalUrl", req.originalUrl);
+    next(new ApiError(`Can't find ${req.originalUrl} on this server`, 404));
+  });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+  // Error handling middleware
+  app.use(globalError);
+
+  // Start server
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`Listening on port ${PORT}`);
+  });
+}).catch((err) => {
+  console.error("Error setting up AdminJS:", err);
 });
