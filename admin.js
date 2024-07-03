@@ -60,8 +60,7 @@ async function setupAdminJS() {
       saveUninitialized: true,
     }
   );
-
-  return { adminJs, router };
+ return { adminJs, router };
 }
 
 module.exports = setupAdminJS;
