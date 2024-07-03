@@ -2,6 +2,12 @@ const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 const path = require("path");
+const cors = require("cors");
+const corsConfig={
+  origin:"*",
+  Credential:true,
+  methods:["GET","POST","DELETE","PUT"],
+}
 
 dotenv.config(); // Correct usage
 
@@ -22,6 +28,7 @@ const projectRoutes = require("./routes/projectRoutes");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const mailingListRoutes = require("./routes/mailingListRoutes");
+const { config } = require("process");
 
 // Connect to database
 connectDB();
@@ -29,8 +36,10 @@ connectDB();
 const app = express();
 
 // Middleware
+app.options("",cors(corsConfig))
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(cors(corsConfig));
 
 // Set up routes
 app.use("/api/v1/blogs", blogRoutes);
