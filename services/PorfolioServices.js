@@ -6,7 +6,7 @@ exports.createPortfolioItem = async (req, res) => {
     try {
         const { title, description, category } = req.body;
         const imageUrl = req.file
-            ? `http://localhost:4000/api/v1/uploads/portfolio/${req.file.filename}`
+            ? `http://localhost:4000/uploads/portfolio/${req.file.filename}`
             : null;
 
         // Check if required fields are missing
@@ -54,7 +54,7 @@ exports.updatePortfolioItem = async (req, res) => {
     try {
         const { title, description, category } = req.body;
         const imageUrl = req.file
-            ? `http://localhost:4000/api/v1/uploads/portfolio/${req.file.filename}`
+            ? `http://localhost:4000/uploads/portfolio/${req.file.filename}`
             : null;
 
         const updatedItem = await Portfolio.findByIdAndUpdate(
