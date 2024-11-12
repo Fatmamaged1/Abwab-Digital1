@@ -4,8 +4,10 @@ const Employee = require("./employeeModel");
 
 const technologySchema = new mongoose.Schema(
   {
-    name: { type: String, //required: true, 
-      unique: true },
+    name: {
+      type: String, //required: true,
+      unique: true,
+    },
     description: { type: String },
     category: [
       {

@@ -27,6 +27,8 @@ const contactRoutes = require("./routes/contactRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
+const homeRoutes = require('./routes/homeRoutes');
+
 const mailingListRoutes = require("./routes/mailingListRoutes");
 const { config } = require("process");
 
@@ -53,6 +55,7 @@ app.use("/api/v1/project", projectRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/mailing-list", mailingListRoutes);
+app.use('/api/v1/home', homeRoutes);
 
 // Static file serving
 app.use("/uploads/blogs", express.static(path.join(__dirname, "uploads/blogs")));

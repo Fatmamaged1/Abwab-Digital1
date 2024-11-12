@@ -10,8 +10,8 @@
   "keywords": [],
   "author": "",
   "engines": {
-  "node": "18"
-},
+    "node": "18"
+  },
   "license": "ISC",
   "dependencies": {
     "@adminjs/design-system": "^4.1.1",
@@ -38,6 +38,7 @@
     "nodemailer": "^6.9.12",
     "npm-modules": "^1.0.1",
     "qs": "^6.11.2",
+    "redis": "^4.7.0",
     "sharp": "^0.33.4",
     "slug": "^8.2.3",
     "slugify": "^1.6.6",

@@ -7,18 +7,13 @@ const {
   updateBlogValidator,
   deleteBlogValidator,
 } = require("../validator/blogValidator");
-const {
-  getBlogs,
-  getBlog,
-  createBlog,
-  updateBlog,
-  deleteBlog,
-} = require("../services/blogServices");
 const blogModel = require("../models/blogModel");
+const { setCache, getCache, deleteCache } = require("../utils/cache");
+const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
 
 const router = express.Router();
 
-// Set up multer to handle file uploads
+// Set up multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/blogs/");
@@ -29,64 +24,97 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + "-" + uniqueSuffix + fileExtension);
   },
 });
-
 const upload = multer({ storage });
 
-router.route("/").post(
-  upload.fields([
-    { name: "image", maxCount: 1 },
-    { name: "tags[0][icon]", maxCount: 10 }, // Adjust the field name and maxCount accordingly
-  ]),
-  (req, res, next) => {
-    console.log("Request body:", req.body);
-    console.log("Request files:", req.files);
-
-    try {
-      if (req.files) {
-        console.log("File uploaded successfully:", JSON.stringify(req.files));
-
-        req.body.image = req.files["image"][0].filename;
-
-        if (
-          req.files["tags[0][icon]"] &&
-          req.files["tags[0][icon]"].length > 0
-        ) {
-          req.body.tags = req.body.tags || [];
-
-          for (let i = 0; i < req.files["tags[0][icon]"].length; i++) {
-            req.body.tags[i] = {
-              name: req.files["tags[0][icon]"][i].originalname,
-              icon: req.files["tags[0][icon]"][i].filename,
-            };
-          }
-        }
-      }
-
-      // Continue with the middleware chain
-      next();
-    } catch (error) {
-      console.error("Error processing files:", error);
-      // Forward the error to the error handling middleware
-      next(error);
+// Get all blogs with caching
+router.route("/").get(async (req, res) => {
+  const cacheKey = "allBlogs";
+  try {
+    const cachedBlogs = await getCache(cacheKey);
+    if (cachedBlogs) {
+      return res.json(formatSuccessResponse(cachedBlogs, "Blogs retrieved from cache"));
     }
-  },
+
+    const blogs = await blogModel.find();
+    await setCache(cacheKey, blogs);
+    return res.json(formatSuccessResponse(blogs, "Blogs retrieved successfully"));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse("Error retrieving blogs", error.message));
+  }
+});
+
+// Get a single blog with caching
+router.route("/:id").get(getBlogValidator, async (req, res) => {
+  const blogId = req.params.id;
+  const cacheKey = `blog_${blogId}`;
+  try {
+    const cachedBlog = await getCache(cacheKey);
+    if (cachedBlog) {
+      return res.json(formatSuccessResponse(cachedBlog, "Blog retrieved from cache"));
+    }
+
+    const blog = await blogModel.findById(blogId);
+    if (!blog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
+
+    await setCache(cacheKey, blog);
+    return res.json(formatSuccessResponse(blog, "Blog retrieved successfully"));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse("Error retrieving blog", error.message));
+  }
+});
+
+// Create a new blog and clear the cache
+router.route("/").post(
+  upload.single("image"),
   createBlogValidator,
-  createBlog
+  async (req, res) => {
+    try {
+      const newBlog = new blogModel({
+        ...req.body,
+        image: req.file ? req.file.filename : null,
+      });
+      const savedBlog = await newBlog.save();
+      await deleteCache("allBlogs");
+      return res.status(201).json(formatSuccessResponse(savedBlog, "Blog created successfully"));
+    } catch (error) {
+      return res.status(500).json(formatErrorResponse("Error creating blog", error.message));
+    }
+  }
 );
 
-router
-  .route("/:id")
-  .get(getBlogValidator, getBlog)
-  .put(updateBlogValidator, updateBlog)
-  .delete(deleteBlogValidator, deleteBlog);
-
-// Get All Blogs
-router.route("/").get(async (req, res, next) => {
+// Update a blog and clear the cache
+router.route("/:id").put(updateBlogValidator, async (req, res) => {
+  const blogId = req.params.id;
   try {
-    const blogs = await blogModel.find();
-    res.json(blogs);
+    const updatedBlog = await blogModel.findByIdAndUpdate(blogId, req.body, { new: true });
+    if (!updatedBlog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
+
+    await deleteCache("allBlogs");
+    await deleteCache(`blog_${blogId}`);
+    return res.json(formatSuccessResponse(updatedBlog, "Blog updated successfully"));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json(formatErrorResponse("Error updating blog", error.message));
+  }
+});
+
+// Delete a blog and clear the cache
+router.route("/:id").delete(deleteBlogValidator, async (req, res) => {
+  const blogId = req.params.id;
+  try {
+    const deletedBlog = await blogModel.findByIdAndDelete(blogId);
+    if (!deletedBlog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
+
+    await deleteCache("allBlogs");
+    await deleteCache(`blog_${blogId}`);
+    return res.json(formatSuccessResponse(null, "Blog deleted successfully"));
+  } catch (error) {
+    return res.status(500).json(formatErrorResponse("Error deleting blog", error.message));
   }
 });
 
