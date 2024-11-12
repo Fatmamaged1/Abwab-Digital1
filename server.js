@@ -28,6 +28,8 @@ const projectRoutes = require("./routes/projectRoutes");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const homeRoutes = require('./routes/homeRoutes');
+const portfolioRoutes = require('./routes/portfolioRoutes');
+
 
 const mailingListRoutes = require("./routes/mailingListRoutes");
 const { config } = require("process");
@@ -56,6 +58,7 @@ app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/mailing-list", mailingListRoutes);
 app.use('/api/v1/home', homeRoutes);
+app.use('/api/v1/portfolio', portfolioRoutes);
 
 // Static file serving
 app.use("/uploads/blogs", express.static(path.join(__dirname, "uploads/blogs")));
@@ -68,6 +71,7 @@ app.use("/uploads/contact", express.static(path.join(__dirname, "uploads/contact
 app.use("/uploads/project", express.static(path.join(__dirname, "uploads/project")));
 app.use("/uploads/user", express.static(path.join(__dirname, "uploads/user")));
 app.use("/uploads/auth", express.static(path.join(__dirname, "uploads/auth")));
+app.use("/uploads/portfolio", express.static(path.join(__dirname, "uploads/portfolio")));
 
 // Setup AdminJS
 setupAdminJS().then(({ adminJs, router }) => {
