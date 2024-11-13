@@ -3,11 +3,11 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 const path = require("path");
 const cors = require("cors");
-const corsConfig={
-  origin:"*",
-  Credential:true,
-  methods:["GET","POST","DELETE","PUT"],
-}
+const corsConfig = {
+  origin: "*",
+  Credential: true,
+  methods: ["GET", "POST", "DELETE", "PUT"],
+};
 
 dotenv.config(); // Correct usage
 
@@ -27,9 +27,8 @@ const contactRoutes = require("./routes/contactRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
-const homeRoutes = require('./routes/homeRoutes');
-const portfolioRoutes = require('./routes/portfolioRoutes');
-
+const homeRoutes = require("./routes/homeRoutes");
+const portfolioRoutes = require("./routes/portfolioRoutes");
 
 const mailingListRoutes = require("./routes/mailingListRoutes");
 const { config } = require("process");
@@ -40,7 +39,7 @@ connectDB();
 const app = express();
 
 // Middleware
-app.options("",cors(corsConfig))
+app.options("", cors(corsConfig));
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors(corsConfig));
@@ -57,41 +56,70 @@ app.use("/api/v1/project", projectRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/mailing-list", mailingListRoutes);
-app.use('/api/v1/home', homeRoutes);
-app.use('/api/v1/portfolio', portfolioRoutes);
+app.use("/api/v1/home", homeRoutes);
+app.use("/api/v1/portfolio", portfolioRoutes);
 
 // Static file serving
-app.use("/uploads/blogs", express.static(path.join(__dirname, "uploads/blogs")));
-app.use("/uploads/employee", express.static(path.join(__dirname, "uploads/employee")));
-app.use("/uploads/services", express.static(path.join(__dirname, "uploads/services")));
-app.use("/uploads/technology", express.static(path.join(__dirname, "uploads/technology")));
-app.use("/uploads/testimonial", express.static(path.join(__dirname, "uploads/testimonial")));
-app.use("/uploads/client", express.static(path.join(__dirname, "uploads/client")));
-app.use("/uploads/contact", express.static(path.join(__dirname, "uploads/contact")));
-app.use("/uploads/project", express.static(path.join(__dirname, "uploads/project")));
+app.use(
+  "/uploads/blogs",
+  express.static(path.join(__dirname, "uploads/blogs"))
+);
+app.use(
+  "/uploads/employee",
+  express.static(path.join(__dirname, "uploads/employee"))
+);
+app.use(
+  "/uploads/services",
+  express.static(path.join(__dirname, "uploads/services"))
+);
+app.use(
+  "/uploads/technology",
+  express.static(path.join(__dirname, "uploads/technology"))
+);
+app.use(
+  "/uploads/testimonial",
+  express.static(path.join(__dirname, "uploads/testimonial"))
+);
+app.use(
+  "/uploads/client",
+  express.static(path.join(__dirname, "uploads/client"))
+);
+app.use(
+  "/uploads/contact",
+  express.static(path.join(__dirname, "uploads/contact"))
+);
+app.use(
+  "/uploads/project",
+  express.static(path.join(__dirname, "uploads/project"))
+);
 app.use("/uploads/user", express.static(path.join(__dirname, "uploads/user")));
 app.use("/uploads/auth", express.static(path.join(__dirname, "uploads/auth")));
-app.use("/uploads/portfolio", express.static(path.join(__dirname, "uploads/portfolio")));
+app.use(
+  "/uploads/portfolio",
+  express.static(path.join(__dirname, "uploads/portfolio"))
+);
 
 // Setup AdminJS
-setupAdminJS().then(({ adminJs, router }) => {
-  app.use(adminJs.options.rootPath, router);
+setupAdminJS()
+  .then(({ adminJs, router }) => {
+    app.use(adminJs.options.rootPath, router);
 
-  // Handling unhandled routes
-  app.all("*", (req, res, next) => {
-    console.log("req.body", req.body);
-    console.log("req.originalUrl", req.originalUrl);
-    next(new ApiError(`Can't find ${req.originalUrl} on this server`, 404));
+    // Handling unhandled routes
+    app.all("*", (req, res, next) => {
+      console.log("req.body", req.body);
+      console.log("req.originalUrl", req.originalUrl);
+      next(new ApiError(`Can't find ${req.originalUrl} on this server`, 404));
+    });
+
+    // Error handling middleware
+    app.use(globalError);
+
+    // Start server
+    const PORT = process.env.PORT || 4000;
+    app.listen(PORT, () => {
+      console.log(`Listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Error setting up AdminJS:", err);
   });
-
-  // Error handling middleware
-  app.use(globalError);
-
-  // Start server
-  const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () => {
-    console.log(`Listening on port ${PORT}`);
-  });
-}).catch((err) => {
-  console.error("Error setting up AdminJS:", err);
-});
