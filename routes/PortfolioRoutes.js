@@ -30,9 +30,10 @@ const storage = multer.diskStorage({
   // Multer instance
   const upload = multer({ storage, fileFilter });
   
-// Route to create a portfolio item
-// Example route using the controller
-router.post('/', upload.single("image"), portfolioController.createPortfolioItem);
+
+// Configure route to handle an array of images
+router.post('/', upload.array('images', 10), portfolioController.createPortfolioItem);
+
 
 // Route to get all portfolio items
 router.get('/', portfolioController.getAllPortfolioItems);
