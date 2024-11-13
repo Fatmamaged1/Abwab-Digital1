@@ -28,7 +28,8 @@ const projectRoutes = require("./routes/projectRoutes");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
 const homeRoutes = require("./routes/homeRoutes");
-const portfolioRoutes = require("./routes/portfolioRoutes");
+const portfolioRoutes = require('./routes/PortfolioRoutes');
+
 
 const mailingListRoutes = require("./routes/mailingListRoutes");
 const { config } = require("process");
