@@ -1,50 +1,37 @@
-// routes/portfolioRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-//const upload = multer();
-const portfolioController = require('../services/PorfolioServices');
+const multer = require("multer");
+const path = require("path");
+const portfolioController = require("../services/PorfolioServices");
 
-// Set up storage configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, '../uploads/portfolio');
-        cb(null, uploadPath); // Make sure this path exists
+        cb(null, "uploads/portfolio"); // Save files to 'uploads/portfolio'
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, uniqueSuffix + '-' + file.originalname);
     }
 });
-  
-  // File filter to allow only images
-  const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image')) {
-      cb(null, true);
-    } else {
-      cb(new ApiError('Only image files are allowed!', 400), false);
-    }
-  };
-  
-  // Multer instance
-  const upload = multer({ storage, fileFilter });
-  
 
-// Configure route to handle an array of images
-router.post('/', upload.array('images', 10), portfolioController.createPortfolioItem);
+const upload = multer({ storage: storage });
 
+// Route for creating and updating portfolio with multiple images
+router.post('/', upload.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'designScreens.web', maxCount: 10 },
+    { name: 'designScreens.app', maxCount: 10 }
+]), portfolioController.createPortfolioItem);
 
-// Route to get all portfolio items
-router.get('/', portfolioController.getAllPortfolioItems);
+router.put('/:id', upload.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'designScreens.web', maxCount: 10 },
+    { name: 'designScreens.app', maxCount: 10 }
+]), portfolioController.updatePortfolioItem);
 
-// Route to get a portfolio item by ID
-router.get('/:id', portfolioController.getPortfolioItemById);
-
-// Route to update a portfolio item
-router.put('/:id', portfolioController.updatePortfolioItem);
-
-// Route to delete a portfolio item
-router.delete('/:id', portfolioController.deletePortfolioItem);
+// Other CRUD routes
+router.get("/", portfolioController.getAllPortfolioItems);
+router.get("/:id", portfolioController.getPortfolioItemById);
+router.delete("/:id", portfolioController.deletePortfolioItem);
 
 module.exports = router;

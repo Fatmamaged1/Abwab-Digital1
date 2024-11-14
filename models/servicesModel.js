@@ -1,31 +1,28 @@
 const mongoose = require("mongoose");
 
-// Sub-schema for representing individual services
 const serviceSchema = new mongoose.Schema({
-  name: { type: String },
-  description: { type: String },
-  technologies: [{ type: mongoose.Schema.Types.ObjectId, ref: "Technology" }],
-  team: {
-    projectManagers: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
-    ],
-    developers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Employee" }],
-    designers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Employee" }],
-    testers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Employee" }],
-  },
-  startDate: { type: Date },
-  endDate: { type: Date },
-
-  testimonials: [{ type: mongoose.Schema.Types.ObjectId, ref: "Testimonial" }],
-  status: {
+  name: { type: String, required: true },
+  category: {
     type: String,
-    enum: ["Pending", "Active", "Completed"],
-    default: "Pending",
+    enum: ["Mobile App Development", "Web Development", "Other"],
+    required: true,
   },
-  client: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Client",
-  },
+  description: { type: String, required: true },
+  benefits: [{ type: String }], // List of benefits of the service
+  keyFeatures: [{ type: String }], // List of key features
+  images: [
+    {
+      url: { type: String, required: true }, // URL of the image
+      altText: { type: String, default: "Service Image" }, // Optional alt text for accessibility
+      caption: { type: String }, // Optional caption
+    },
+  ],
+  quoteLink: { type: String, default: "/get-quote" },
+  createdAt: { type: Date, default: Date.now },
 });
+
+// Enable virtuals for JSON output
+serviceSchema.set("toJSON", { virtuals: true });
+serviceSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("Service", serviceSchema);

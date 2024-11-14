@@ -1,42 +1,99 @@
-const { v4: uuidv4 } = require("uuid");
-const sharp = require("sharp");
-const { uploadSingleImage } = require("../middleware/uploadImageMiddleware.js");
-const asyncHandler = require("express-async-handler");
-const ApiError = require("../utils/ApiError.js");
-const factory = require("./handlerFactory.js");
-const AgencyModel = require("../models/servicesModel.js");
-//const blogModel = require("../models/blogModel.js"); // This line is unnecessary if not used
+const Service = require("../models/servicesModel");
+const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
 
-// Assume you have a 'ServicesModel' imported from somewhere
-const ServicesModel = require("../models/servicesModel.js"); // Replace with the correct path and file name
+// Create a new service
+exports.createService = async (req, res) => {
+    try {
+        const { name, category, description, benefits, keyFeatures, quoteLink } = req.body;
 
-// Middleware to upload blog image
-exports.uploadServicesImage = uploadSingleImage("image");
+        // Process uploaded files
+        const images = req.files ? req.files.map(file => ({
+            url: `http://localhost:4000/uploads/services/${file.filename}`,
+            altText: file.originalname,
+            caption: req.body.caption || ""
+        })) : [];
 
-// Middleware to resize the uploaded image
-exports.resizeImage = asyncHandler(async (req, res, next) => {
-  if (!req.file) {
-    return next();
+        const newService = new Service({
+            name,
+            category,
+            description,
+            benefits: benefits ? benefits.split(",") : [],
+            keyFeatures: keyFeatures ? keyFeatures.split(",") : [],
+            images,
+            quoteLink,
+        });
+
+        const savedService = await newService.save();
+        return res.status(201).json(formatSuccessResponse(savedService, "Service created successfully"));
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json(formatErrorResponse("Failed to create service", error.message));
+    }
+};
+
+// Update a service
+exports.updateService = async (req, res) => {
+    try {
+        const { name, category, description, benefits, keyFeatures, quoteLink } = req.body;
+
+        // Process uploaded files
+        const images = req.files ? req.files.map(file => ({
+            url: `http://localhost:4000/uploads/services/${file.filename}`,
+            altText: file.originalname,
+            caption: req.body.caption || ""
+        })) : [];
+
+        const updatedService = await Service.findByIdAndUpdate(
+            req.params.id,
+            {
+                name,
+                category,
+                description,
+                benefits: benefits ? benefits.split(",") : [],
+                keyFeatures: keyFeatures ? keyFeatures.split(",") : [],
+                images,
+                quoteLink,
+            },
+            { new: true }
+        );
+
+        if (!updatedService) return res.status(404).json(formatErrorResponse("Service not found"));
+        return res.status(200).json(formatSuccessResponse(updatedService, "Service updated successfully"));
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json(formatErrorResponse("Failed to update service", error.message));
+    }
+};
+// Get all services
+exports.getAllServices = async (req, res) => {
+  try {
+      const services = await Service.find();
+      return res.status(200).json(formatSuccessResponse(services, "Services retrieved successfully"));
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json(formatErrorResponse("Failed to retrieve services", error.message));
   }
+};
 
-  const filename = `blog-${uuidv4()}-${Date.now()}.jpeg`;
-
-  // Resize and save the image
-  await sharp(req.file.buffer)
-    .resize(600, 600)
-    .toFormat("jpeg")
-    .jpeg({ quality: 95 })
-    .toFile(`uploads/blogs/${filename}`);
-
-  // Save the filename in the request body for storage in the database
-  req.body.image = filename;
-
-  next();
-});
-
-// CRUD operations using factory pattern
-exports.getServices = factory.getAll(AgencyModel, "Agency");
-exports.getService = factory.getOne(AgencyModel, "Agency");
-exports.createServices = factory.createOne(AgencyModel, "Agency");
-exports.updateServices = factory.updateOne(AgencyModel, "Agency");
-exports.deleteServices = factory.deleteOne(AgencyModel, "Agency");
+// Get a single service by ID
+exports.getServiceById = async (req, res) => {
+  try {
+      const service = await Service.findById(req.params.id);
+      if (!service) return res.status(404).json(formatErrorResponse("Service not found"));
+      return res.status(200).json(formatSuccessResponse(service, "Service retrieved successfully"));
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json(formatErrorResponse("Failed to retrieve service", error.message));
+  }
+};
+// Delete a service
+exports.deleteService = async (req, res) => {
+  try {
+      const deletedService = await Service.findByIdAndDelete(req.params.id);
+      if (!deletedService) return res.status(404).json(formatErrorResponse("Service not found"));
+      return res.status(200).json(formatSuccessResponse(null, "Service deleted successfully"));
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json(formatErrorResponse("Failed to delete service", error.message));
+  }
+};

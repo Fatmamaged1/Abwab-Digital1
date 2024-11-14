@@ -92,6 +92,9 @@ app.use(
 app.use(
   "/uploads/project",
   express.static(path.join(__dirname, "uploads/project"))
+);app.use(
+  "/uploads/services",
+  express.static(path.join(__dirname, "uploads/services"))
 );
 app.use("/uploads/user", express.static(path.join(__dirname, "uploads/user")));
 app.use("/uploads/auth", express.static(path.join(__dirname, "uploads/auth")));
