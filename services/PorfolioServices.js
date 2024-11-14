@@ -1,5 +1,10 @@
 const Portfolio = require("../models/PortfolioModel");
 const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
+const { setCache, getCache, deleteCache } = require("../utils/cache");
+
+// Cache keys
+const PORTFOLIO_ALL_KEY = "allPortfolioItems";
+const PORTFOLIO_SINGLE_KEY = id => `portfolioItem:${id}`;
 
 // Create a new portfolio item
 exports.createPortfolioItem = async (req, res) => {
@@ -42,6 +47,10 @@ exports.createPortfolioItem = async (req, res) => {
         });
 
         const savedItem = await newPortfolioItem.save();
+
+        // Clear the cached list of all portfolio items since a new one was added
+        await deleteCache(PORTFOLIO_ALL_KEY);
+
         return res.status(201).json(formatSuccessResponse(savedItem, "Portfolio item created successfully"));
     } catch (error) {
         console.error(error);
@@ -49,10 +58,17 @@ exports.createPortfolioItem = async (req, res) => {
     }
 };
 
-// Get all portfolio items
+// Get all portfolio items with caching
 exports.getAllPortfolioItems = async (req, res) => {
     try {
+        const cachedItems = await getCache(PORTFOLIO_ALL_KEY);
+        if (cachedItems) {
+            return res.status(200).json(formatSuccessResponse(cachedItems, "Portfolio items retrieved successfully from cache"));
+        }
+
         const items = await Portfolio.find().populate("teamMembers");
+        await setCache(PORTFOLIO_ALL_KEY, items);  // Cache the result
+
         return res.status(200).json(formatSuccessResponse(items, "Portfolio items retrieved successfully"));
     } catch (error) {
         console.error(error);
@@ -60,11 +76,20 @@ exports.getAllPortfolioItems = async (req, res) => {
     }
 };
 
-// Get a single portfolio item by ID
+// Get a single portfolio item by ID with caching
 exports.getPortfolioItemById = async (req, res) => {
+    const cacheKey = PORTFOLIO_SINGLE_KEY(req.params.id);
     try {
+        const cachedItem = await getCache(cacheKey);
+        if (cachedItem) {
+            return res.status(200).json(formatSuccessResponse(cachedItem, "Portfolio item retrieved successfully from cache"));
+        }
+
         const item = await Portfolio.findById(req.params.id).populate("teamMembers");
         if (!item) return res.status(404).json(formatErrorResponse("Portfolio item not found"));
+
+        await setCache(cacheKey, item);  // Cache the result
+
         return res.status(200).json(formatSuccessResponse(item, "Portfolio item retrieved successfully"));
     } catch (error) {
         console.error(error);
@@ -72,7 +97,7 @@ exports.getPortfolioItemById = async (req, res) => {
     }
 };
 
-// Update a portfolio item
+// Update a portfolio item and clear relevant caches
 exports.updatePortfolioItem = async (req, res) => {
     try {
         const { name, description, startDate, endDate, category, client, status, budget, currency, teamMembers } = req.body;
@@ -103,6 +128,11 @@ exports.updatePortfolioItem = async (req, res) => {
         ).populate("teamMembers");
 
         if (!updatedItem) return res.status(404).json(formatErrorResponse("Portfolio item not found"));
+
+        // Update the cache
+        await setCache(PORTFOLIO_SINGLE_KEY(req.params.id), updatedItem);
+        await deleteCache(PORTFOLIO_ALL_KEY); // Clear cached list of all items
+
         return res.status(200).json(formatSuccessResponse(updatedItem, "Portfolio item updated successfully"));
     } catch (error) {
         console.error(error);
@@ -110,11 +140,16 @@ exports.updatePortfolioItem = async (req, res) => {
     }
 };
 
-// Delete a portfolio item
+// Delete a portfolio item and clear relevant caches
 exports.deletePortfolioItem = async (req, res) => {
     try {
         const deletedItem = await Portfolio.findByIdAndDelete(req.params.id);
         if (!deletedItem) return res.status(404).json(formatErrorResponse("Portfolio item not found"));
+
+        // Clear caches related to this item
+        await deleteCache(PORTFOLIO_SINGLE_KEY(req.params.id));
+        await deleteCache(PORTFOLIO_ALL_KEY);
+
         return res.status(200).json(formatSuccessResponse(null, "Portfolio item deleted successfully"));
     } catch (error) {
         console.error(error);
