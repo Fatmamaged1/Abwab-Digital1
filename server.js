@@ -17,6 +17,7 @@ const ApiError = require("./utils/ApiError");
 const setupAdminJS = require("./admin");
 
 // Import routes
+const aboutRoutes = require('./routes/aboutRoutes');
 const employeeRoutes = require("./routes/employeeRoutes");
 const blogRoutes = require("./routes/blogRoutes");
 const servicesRoutes = require("./routes/servicesRoutes");
@@ -46,6 +47,7 @@ app.use(morgan("dev"));
 app.use(cors(corsConfig));
 
 // Set up routes
+app.use('/api/v1/about', aboutRoutes);
 app.use("/api/v1/blogs", blogRoutes);
 app.use("/api/v1/employee", employeeRoutes);
 app.use("/api/v1/services", servicesRoutes);
@@ -68,6 +70,9 @@ app.use(
 app.use(
   "/uploads/employee",
   express.static(path.join(__dirname, "uploads/employee"))
+);app.use(
+  "/uploads/about",
+  express.static(path.join(__dirname, "uploads/about"))
 );
 app.use(
   "/uploads/services",
