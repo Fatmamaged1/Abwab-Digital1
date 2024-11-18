@@ -1,28 +1,35 @@
 const mongoose = require("mongoose");
 
-const serviceSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  category: {
-    type: String,
-    enum: ["Mobile App Development", "Web Development", "Other"],
-    required: true,
+const ServiceSchema = new mongoose.Schema({
+  title: { type: String, required: true }, // e.g., "We help you grow your business faster"
+  description: { type: String, required: true }, // Main text content
+  stats: {
+    clients: { type: String }, // e.g., "90+ Clients"
+    countries: { type: String }, // e.g., "30+ Countries"
+    projects: { type: String }, // e.g., "50+ Projects"
   },
-  description: { type: String, required: true },
-  benefits: [{ type: String }], // List of benefits of the service
-  keyFeatures: [{ type: String }], // List of key features
-  images: [
+  services: [
     {
-      url: { type: String, required: true }, // URL of the image
-      altText: { type: String, default: "Service Image" }, // Optional alt text for accessibility
-      caption: { type: String }, // Optional caption
+      image: { type: String, required: true }, 
+      title: { type: String, required: true }, 
+      description: { type: String, required: true }, }
+  ],
+  features: [
+    {
+      icon: { type: String, required: true }, 
+      title: { type: String, required: true }, 
+      subtitle: { type: String, required: true }, 
     },
   ],
-  quoteLink: { type: String, default: "/get-quote" },
-  createdAt: { type: Date, default: Date.now },
+  footer: {
+    copyright: { type: String, required: false }, 
+    socialLinks: {
+      discord: { type: String },
+      twitter: { type: String },
+      youtube: { type: String },
+    },
+    quickLinks: [String], 
+  },
 });
 
-// Enable virtuals for JSON output
-serviceSchema.set("toJSON", { virtuals: true });
-serviceSchema.set("toObject", { virtuals: true });
-
-module.exports = mongoose.model("Service", serviceSchema);
+module.exports = mongoose.model("Service", ServiceSchema);

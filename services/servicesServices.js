@@ -1,101 +1,106 @@
 const Service = require("../models/servicesModel");
-const {
-  formatSuccessResponse,
-  formatErrorResponse,
-} = require("../utils/responseFormatter");
+const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
 const { setCache, getCache, deleteCache } = require("../utils/cache");
 
-// Define cache keys
-const SERVICES_ALL_KEY = "allServices";
-const SERVICE_SINGLE_KEY = (id) => `service:${id}`;
+// Cache keys
+const SERVICES_CACHE_KEY = "services:all";
+const SERVICE_CACHE_KEY = (id) => `services:${id}`;
+
+// Parse JSON fields with error handling
+const parseJSON = (input, fallback = {}) => {
+  try {
+    return JSON.parse(input || "{}");
+  } catch {
+    return fallback;
+  }
+};
+
+// Handle file paths for uploads
+const getFilePath = (file) =>
+  file ? `/uploads/services/${file.filename}` : null;
 
 // Create a new service
 exports.createService = async (req, res) => {
   try {
-    const { name, category, description, benefits, keyFeatures, quoteLink } =
-      req.body;
+    const { title, description, stats, services, features, footer } = req.body;
 
-    // Process uploaded files
-    const images = req.files
-      ? req.files.map((file) => ({
-          url: `http://localhost:4000/uploads/services/${file.filename}`,
-          altText: file.originalname,
-          caption: req.body.caption || "",
-        }))
-      : [];
+    const parsedServices = parseJSON(services, []).map((service) => ({
+      ...service,
+      image: service.image || getFilePath(req.files?.image?.[0]),
+    }));
+
+    const parsedFeatures = parseJSON(features, []).map((feature) => ({
+      ...feature,
+      icon: feature.icon || getFilePath(req.files?.icon?.[0]),
+    }));
 
     const newService = new Service({
-      name,
-      category,
+      title,
       description,
-      benefits: benefits ? benefits.split(",") : [],
-      keyFeatures: keyFeatures ? keyFeatures.split(",") : [],
-      images,
-      quoteLink,
+      stats: parseJSON(stats),
+      services: parsedServices,
+      features: parsedFeatures,
+      footer: parseJSON(footer),
     });
 
     const savedService = await newService.save();
 
-    // Clear the cached list of all services since a new service was added
-    await deleteCache(SERVICES_ALL_KEY);
+    // Invalidate cache
+    await deleteCache(SERVICES_CACHE_KEY);
 
-    return res
+    res
       .status(201)
-      .json(
-        formatSuccessResponse(savedService, "Service created successfully")
-      );
+      .json(formatSuccessResponse(savedService, "Service created successfully"));
   } catch (error) {
     console.error(error);
-    return res
+    res
       .status(500)
       .json(formatErrorResponse("Failed to create service", error.message));
   }
 };
 
-// Update a service
+// Update an existing service
 exports.updateService = async (req, res) => {
   try {
-    const { name, category, description, benefits, keyFeatures, quoteLink } =
-      req.body;
+    const { title, description, stats, services, features, footer } = req.body;
 
-    // Process uploaded files
-    const images = req.files
-      ? req.files.map((file) => ({
-          url: `http://localhost:4000/uploads/services/${file.filename}`,
-          altText: file.originalname,
-          caption: req.body.caption || "",
-        }))
-      : [];
+    const parsedServices = parseJSON(services, []).map((service) => ({
+      ...service,
+      image: service.image || getFilePath(req.files?.image?.[0]),
+    }));
+
+    const parsedFeatures = parseJSON(features, []).map((feature) => ({
+      ...feature,
+      icon: feature.icon || getFilePath(req.files?.icon?.[0]),
+    }));
 
     const updatedService = await Service.findByIdAndUpdate(
       req.params.id,
       {
-        name,
-        category,
+        title,
         description,
-        benefits: benefits ? benefits.split(",") : [],
-        keyFeatures: keyFeatures ? keyFeatures.split(",") : [],
-        images,
-        quoteLink,
+        stats: parseJSON(stats),
+        services: parsedServices,
+        features: parsedFeatures,
+        footer: parseJSON(footer),
       },
       { new: true }
     );
 
-    if (!updatedService)
+    if (!updatedService) {
       return res.status(404).json(formatErrorResponse("Service not found"));
+    }
 
-    // Update cache
-    await setCache(SERVICE_SINGLE_KEY(req.params.id), updatedService);
-    await deleteCache(SERVICES_ALL_KEY); // Clear cached list of all services
+    // Invalidate relevant caches
+    await deleteCache(SERVICES_CACHE_KEY);
+    await deleteCache(SERVICE_CACHE_KEY(req.params.id));
 
-    return res
+    res
       .status(200)
-      .json(
-        formatSuccessResponse(updatedService, "Service updated successfully")
-      );
+      .json(formatSuccessResponse(updatedService, "Service updated successfully"));
   } catch (error) {
     console.error(error);
-    return res
+    res
       .status(500)
       .json(formatErrorResponse("Failed to update service", error.message));
   }
@@ -104,82 +109,80 @@ exports.updateService = async (req, res) => {
 // Get all services with caching
 exports.getAllServices = async (req, res) => {
   try {
-    const cachedServices = await getCache(SERVICES_ALL_KEY);
+    // Check Redis cache
+    const cachedServices = await getCache(SERVICES_CACHE_KEY);
     if (cachedServices) {
       return res
         .status(200)
-        .json(
-          formatSuccessResponse(
-            cachedServices,
-            "Services retrieved successfully from cache"
-          )
-        );
+        .json(formatSuccessResponse(cachedServices, "Services retrieved from cache"));
     }
 
     const services = await Service.find();
-    await setCache(SERVICES_ALL_KEY, services); // Cache the result
 
-    return res
+    // Cache the result
+    await setCache(SERVICES_CACHE_KEY, services);
+
+    res
       .status(200)
       .json(formatSuccessResponse(services, "Services retrieved successfully"));
   } catch (error) {
     console.error(error);
-    return res
+    res
       .status(500)
       .json(formatErrorResponse("Failed to retrieve services", error.message));
   }
 };
 
-// Get a single service by ID with caching
+// Get a service by ID with caching
 exports.getServiceById = async (req, res) => {
-  const cacheKey = SERVICE_SINGLE_KEY(req.params.id);
   try {
+    const cacheKey = SERVICE_CACHE_KEY(req.params.id);
+
+    // Check Redis cache
     const cachedService = await getCache(cacheKey);
     if (cachedService) {
       return res
         .status(200)
-        .json(
-          formatSuccessResponse(
-            cachedService,
-            "Service retrieved successfully from cache"
-          )
-        );
+        .json(formatSuccessResponse(cachedService, "Service retrieved from cache"));
     }
 
     const service = await Service.findById(req.params.id);
-    if (!service)
+    if (!service) {
       return res.status(404).json(formatErrorResponse("Service not found"));
+    }
 
-    await setCache(cacheKey, service); // Cache the result
+    // Cache the result
+    await setCache(cacheKey, service);
 
-    return res
+    res
       .status(200)
       .json(formatSuccessResponse(service, "Service retrieved successfully"));
   } catch (error) {
     console.error(error);
-    return res
+    res
       .status(500)
       .json(formatErrorResponse("Failed to retrieve service", error.message));
   }
 };
 
-// Delete a service and clear relevant caches
+// Delete a service and invalidate caches
 exports.deleteService = async (req, res) => {
   try {
-    const deletedService = await Service.findByIdAndDelete(req.params.id);
-    if (!deletedService)
+    const service = await Service.findByIdAndDelete(req.params.id);
+    if (!service) {
       return res.status(404).json(formatErrorResponse("Service not found"));
+    }
 
-    // Clear caches related to this item
-    await deleteCache(SERVICE_SINGLE_KEY(req.params.id));
-    await deleteCache(SERVICES_ALL_KEY);
+    // Invalidate caches
+    await deleteCache(SERVICES_CACHE_KEY);
+    await deleteCache(SERVICE_CACHE_KEY(req.params.id));
 
-    return res
+    res
       .status(200)
       .json(formatSuccessResponse(null, "Service deleted successfully"));
   } catch (error) {
     console.error(error);
-    return res
+    res
       .status(500)
       .json(formatErrorResponse("Failed to delete service", error.message));
   }

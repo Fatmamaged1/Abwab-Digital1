@@ -4,24 +4,41 @@ const multer = require("multer");
 const path = require("path");
 const serviceController = require("../services/servicesServices");
 
-// Configure storage for multer
+// Configure multer for file uploads
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/services"); // Save files to 'uploads/services'
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + "-" + file.originalname);
-    }
+  destination: (req, file, cb) => {
+    cb(null, "uploads/services");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`;
+    cb(null, uniqueSuffix);
+  },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// CRUD routes with image upload support
-router.post("/", upload.array("images", 5), serviceController.createService);
-router.put("/:id", upload.array("images", 5), serviceController.updateService);
+// Define routes
 router.get("/", serviceController.getAllServices);
 router.get("/:id", serviceController.getServiceById);
+
+router.post(
+  "/",
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "icon", maxCount: 1 },
+  ]),
+  serviceController.createService
+);
+
+router.put(
+  "/:id",
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "icon", maxCount: 1 },
+  ]),
+  serviceController.updateService
+);
+
 router.delete("/:id", serviceController.deleteService);
 
 module.exports = router;
