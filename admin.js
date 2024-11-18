@@ -3,7 +3,7 @@ const sharp = require("sharp");
 const User = require("./models/userModel"); // Adjust the path to your User model
 sharp("./public/images/Abwab.jpg")
 
-  .resize({ width: 80 }) // Resize width to 300px (adjust if needed)
+  .resize({ width: 40 }) // Resize width to 300px (adjust if needed)
   .jpeg({ quality: 80 }) // Compress JPEG quality to 80%
   .toFile("./public/images/Abwab-min.jpg") // Save minimized image
   .then(() => console.log("Logo optimized successfully!"))
