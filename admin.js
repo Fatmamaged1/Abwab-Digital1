@@ -1,6 +1,13 @@
 const mongoose = require("mongoose");
+const sharp = require("sharp");
 const User = require("./models/userModel"); // Adjust the path to your User model
+sharp("./public/images/Abwab.jpg")
 
+  .resize({ width: 80 }) // Resize width to 300px (adjust if needed)
+  .jpeg({ quality: 80 }) // Compress JPEG quality to 80%
+  .toFile("./public/images/Abwab-min.jpg") // Save minimized image
+  .then(() => console.log("Logo optimized successfully!"))
+  .catch((err) => console.error("Error optimizing logo:", err));
 const Blog = require("./models/blogModel");
 const Employee = require("./models/employeeModel");
 const Service = require("./models/servicesModel");
@@ -10,6 +17,7 @@ const Client = require("./models/clientModel");
 const Contact = require("./models/contactModel");
 const Project = require("./models/projectModel");
 const MailingList = require("./models/MailingListModel");
+const About =require ("./models/aboutModel")
 const express = require("express");
 // Initialize the express application
 const app = express();
@@ -37,7 +45,13 @@ async function setupAdminJS() {
       { resource: Contact, options: {} },
       { resource: Project, options: {} },
       { resource: MailingList, options: {} },
+      { resource: About, options: {} },
     ],
+    branding: {
+      companyName: "AbwabDigital",
+      logo: "/public/images/Abwab-min.jpg",
+      softwareBrothers: false,
+    },
     rootPath: "/admin",
   });
 

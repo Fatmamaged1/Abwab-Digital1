@@ -107,6 +107,7 @@ app.use(
   "/uploads/portfolio",
   express.static(path.join(__dirname, "uploads/portfolio"))
 );
+app.use("/public", express.static("public"));
 
 // Setup AdminJS
 setupAdminJS()
