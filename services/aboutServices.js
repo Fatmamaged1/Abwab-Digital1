@@ -25,8 +25,11 @@ exports.getAllAbout = async (req, res) => {
         );
     }
 
-    // Fetch data from DB
-    const aboutData = await About.find();
+    // Fetch data from DB, populating related fields
+    const aboutData = await About.find()
+      .populate("services")
+      .populate("portfolio");
+
     if (!aboutData.length)
       return res.status(404).json(formatErrorResponse("No data found"));
 
@@ -59,8 +62,11 @@ exports.getAboutById = async (req, res) => {
         );
     }
 
-    // Fetch data from DB
-    const aboutData = await About.findById(id);
+    // Fetch data from DB, populating related fields
+    const aboutData = await About.findById(id)
+      .populate("services")
+      .populate("portfolio");
+
     if (!aboutData)
       return res
         .status(404)
@@ -76,68 +82,72 @@ exports.getAboutById = async (req, res) => {
   }
 };
 
+// Create or Update About Page
+// Create or Update About Page
 exports.createOrUpdateAbout = async (req, res) => {
-    const { title, description, stats, vision, mission, features } = req.body;
-  
-    // Check the structure of req.files and handle accordingly
-    const processedFeatures = features.map((feature, index) => {
-      const uploadedFile =
-        req.files[`features[${index}][icon]`] // If using upload.fields
-          ? req.files[`features[${index}][icon]`][0]
-          : req.files.find((file) => file.fieldname === `features[${index}][icon]`); // If using upload.any()
-  
-      return {
-        ...feature,
-        icon: uploadedFile ? `/uploads/about/${uploadedFile.filename}` : feature.icon,
-      };
-    });
-  
-    const imageUrl = req.files?.image?.[0]?.filename ? `/uploads/about/${req.files.image[0].filename}` : null;
-  
-    try {
-      let aboutData = await About.findOne();
-  
-      if (aboutData) {
-        // Update existing data
-        aboutData.title = title || aboutData.title;
-        aboutData.description = description || aboutData.description;
-        aboutData.stats = stats || aboutData.stats;
-        aboutData.vision = vision || aboutData.vision;
-        aboutData.mission = mission || aboutData.mission;
-        aboutData.features = processedFeatures.length ? processedFeatures : aboutData.features;
-        if (imageUrl) aboutData.image = imageUrl;
-  
-        await aboutData.save();
-  
-        // Invalidate cache
-        await deleteCache(CACHE_KEY_ALL);
-  
-        return res.status(200).json(formatSuccessResponse(aboutData, "About page updated successfully"));
-      }
-  
-      // Create new data
-      aboutData = new About({
-        title,
-        description,
-        stats,
-        vision,
-        mission,
-        features: processedFeatures,
-        image: imageUrl,
-      });
+  const { hero, stats, values, features, services, technologies, portfolio, footer } = req.body;
+  console.log("Body:", req.body);
+  console.log("Files:", req.files);
+
+  try {
+    let aboutData = await About.findOne();
+
+    // Process `values` to ensure `icon` is assigned correctly
+    const processedValues = values
+      ? values.map((value, index) => ({
+          ...value,
+          icon: req.files[`values[${index}][icon]`]
+            ? `/uploads/about/${req.files[`values[${index}][icon]`][0].filename}`
+            : value.icon, // Keep existing icon if not updated
+        }))
+      : aboutData ? aboutData.values : [];
+
+    if (aboutData) {
+      // Update existing data
+      aboutData.hero = hero || aboutData.hero;
+      aboutData.stats = stats || aboutData.stats;
+      aboutData.values = processedValues || aboutData.values;
+      aboutData.features = features || aboutData.features;
+      aboutData.services = services || aboutData.services;
+      aboutData.technologies = technologies || aboutData.technologies;
+      aboutData.portfolio = portfolio || aboutData.portfolio;
+      aboutData.footer = footer || aboutData.footer;
+
       await aboutData.save();
-  
+
       // Invalidate cache
       await deleteCache(CACHE_KEY_ALL);
-  
-      return res.status(201).json(formatSuccessResponse(aboutData, "About page created successfully"));
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json(formatErrorResponse("Server error", error.message));
+
+      return res
+        .status(200)
+        .json(formatSuccessResponse(aboutData, "About page updated successfully"));
     }
-  };
-  
-  
+
+    // Create new data
+    aboutData = new About({
+      hero,
+      stats,
+      values: processedValues,
+      features,
+      services,
+      technologies,
+      portfolio,
+      footer,
+    });
+    await aboutData.save();
+
+    // Invalidate cache
+    await deleteCache(CACHE_KEY_ALL);
+
+    return res
+      .status(201)
+      .json(formatSuccessResponse(aboutData, "About page created successfully"));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(formatErrorResponse("Server error", error.message));
+  }
+};
+
 
 // Delete About Page Data by ID (with Redis invalidation)
 exports.deleteAboutById = async (req, res) => {
@@ -167,52 +177,40 @@ exports.deleteAboutById = async (req, res) => {
 
 // Update About Page Data by ID (with Redis invalidation)
 exports.updateAboutById = async (req, res) => {
-    const { id } = req.params;
-    const { title, description, stats, vision, mission, features } = req.body;
-  
-    // Process uploaded feature icons
-    const processedFeatures = features
-      ? JSON.parse(features).map((feature, index) => ({
-          ...feature,
-          icon: req.files && req.files[`features[${index}][icon]`]
-            ? `/uploads/about/${req.files[`features[${index}][icon]`][0].filename}`
-            : feature.icon, // Retain existing icon if no new file is uploaded
-        }))
-      : [];
-  
-    const imageUrl = req.file ? `/uploads/about/${req.file.filename}` : null;
-  
-    try {
-      const aboutData = await About.findById(id);
-  
-      if (!aboutData)
-        return res
-          .status(404)
-          .json(formatErrorResponse("No data found with the provided ID"));
-  
-      // Update data
-      aboutData.title = title || aboutData.title;
-      aboutData.description = description || aboutData.description;
-      aboutData.stats = stats || aboutData.stats;
-      aboutData.vision = vision || aboutData.vision;
-      aboutData.mission = mission || aboutData.mission;
-      aboutData.features = processedFeatures.length ? processedFeatures : aboutData.features;
-      if (imageUrl) aboutData.image = imageUrl;
-  
-      await aboutData.save();
-  
-      // Invalidate cache
-      await deleteCache(CACHE_KEY_ALL);
-      await deleteCache(`${CACHE_KEY_PREFIX_ID}${id}`);
-  
-      res
-        .status(200)
-        .json(
-          formatSuccessResponse(aboutData, "About page data updated successfully")
-        );
-    } catch (error) {
-      console.error(error);
-      res.status(500).json(formatErrorResponse("Server error", error.message));
-    }
-  };
-  
+  const { id } = req.params;
+  const { hero, stats, values, features, services, technologies, portfolio, footer } = req.body;
+
+  try {
+    const aboutData = await About.findById(id);
+
+    if (!aboutData)
+      return res
+        .status(404)
+        .json(formatErrorResponse("No data found with the provided ID"));
+
+    // Update data
+    aboutData.hero = hero || aboutData.hero;
+    aboutData.stats = stats || aboutData.stats;
+    aboutData.values = values || aboutData.values;
+    aboutData.features = features || aboutData.features;
+    aboutData.services = services || aboutData.services;
+    aboutData.technologies = technologies || aboutData.technologies;
+    aboutData.portfolio = portfolio || aboutData.portfolio;
+    aboutData.footer = footer || aboutData.footer;
+
+    await aboutData.save();
+
+    // Invalidate cache
+    await deleteCache(CACHE_KEY_ALL);
+    await deleteCache(`${CACHE_KEY_PREFIX_ID}${id}`);
+
+    res
+      .status(200)
+      .json(
+        formatSuccessResponse(aboutData, "About page data updated successfully")
+      );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(formatErrorResponse("Server error", error.message));
+  }
+};

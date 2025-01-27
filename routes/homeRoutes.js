@@ -1,16 +1,53 @@
-// routes/homeRouter.js
 const express = require('express');
-const { createHome, getHomeData, updateHomeData } = require('../services/homeServices');
+const homeController = require('../services/homeServices');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
-// POST: Create homepage data
-router.post('/', createHome);
+// Create Home data with image upload
+router.post(
+  '/home',
+  upload.fields([
+    { name: 'heroImage', maxCount: 1 },
+    { name: 'aboutSectionImage', maxCount: 1 },
+  ]),
+  homeController.createHome
+);
 
-// GET: Retrieve homepage data
-router.get('/', getHomeData);
+// Update Home data
+router.put(
+  '/home',
+  upload.fields([
+    { name: 'heroImage', maxCount: 1 },
+    { name: 'aboutSectionImage', maxCount: 1 },
+  ]),
+  homeController.updateHomeData
+);
 
-// PUT: Update homepage data
-router.put('/', updateHomeData);
+// Get Home data
+router.get('/home', async (req, res) => {
+  try {
+    const homeDataResponse = await homeController.getHomeData(req);
+
+    if (!homeDataResponse || !homeDataResponse.data) {
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error retrieving homepage data',
+      });
+    }
+
+    res.json({
+      status: 'success',
+      seo: homeDataResponse.data.seo,
+      data: homeDataResponse.data.homeData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error retrieving homepage data',
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

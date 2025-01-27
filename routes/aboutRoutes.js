@@ -30,10 +30,11 @@ router.get("/:id", getAboutById); // Get data by ID
 router.post(
   "/",
   upload.fields([
-    { name: "image", maxCount: 1 }, // Main image
-    { name: "features[0][icon]", maxCount: 1 },
-    { name: "features[1][icon]", maxCount: 1 },
-    { name: "features[2][icon]", maxCount: 1 }, // Add more fields if necessary
+    { name: "hero", maxCount: 1 }, // Main image
+    { name: "stats[0][icon]", maxCount: 1 },
+    { name: "stats[1][icon]", maxCount: 1 },
+    { name: "stats[2][icon]", maxCount: 1 }, 
+    {name:"values[0][icon]",maxCount:1}// Add more fields if necessary
   ]),
   createOrUpdateAbout
 ); // Create or update about page

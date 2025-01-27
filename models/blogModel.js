@@ -1,33 +1,37 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 
-const tagSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  icon: {
-    type: String,
-  },
+// SEO Schema
+const seoSchema = new mongoose.Schema({
+  language: { type: String, enum: ["en", "ar"], required: true },
+  metaTitle: { type: String, required: true },
+  metaDescription: { type: String, required: true },
+  keywords: { type: String, required: true },
+  canonicalTag: { type: String },
+  structuredData: { type: mongoose.Schema.Types.Mixed },
 });
 
+// Tag Schema
+const tagSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  icon: { type: String }, // Optional icon for tags
+});
+
+// Blog Schema
 const blogSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
+    section: {
+      title: { type: String, required: true }, // Title moved here
+      description: { type: String, required: true }, // Description moved here
+      image: { // Section image
+        url: { type: String, required: true },
+        altText: { type: String, default: "Section Image" },
+      },
     },
     slug: {
       type: String,
       unique: true,
       lowercase: true,
-    },
-    description: {
-      type: String,
-      required: true,
-      trim: true,
     },
     content: {
       type: String,
@@ -47,13 +51,12 @@ const blogSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    tags: [tagSchema],
     image: {
       url: { type: String, required: true },
       altText: { type: String, default: "Blog Image" },
     },
+    seo: [seoSchema],
     similarArticles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" }],
-
   },
   {
     timestamps: true,
@@ -62,7 +65,8 @@ const blogSchema = new mongoose.Schema(
   }
 );
 
-// Automatically generate a slug from the title
+
+// Middleware: Automatically generate a slug from the title
 blogSchema.pre("save", function (next) {
   if (this.isModified("title")) {
     this.slug = slugify(this.title, { lower: true, strict: true });

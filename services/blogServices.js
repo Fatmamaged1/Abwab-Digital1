@@ -9,12 +9,18 @@ const { setCache, getCache, deleteCache } = require("../utils/cache");
 const BLOGS_ALL_KEY = "allBlogs";
 const BLOG_SINGLE_KEY = (id) => `blog:${id}`;
 
-// Create a new blog
 exports.createBlog = async (req, res) => {
   try {
-    const { title, description, content, categories, author, tags, similarArticles } = req.body;
+    const {
+      section,
+      content,
+      categories,
+      author,
+      seo,
+      similarArticles,
+    } = req.body;
 
-    const image = req.file
+    const blogImage = req.file
       ? {
           url: `http://localhost:4000/uploads/blogs/${req.file.filename}`,
           altText: req.body.altText || "Blog Image",
@@ -24,27 +30,61 @@ exports.createBlog = async (req, res) => {
     // Ensure categories is an array
     const categoriesArray = categories.split(",");
 
-    // Check if similarArticles is a valid JSON string and parse it
+    // Parse similarArticles safely
     let similarArticlesArray = [];
     if (similarArticles) {
       try {
-        // If similarArticles is a string, attempt to parse it
         similarArticlesArray = JSON.parse(similarArticles);
       } catch (error) {
-        // If JSON.parse fails, leave it as an empty array
         console.error("Error parsing similarArticles:", error);
+        return res.status(400).json({ message: "Invalid JSON format for similarArticles" });
       }
     }
 
+    // Parse section safely
+    // Parse section safely
+let sectionObject = null;
+if (section) {
+  try {
+    sectionObject = JSON.parse(section);
+
+    // Add uploaded file's URL to the section.image if file exists
+    if (req.file) {
+      sectionObject.image.url = `http://localhost:4000/uploads/blogs/${req.file.filename}`;
+    }
+  } catch (error) {
+    console.error("Error parsing section:", error);
+    return res.status(400).json({ message: "Invalid JSON format for section" });
+  }
+} else {
+  return res.status(400).json({ message: "Section is required" });
+}
+
+let seoObject = null;
+
+if (seo) {
+  try {
+    const parsedSeo = JSON.parse(seo);
+
+    if (Array.isArray(parsedSeo)) {
+      seoObject = parsedSeo[0]; // Use the first object in the array
+    } else {
+      seoObject = parsedSeo;
+    }
+  } catch (error) {
+    console.error("Error parsing SEO:", error);
+    return res.status(400).json({ message: "Invalid JSON format for SEO" });
+  }
+}
+
     const newBlog = new Blog({
-      title,
-      description,
+      section: sectionObject, // Add parsed section here
       content,
       categories: categoriesArray,
       author,
-      tags: JSON.parse(tags), // Parse tags as JSON
+      seo: seoObject, // Add parsed SEO here
       similarArticles: similarArticlesArray, // Set similarArticles
-      image,
+      image: blogImage,
     });
 
     const savedBlog = await newBlog.save();
@@ -60,6 +100,7 @@ exports.createBlog = async (req, res) => {
 };
 
 // Get all blogs with caching
+// Get all blogs with SEO data in both 'en' and 'ar'
 exports.getAllBlogs = async (req, res) => {
   try {
     // Check Redis cache first
@@ -70,15 +111,21 @@ exports.getAllBlogs = async (req, res) => {
         .json(formatSuccessResponse(cachedBlogs, "Blogs retrieved successfully from cache"));
     }
 
-    // Fetch blogs from the database and populate `similarArticles`
-    const blogs = await Blog.find().populate("similarArticles");
+    // Fetch blogs and include 'en' and 'ar' SEO fields
+    const blogs = await Blog.find({}, "image section.title author createdAt categories seo").populate("similarArticles");
 
-    // Cache the result
-    await setCache(BLOGS_ALL_KEY, blogs);
+    // Filter and format the data to include only 'en' and 'ar' languages in the SEO
+    const formattedBlogs = blogs.map((blog) => ({
+      ...blog._doc,
+      seo: blog.seo.filter((seoData) => ["en", "ar"].includes(seoData.language)),
+    }));
+
+    // Cache the formatted result
+    await setCache(BLOGS_ALL_KEY, formattedBlogs);
 
     return res
       .status(200)
-      .json(formatSuccessResponse(blogs, "Blogs retrieved successfully"));
+      .json(formatSuccessResponse(formattedBlogs, "Blogs retrieved successfully"));
   } catch (error) {
     console.error(error);
     return res
@@ -89,36 +136,43 @@ exports.getAllBlogs = async (req, res) => {
 
 
 
+// Get a single blog by ID with caching
 exports.getBlogById = async (req, res) => {
   const cacheKey = BLOG_SINGLE_KEY(req.params.id);
   try {
-      const cachedBlog = await getCache(cacheKey);
-      if (cachedBlog) {
-          return res.status(200).json(formatSuccessResponse(cachedBlog, "Blog retrieved successfully from cache"));
-      }
+    const cachedBlog = await getCache(cacheKey);
+    if (cachedBlog) {
+      return res
+        .status(200)
+        .json(formatSuccessResponse(cachedBlog, "Blog retrieved successfully from cache"));
+    }
 
-      // Fetch and populate `similarArticles`
-      const blog = await Blog.findById(req.params.id).populate("similarArticles");
-      if (!blog) {
-          return res.status(404).json(formatErrorResponse("Blog not found"));
-      }
+    const blog = await Blog.findById(req.params.id).populate("similarArticles");
+    if (!blog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
 
-      // Cache the populated result
-      await setCache(cacheKey, blog);
+    await setCache(cacheKey, blog);
 
-      return res.status(200).json(formatSuccessResponse(blog, "Blog retrieved successfully"));
+    return res.status(200).json(formatSuccessResponse(blog, "Blog retrieved successfully"));
   } catch (error) {
-      console.error(error);
-      return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
+    console.error(error);
+    return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
-
-
 
 // Update a blog and clear relevant caches
 exports.updateBlog = async (req, res) => {
   try {
-    const { title, description, content, categories, author, tags } = req.body;
+    const {
+      title,
+      description,
+      content,
+      categories,
+      author,
+      tags,
+      seo,
+    } = req.body;
 
     const image = req.file
       ? {
@@ -136,26 +190,25 @@ exports.updateBlog = async (req, res) => {
         categories: categories.split(","),
         author,
         tags: JSON.parse(tags),
+        seo, // Update the SEO object
         image,
       },
       { new: true }
     );
 
-    if (!updatedBlog)
+    if (!updatedBlog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
 
-    // Update cache
     await setCache(BLOG_SINGLE_KEY(req.params.id), updatedBlog);
-    await deleteCache(BLOGS_ALL_KEY); // Clear cached list of all blogs
+    await deleteCache(BLOGS_ALL_KEY);
 
     return res
       .status(200)
       .json(formatSuccessResponse(updatedBlog, "Blog updated successfully"));
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json(formatErrorResponse("Failed to update blog", error.message));
+    return res.status(500).json(formatErrorResponse("Failed to update blog", error.message));
   }
 };
 
@@ -163,10 +216,10 @@ exports.updateBlog = async (req, res) => {
 exports.deleteBlog = async (req, res) => {
   try {
     const deletedBlog = await Blog.findByIdAndDelete(req.params.id);
-    if (!deletedBlog)
+    if (!deletedBlog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
 
-    // Clear caches related to this item
     await deleteCache(BLOG_SINGLE_KEY(req.params.id));
     await deleteCache(BLOGS_ALL_KEY);
 

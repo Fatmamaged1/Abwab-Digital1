@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 const path = require("path");
 const cors = require("cors");
+const helmet = require('helmet');
 const corsConfig = {
   origin: "*",
   Credential: true,
@@ -45,6 +46,15 @@ app.options("", cors(corsConfig));
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors(corsConfig));
+app.use(helmet());
+// Set the views directory and view engine
+app.set('views', path.join(__dirname, 'views'));
+
+// Set the view engine to EJS
+app.set('view engine', 'ejs');
+
+// Define static files folder for assets like images, CSS, and JS
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Set up routes
 app.use('/api/v1/about', aboutRoutes);
@@ -100,6 +110,7 @@ app.use(
 );app.use(
   "/uploads/services",
   express.static(path.join(__dirname, "uploads/services"))
+
 );
 app.use("/uploads/user", express.static(path.join(__dirname, "uploads/user")));
 app.use("/uploads/auth", express.static(path.join(__dirname, "uploads/auth")));
@@ -108,6 +119,11 @@ app.use(
   express.static(path.join(__dirname, "uploads/portfolio"))
 );
 app.use("/public", express.static("public"));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+  
+);
 
 // Setup AdminJS
 setupAdminJS()
