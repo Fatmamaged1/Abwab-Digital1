@@ -136,30 +136,96 @@ exports.getAllBlogs = async (req, res) => {
 
 
 
-// Get a single blog by ID with caching
+//const BLOG_SINGLE_KEY = (id) => `blog:${id}`;
+
 exports.getBlogById = async (req, res) => {
   const cacheKey = BLOG_SINGLE_KEY(req.params.id);
+
   try {
-    const cachedBlog = await getCache(cacheKey);
+    // Check cache first
+    let cachedBlog = await getCache(cacheKey);
     if (cachedBlog) {
-      return res
-        .status(200)
-        .json(formatSuccessResponse(cachedBlog, "Blog retrieved successfully from cache"));
+      try {
+        cachedBlog = JSON.parse(cachedBlog); // Only parse if it's a string
+      } catch (err) {
+        console.warn("Cache parsing error, using raw cached data", err);
+      }
+      return res.status(200).json(
+        formatSuccessResponse(
+          cachedBlog,
+          "Blog retrieved successfully from cache"
+        )
+      );
     }
 
-    const blog = await Blog.findById(req.params.id).populate("similarArticles");
+    // Fetch blog with related articles
+    const blog = await Blog.findById(req.params.id)
+      .populate("similarArticles", "title url image") // Populate only necessary fields
+      .lean(); // Optimize for read-only query
+
     if (!blog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    await setCache(cacheKey, blog);
+    // Format blog response according to UI design
+    const formattedBlog = {
+      section: {
+        image: {
+          url: blog.imageUrl || "", // Ensure image field exists
+          altText: blog.title || "Blog Image"
+        },
+        title: blog.title,
+        description: blog.description
+      },
+      image: {
+        url: blog.imageUrl || "",
+        altText: blog.title
+      },
+      _id: blog._id,
+      content: blog.content || [], // Ensure content structure
+      categories: blog.categories || [],
+      author: blog.author || "Unknown",
+      publishedDate: blog.publishedAt || blog.createdAt,
+      seo: [
+        {
+          language: "en",
+          metaTitle: blog.seo?.metaTitle || blog.title,
+          metaDescription: blog.seo?.metaDescription || blog.description,
+          keywords: blog.seo?.keywords || [],
+          canonicalTag: blog.seo?.canonicalTag || "",
+          structuredData: {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": blog.title,
+            "description": blog.description,
+            "author": {
+              "@type": "Organization",
+              "name": "Abwab Digital",
+              "url": "https://yourwebsite.com"
+            }
+          }
+        }
+      ],
+      similarArticles: blog.similarArticles.map((article) => ({
+        title: article.title,
+        url: article.url,
+        image: article.image
+      })),
+      createdAt: blog.createdAt,
+      updatedAt: blog.updatedAt,
+      id: blog._id
+    };
 
-    return res.status(200).json(formatSuccessResponse(blog, "Blog retrieved successfully"));
+    // Store in cache
+    await setCache(cacheKey, JSON.stringify(formattedBlog));
+
+    return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
   } catch (error) {
     console.error(error);
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
+
 
 // Update a blog and clear relevant caches
 exports.updateBlog = async (req, res) => {

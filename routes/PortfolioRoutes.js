@@ -20,13 +20,15 @@ const upload = multer({ storage: storage });
 router.post('/', upload.fields([
     { name: 'images', maxCount: 10 },
     { name: 'designScreens.web', maxCount: 10 },
-    { name: 'designScreens.app', maxCount: 10 }
+    { name: 'designScreens.app', maxCount: 10 },
+    { name: 'screenshots', maxCount: 10 }
 ]), portfolioController.createPortfolioItem);
-
+    
 router.put('/:id', upload.fields([
     { name: 'images', maxCount: 10 },
     { name: 'designScreens.web', maxCount: 10 },
-    { name: 'designScreens.app', maxCount: 10 }
+    { name: 'designScreens.app', maxCount: 10 },
+    { name: 'screenshots', maxCount: 10 }
 ]), portfolioController.updatePortfolioItem);
 
 // Other CRUD routes

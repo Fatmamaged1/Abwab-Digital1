@@ -1,65 +1,101 @@
 const mongoose = require("mongoose");
 
 const portfolioSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
-  startDate: { type: Date, default: Date.now },
-  endDate: { type: Date },
+
+  // SEO Fields
+  seo: {
+    metaTitle: { type: String, required: true, trim: true },
+    metaDescription: { type: String, required: true, trim: true },
+    canonical: { type: String, trim: true }, // Auto-generated canonical URL
+  },
+
+  // SEO-Friendly URL - Must be unique
+  url: { type: String, required: true, unique: true, trim: true },
+
+  // Main images for the project with SEO-friendly alt text
   images: [
     {
       url: { type: String, required: true },
-      altText: { type: String, default: "Image" },
+      altText: { type: String, default: "Project Image" },
       caption: { type: String },
     },
   ],
+
+  // Design previews (Web & Mobile)
   designScreens: {
     web: [
       {
         url: { type: String, required: true },
-        altText: { type: String, default: "Image" },
+        altText: { type: String, default: "Web Design" },
         caption: { type: String },
       },
     ],
     app: [
       {
         url: { type: String, required: true },
-        altText: { type: String, default: "Image" },
+        altText: { type: String, default: "App Design" },
         caption: { type: String },
       },
     ],
   },
+
+  // Additional Screenshots
+  screenshots: [
+    {
+      url: { type: String, required: true },
+      altText: { type: String, default: "App Screenshot" },
+    },
+  ],
+
+  // Project Category
   category: {
     type: String,
-    enum: ["Mobile App", "Website", "Other"],
+    enum: ["Mobile App", "Website", "E-Commerce", "Dashboard", "Other"],
     required: true,
   },
-  client: { type: String },
-  status: {
+
+  client: { type: String }, // Optional Client Name
+  downloads: { type: Number, default: 0 }, // App/Software Downloads
+
+  platform: {
     type: String,
-    enum: ["Planning", "Development", "Testing", "Completed", "Other"],
+    enum: ["Mobile Application", "Website", "Desktop Software"],
+    required: true,
   },
-  budget: {
-    type: Number,
-    min: 0, // Ensure positive budget
+
+  region: { type: String, required: true }, // Location of the project
+  technologies: [{ type: String }], // Tech stack used (e.g., React, Node.js)
+
+  // Related projects
+  relatedProjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Portfolio" }],
+
+  // Multilingual Support
+  content: {
+    en: {
+      title: { type: String, required: true, trim: true },
+      description: { type: String, required: true, trim: true },
+    },
+    ar: {
+      title: { type: String, required: true, trim: true },
+      description: { type: String, required: true, trim: true },
+    },
   },
-  currency: {
-    type: String,
-    enum: ["USD", "EUR", "RUB", "AED", "EGP", "SAR"],
-  },
-  teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Employee" }],
+
   createdAt: { type: Date, default: Date.now },
 });
 
-// Virtual field for duration
-portfolioSchema.virtual("duration").get(function () {
-  if (!this.startDate) return "No start date";
-  if (!this.endDate) return "Ongoing";
-  const diffInDays = (this.endDate - this.startDate) / (1000 * 60 * 60 * 24);
-  return `${Math.floor(diffInDays)} days`;
+// Auto-generate canonical URL if not provided
+portfolioSchema.pre("save", function (next) {
+  if (!this.seo.canonical) {
+    this.seo.canonical = `https://yourwebsite.com/${this.url}`;
+  }
+  next();
 });
 
-// Enable virtuals for JSON and Object output
+// Enable virtuals for JSON & Object output
 portfolioSchema.set("toJSON", { virtuals: true });
 portfolioSchema.set("toObject", { virtuals: true });
 
-module.exports = mongoose.model("Portfolio", portfolioSchema);
+module.exports = mongoose.models.Portfolio || mongoose.model("Portfolio", portfolioSchema);

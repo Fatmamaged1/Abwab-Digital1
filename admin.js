@@ -1,13 +1,9 @@
+require("dotenv").config();
 const mongoose = require("mongoose");
 const sharp = require("sharp");
-const User = require("./models/userModel"); // Adjust the path to your User model
-sharp("./public/images/Abwab.jpg")
+const express = require("express");
 
-  .resize({ width: 40 }) // Resize width to 300px (adjust if needed)
-  .jpeg({ quality: 80 }) // Compress JPEG quality to 80%
-  .toFile("./public/images/Abwab-min.jpg") // Save minimized image
-  .then(() => console.log("Logo optimized successfully!"))
-  .catch((err) => console.error("Error optimizing logo:", err));
+const User = require("./models/userModel");
 const Blog = require("./models/blogModel");
 const Employee = require("./models/employeeModel");
 const Service = require("./models/servicesModel");
@@ -17,20 +13,32 @@ const Client = require("./models/clientModel");
 const Contact = require("./models/contactModel");
 const Project = require("./models/projectModel");
 const MailingList = require("./models/MailingListModel");
-const About =require ("./models/aboutModel")
-const express = require("express");
-// Initialize the express application
+const About = require("./models/aboutModel");
+const Portfolio = require("./models/PortfolioModel"); // Added Portfolio Model
+
 const app = express();
 
+// Function to optimize logo image
+async function optimizeLogo() {
+  try {
+    await sharp("./public/images/Abwab.jpg")
+      .resize({ width: 40 }) // Resize width
+      .jpeg({ quality: 80 }) // Compress JPEG quality
+      .toFile("./public/images/Abwab-min.jpg"); // Save optimized image
+    console.log("Logo optimized successfully!");
+  } catch (err) {
+    console.error("Error optimizing logo:", err);
+  }
+}
+
+// Initialize AdminJS
 async function setupAdminJS() {
   const { AdminJS } = await import("adminjs");
   const AdminJSExpress = await import("@adminjs/express");
   const AdminJSMongoose = await import("@adminjs/mongoose");
 
-  // Register the adapter
   AdminJS.registerAdapter(AdminJSMongoose);
 
-  // Create an instance of AdminJS
   const adminJs = new AdminJS({
     databases: [mongoose],
     rootPath: "/admin",
@@ -46,23 +54,26 @@ async function setupAdminJS() {
       { resource: Project, options: {} },
       { resource: MailingList, options: {} },
       { resource: About, options: {} },
+      { resource: Portfolio, options: {} }, // Added Portfolio
     ],
     branding: {
       companyName: "AbwabDigital",
       logo: "/public/images/Abwab-min.jpg",
       softwareBrothers: false,
     },
-    rootPath: "/admin",
   });
 
-  // Set up the router with authentication
   const router = AdminJSExpress.buildAuthenticatedRouter(
     adminJs,
     {
       authenticate: async (email, password) => {
-        const user = await User.findOne({ email });
-        if (user && user.isAdmin && (await user.comparePassword(password))) {
-          return user;
+        try {
+          const user = await User.findOne({ email });
+          if (user && user.isAdmin && (await user.comparePassword(password))) {
+            return user;
+          }
+        } catch (err) {
+          console.error("Authentication error:", err);
         }
         return null;
       },
@@ -74,7 +85,11 @@ async function setupAdminJS() {
       saveUninitialized: true,
     }
   );
- return { adminJs, router };
+
+  return { adminJs, router };
 }
+
+// Optimize logo when the server starts
+optimizeLogo();
 
 module.exports = setupAdminJS;
