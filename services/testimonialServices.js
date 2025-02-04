@@ -36,7 +36,63 @@ exports.resizeImage = asyncHandler(async (req, res, next) => {
 
 // CRUD operations using factory pattern
 exports.getTestimonials= factory.getAll(TestimonialModel,"Testimonial");
-exports.getTestimonial= factory.getOne(TestimonialModel,"Testimonial");
-exports.createTestimonial = factory.createOne(TestimonialModel,"Testimonial");
+ exports.getTestimonials = async (req, res) => {
+  try {
+      const testimonials = await TestimonialModel.find();
+
+      // Append full URL to icon field
+      const updatedTestimonials = testimonials.map(testimonial => ({
+          ...testimonial._doc,
+          icon: testimonial.icon 
+              ? `http://localhost:4000/uploads/testimonials/${testimonial.icon}`
+              : null,
+      }));
+
+      res.status(200).json({
+          status: "success",
+          data: updatedTestimonials,
+      });
+  } catch (error) {
+      res.status(500).json({
+          status: "error",
+          errors: [{ field: "general", message: error.message }],
+      });
+  }
+};
+
+ exports.createTestimonial = async (req, res) => {
+  try {
+      const { clien, name, content, rating } = req.body;
+      
+      // Construct full image URL
+      const icon = req.file
+          ? `http://localhost:4000/uploads/testimonials/${req.file.filename}`
+          : null; // Use `null` if no image was uploaded
+
+      const newTestimonial = new TestimonialModel({
+          clien,
+          name,
+          content,
+          rating,
+          icon: icon, // Store full URL instead of just filename
+      });
+
+      const savedTestimonial = await newTestimonial.save();
+
+      res.status(201).json({
+          status: "success",
+          message: "Testimonial created successfully",
+          data: savedTestimonial,
+      });
+  } catch (error) {
+      console.error("Error creating testimonial:", error);
+      res.status(500).json({
+          status: "error",
+          message: "Failed to create testimonial",
+          error: error.message,
+      });
+  }
+};
+
 exports.updateTestimonial = factory.updateOne(TestimonialModel,"Testimonial");
 exports.deleteTestimonial= factory.deleteOne(TestimonialModel,"Testimonial");
