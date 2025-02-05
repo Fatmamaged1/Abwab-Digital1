@@ -66,6 +66,8 @@ async function startServer() {
     app.use("/api/v1/mailing-list", mailingListRoutes);
     app.use("/api/v1/home", homeRoutes);
     app.use("/api/v1/portfolio", portfolioRoutes);
+    app.use("/api/v1/privacy-policy", require("./routes/privacyPolicy"));
+    app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
 
     // ✅ Static file serving (Uploads)
     const uploadDirs = [
