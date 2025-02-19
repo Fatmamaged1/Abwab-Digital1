@@ -226,7 +226,7 @@ exports.getAllServices = async (req, res) => {
         _id: service._id,
         title: service.title || "Default Title",
         description: service.description || "Default Description",
-        footer: service.footer || { copyright: "© 2025 Your Company", quickLinks: [], socialLinks: [] },
+       // footer: service.footer || { copyright: "© 2025 Your Company", quickLinks: [], socialLinks: [] },
         icon: service.keyFeatures?.[0]?.icon || null, // Get icon from keyFeatures
         enhancedIconLink: service.keyFeatures?.[0]?.icon ? getFullPath(req, service.keyFeatures[0].icon) : null, // Construct the full path for icon
       };

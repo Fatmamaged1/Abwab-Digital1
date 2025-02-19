@@ -1,103 +1,131 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); 
 
 // Schema for SEO fields
 const seoSchema = new mongoose.Schema({
-  language: { type: String, enum: ['en', 'ar'], required: true }, // Language code (e.g., "en", "ar")
-  metaTitle: { type: String, required: true }, // Page title for SEO
-  metaDescription: { type: String, required: true }, // Meta description for SEO
-  keywords: { type: String, required: true }, // Comma-separated keywords
-  canonicalTag: { type: String }, // Canonical URL for the page
-  structuredData: { type: mongoose.Schema.Types.Mixed }, // JSON-LD structured data
+  language: { type: String, enum: ['en', 'ar'], required: true },
+  metaTitle: { type: String, required: true },
+  metaDescription: { type: String, required: true },
+  keywords: { type: String, required: true },
+  canonicalTag: { type: String },
+  structuredData: { type: mongoose.Schema.Types.Mixed },
 });
 
+// Home Page Schema
 const HomeSchema = new mongoose.Schema({
   heroSection: {
-    welcomeText: { type: String }, // "Elevating Your Business..."
-    companyName: { type: String }, // "Abwab Digital"
-    description: { type: String }, // Supporting description text
-    heroImage: { type: String }, // URL for the hero image
-    ctaText: { type: String }, // Call-to-action button text
-    ctaLink: { type: String }, // Call-to-action button link
-    altText: { type: String }, // Alt text for the hero image
-  },
-  statistics: [
-    {
-      label: { type: String, required: true }, // Example: "Projects Completed"
-      value: { type: Number, required: true }, // Example: 200+
-    },
-  ],
-  services: [
-    [{ type: mongoose.Schema.Types.ObjectId, ref: 'Service' }],
-  ],
-  aboutSection: {
-    title: { type: String }, // Example: "Welcome to Abwab Digital"
-    description: { type: String }, // Text description for the about section
-    image: { type: String }, // URL for the image
-    altText: { type: String }, // Alt text for the about section image
-    values: [
+    title: { type: String, required: true }, // Added Title
+    description: { type: String, required: true }, // Added Description
+    welcomeText: { type: String },
+    companyName: { type: String },
+    heroImage: { type: String },  // Main hero image URL
+    backgroundImage: { type: String }, // Background image
+    ctaText: { type: String }, 
+    ctaLink: { type: String }, 
+    altText: { type: String },
+    statistics: [ // Added statistics for position, experience, etc.
       {
-        title: { type: String }, // Example: "Innovation"
-        description: { type: String }, // Description of the value
+        label: { type: String, required: true },
+        value: { type: Number, required: true },
+        icon: { type: String }, // Icon for each statistic
       },
     ],
   },
-  portfolio: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Portfolio' }],
+  services: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service',
+    },
+  ],
+  aboutSection: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'About',
+    },
+  ],
+  portfolio: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Portfolio',
+    },
+  ],blogSection: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Blog',
+    },
+  ],
+  testimonials: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Testimonial',
+    },
+  ],
   scheduleSection: {
-    title: { type: String }, // Example: "Schedule Your Consultation"
-    description: { type: String }, // Supporting description
+    title: { type: String },
+    description: { type: String },
     availableDates: [
       {
-        date: { type: Date }, // Available date for scheduling
-        timeSlots: [{ type: String }], // Example: ["10:00 AM", "2:00 PM"]
+        date: { type: Date },
+        timeSlots: [{ type: String }],
       },
     ],
   },
   whyChooseUs: [
     {
-      title: { type: String }, // Example: "Reliability"
-      description: { type: String }, // Supporting description
-      icon: { type: String }, // Icon or image URL
+      title: { type: String },
+      description: { type: String },
+      icon: { type: String },
     },
   ],
   trustedPartners: [
     {
-      name: { type: String }, // Example: "Google"
-      logo: { type: String }, // URL of the partner's logo
-      link: { type: String }, // Optional link to the partner's website
-      altText: { type: String }, // Alt text for the partner's logo
+      name: { type: String },
+      logo: { type: String },
+      link: { type: String },
+      altText: { type: String },
     },
   ],
-  blogSection: [
-    { type: mongoose.Schema.Types.ObjectId, ref: 'Blog' },
+  technologyStack: [
+    {
+      name: { type: String }, // Example: "React"
+      icon: { type: String }, // Technology logo/icon
+    },
   ],
-  testimonials: [
-    { type: mongoose.Schema.Types.ObjectId, ref: 'Testimonial' },
-  ],
+  
+  contactForm: {
+    title: { type: String },
+    fields: [
+      {
+        label: { type: String },
+        type: { type: String, enum: ['text', 'email', 'textarea'] },
+        required: { type: Boolean, default: false },
+      },
+    ],
+  },
   footer: {
-    aboutText: { type: String }, // Brief about text
+    aboutText: { type: String },
     quickAccessLinks: [
       {
-        name: { type: String }, // Example: "Home"
-        url: { type: String }, // URL for the link
+        name: { type: String },
+        url: { type: String },
       },
     ],
     mainLinks: [
       {
-        name: { type: String }, // Example: "Services"
-        url: { type: String }, // URL for the link
+        name: { type: String },
+        url: { type: String },
       },
     ],
     socialLinks: [
       {
-        platform: { type: String }, // Example: "Facebook"
-        url: { type: String }, // URL for the social link
-        icon: { type: String }, // Icon or image URL
+        platform: { type: String },
+        url: { type: String },
+        icon: { type: String },
       },
     ],
   },
-  seo: [seoSchema], // Array to support multilingual SEO
-  url: { type: String, required: true, unique: true }, // Unique URL for the page
-  content: { type: String }, // Content for the page
+  seo: [seoSchema],
+  url: { type: String, required: true, unique: true },
+  content: { type: String },
   createdAt: {
     type: Date,
     default: Date.now,

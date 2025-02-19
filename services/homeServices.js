@@ -1,154 +1,149 @@
 const Home = require('../models/homeModel');
 const { formatSuccessResponse, formatErrorResponse } = require('../utils/responseFormatter');
 
-// Controller to create initial homepage data
-exports.createHome = async (req, res) => {
+// Helper function for JSON parsing with error handling
+const parseJSON = (data, defaultValue = []) => {
   try {
-    console.log(req.body);
-    // Check if a Home document already exists
-    const existingHome = await Home.findOne();
-    if (existingHome) {
-      return res.status(400).json(formatErrorResponse("Homepage data already exists"));
-    }
-
-    // Handle image upload paths
-    const heroImage = req.files?.heroImage?.[0]?.path;
-    const aboutImage = req.files?.aboutSectionImage?.[0]?.path;
-
-    // Parse JSON fields
-    const seo = JSON.parse(req.body.seo || "[]"); // SEO for multiple languages
-    const parsedStatistics = JSON.parse(req.body.statistics || "[]");
-    const parsedTrustedPartners = JSON.parse(req.body.trustedPartners || "[]");
-    const parsedValues = JSON.parse(req.body.values || "[]");
-    const parsedAvailableDates = JSON.parse(req.body.availableDates || "[]");
-    const parsedFooter = JSON.parse(req.body.footer || "{}");
-
-    // Create a new Home document
-    const homeData = new Home({
-      heroSection: {
-        ...req.body.heroSection,
-        heroImage: heroImage || null,
-        altText: req.body.heroAltText || "", // Alt text for hero image
-      },
-      aboutSection: {
-        title: req.body.aboutTitle,
-        description: req.body.aboutDescription,
-        image: aboutImage || null,
-        altText: req.body.aboutAltText || "", // Alt text for about section image
-        values: parsedValues,
-      },
-      statistics: parsedStatistics,
-      scheduleSection: {
-        title: req.body.scheduleTitle,
-        availableDates: parsedAvailableDates,
-      },
-      trustedPartners: parsedTrustedPartners,
-      footer: parsedFooter,
-      blogSection: req.body.blogSection || [],
-      portfolio: req.body.portfolio || [],
-      whyChooseUs: req.body.whyChooseUs || [],
-      testimonials: req.body.testimonials || [],
-      services: req.body.services || [],
-      seo,
-      url: req.body.url || "/home",
-    });
-
-    const savedHomeData = await homeData.save();
-    return res.status(201).json(formatSuccessResponse(savedHomeData, "Homepage data created successfully"));
+    return typeof data === "string" ? JSON.parse(data) : data;
   } catch (error) {
-    return res.status(500).json(formatErrorResponse("Error creating homepage data", error.message));
+    console.error("JSON Parsing Error:", error.message);
+    return defaultValue;
   }
 };
 
-exports.updateHomeData = async (req, res) => {
+const mongoose = require("mongoose");
+
+// Controller to create or update homepage data
+exports.createHome = async (req, res) => {
+    try {
+    console.log("Received Body:", req.body);
+
+    let homeData = await Home.findOne();
+    const isNew = !homeData; // Check if we are creating or updating
+
+    // Parse JSON fields
+    const heroSection = parseJSON(req.body.heroSection, {});
+    const seo = parseJSON(req.body.seo, []);
+    const statistics = parseJSON(req.body.statistics, []);
+    const availableDates = parseJSON(req.body.availableDates, []);
+    const trustedPartners = parseJSON(req.body.trustedPartners, []);
+    const whyChooseUs = parseJSON(req.body.whyChooseUs, []);
+    const footer = parseJSON(req.body.footer, {});
+
+    // Convert IDs to ObjectId
+    const services = req.body.services ? new mongoose.Types.ObjectId(req.body.services) : null;
+    const aboutSection = req.body.aboutSection ? new mongoose.Types.ObjectId(req.body.aboutSection) : null;
+    const portfolio = req.body.portfolio ? new mongoose.Types.ObjectId(req.body.portfolio) : null;
+    const blogSection = req.body.blogSection ? new mongoose.Types.ObjectId(req.body.blogSection) : null;
+    const testimonials = req.body.testimonials ? new mongoose.Types.ObjectId(req.body.testimonials) : null;
+
+    // Handle file uploads
+    const heroImage = req.files?.heroImage?.[0]?.path || homeData?.heroSection?.heroImage || null;
+    const aboutImage = req.files?.aboutImage?.[0]?.path || homeData?.aboutSection?.image || null;
+    const backgroundImage = req.files?.backgroundImage?.[0]?.path || homeData?.backgroundImage || null;
+
+    // Validate required fields
+    if (!heroSection.title || !heroSection.description) {
+      return res.status(400).json({ success: false, message: "Hero Section title and description are required." });
+    }
+
+    // Home update object
+    const homeUpdate = {
+      heroSection: {
+        ...homeData?.heroSection,
+        ...heroSection,
+        heroImage,
+      },
+      statistics,
+      availableDates,
+      trustedPartners,
+      whyChooseUs,
+      footer,
+      seo,
+      backgroundImage,
+      url: req.body.url || "/home",
+      services,
+      aboutSection,
+      portfolio,
+      blogSection,
+      testimonials,
+    };
+
+    if (isNew) {
+      homeData = new Home(homeUpdate);
+    } else {
+      homeData.set(homeUpdate);
+    }
+
+    const savedHomeData = await homeData.save();
+    return res.status(isNew ? 201 : 200).json({
+      success: true,
+      message: isNew ? "Homepage created successfully" : "Homepage updated successfully",
+      data: savedHomeData,
+    });
+
+  } catch (error) {
+    console.error("Error creating/updating homepage:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Error creating/updating homepage data",
+      error: error.message,
+    });
+  }
+};
+
+exports.getHomeData = async (req, res) => {
   try {
-    const homeData = await Home.findOne();
+    console.log('Fetching home data...');
+    const { language } = req.query;
+
+    const homeData = await Home.findOne()
+    .populate("blogSection", "section image categories") // Fetch all related blogs
+    .populate("portfolio", "title description image category") // Fetch all portfolios
+    .populate("testimonials") // Fetch all testimonials
+    .populate("services", "title description") // Fetch all services
+    .populate("aboutSection"); // Fetch all about sections
+  
     if (!homeData) {
       return res.status(404).json(formatErrorResponse("Homepage data not found"));
     }
 
-    // Parse JSON strings for fields
-    const seo = req.body.seo ? JSON.parse(req.body.seo) : homeData.seo;
-    const statistics = req.body.statistics ? JSON.parse(req.body.statistics) : homeData.statistics;
-    const trustedPartners = req.body.trustedPartners ? JSON.parse(req.body.trustedPartners) : homeData.trustedPartners;
+    // Find SEO data for the requested language, fallback to default if not found
+    let seoData = homeData.seo.find((seo) => seo.language === language) || homeData.seo[0] || {};
 
-    // Handle image uploads
-    const heroImage = req.files?.heroImage?.[0]?.path;
-    const aboutImage = req.files?.aboutSectionImage?.[0]?.path;
-
-    // Update the home data
-    homeData.set({
-      ...req.body,
-      heroSection: {
-        ...homeData.heroSection,
-        ...req.body.heroSection,
-        heroImage: heroImage || homeData.heroSection.heroImage,
-        altText: req.body.heroAltText || homeData.heroSection.altText,
-      },
-      aboutSection: {
-        ...homeData.aboutSection,
-        ...req.body.aboutSection,
-        image: aboutImage || homeData.aboutSection.image,
-        altText: req.body.aboutAltText || homeData.aboutSection.altText,
-      },
-      statistics,
-      trustedPartners,
-      seo,
-    });
-
-    const savedData = await homeData.save();
-    return res.json(formatSuccessResponse(savedData, "Homepage data updated successfully"));
-  } catch (error) {
-    return res.status(500).json(formatErrorResponse("Error updating homepage data", error.message));
-  }
-};
-
-exports.getHomeData = async (req) => {
-  try {
-    console.log('Fetching home data...');
-    const { language } = req.query; // Language query parameter (e.g., ?language=en)
-
-    const homeData = await Home.findOne()
-      .populate('blogSection')
-      .populate('portfolio')
-      .populate('testimonials')
-      .populate('services');
-
-    if (!homeData) {
-      console.error('No home data found');
-      throw new Error("Homepage data not found");
-    }
-
-    // Find language-specific SEO data
-    const seoData = homeData.seo.find((seo) => seo.language === language);
-
-    if (!seoData) {
-      throw new Error(`SEO data not found for language: ${language}`);
-    }
-
+    // Construct base URL for image paths
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const formatImagePath = (imagePath) =>
-      imagePath?.startsWith('http') ? imagePath : `${baseUrl}/${imagePath?.replace(/\\/g, '/')}`;
+    
+    // Function to clean and format image paths
+    const formatImagePath = (imagePath) => {
+      if (!imagePath) return null;
 
-    // Format image paths
-    homeData.heroSection.heroImage = formatImagePath(homeData.heroSection.heroImage);
-    homeData.aboutSection.image = formatImagePath(homeData.aboutSection.image);
+      // Trim spaces & replace spaces with "%20" for valid URLs
+      const cleanedPath = imagePath.trim().replace(/\s+/g, "%20");
 
-    homeData.trustedPartners = homeData.trustedPartners.map((partner) => ({
+      return cleanedPath.startsWith("http") ? cleanedPath : `${baseUrl}/${cleanedPath.replace(/\\/g, "/")}`;
+    };
+
+    // Ensure heroSection images are formatted properly
+    if (homeData.heroSection) {
+      homeData.heroSection.heroImage = formatImagePath(homeData.heroSection.heroImage);
+    }
+
+    // Ensure aboutSection images are formatted properly
+    if (homeData.aboutSection) {
+      homeData.aboutSection.image = formatImagePath(homeData.aboutSection.image);
+    }
+
+    // Format trustedPartners images
+    homeData.trustedPartners = (homeData.trustedPartners || []).map((partner) => ({
       ...partner,
       logo: formatImagePath(partner.logo),
     }));
 
-    return {
-      success: true,
-      message: "Homepage data retrieved successfully",
-      data: {
-        homeData,
-        seo: seoData,
-      },
-    };
+    return res.json(formatSuccessResponse({ homeData, seo: seoData }, "Homepage data retrieved successfully"));
+
   } catch (error) {
-    console.error('Error in getHomeData:', error.message || error);
-    throw new Error(error.message || "Error retrieving homepage data");
+    console.error('Error in getHomeData:', error.message);
+    return res.status(500).json(formatErrorResponse("Error retrieving homepage data", error.message));
   }
 };

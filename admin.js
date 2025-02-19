@@ -25,9 +25,9 @@ async function optimizeLogo() {
       .resize({ width: 40 }) // Resize width
       .jpeg({ quality: 80 }) // Compress JPEG quality
       .toFile("./public/images/Abwab-min.jpg"); // Save optimized image
-    console.log("Logo optimized successfully!");
+    console.log("✅ Logo optimized successfully!");
   } catch (err) {
-    console.error("Error optimizing logo:", err);
+    console.error("❌ Error optimizing logo:", err);
   }
 }
 
@@ -58,6 +58,7 @@ async function setupAdminJS() {
     ],
     branding: {
       companyName: "AbwabDigital",
+      
       logo: "/public/images/Abwab-min.jpg",
       softwareBrothers: false,
     },
@@ -73,7 +74,7 @@ async function setupAdminJS() {
             return user;
           }
         } catch (err) {
-          console.error("Authentication error:", err);
+          console.error("❌ Authentication error:", err);
         }
         return null;
       },
@@ -82,7 +83,7 @@ async function setupAdminJS() {
     null,
     {
       resave: false,
-      saveUninitialized: true,
+      saveUninitialized: false,
     }
   );
 

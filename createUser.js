@@ -10,7 +10,7 @@ async function createAdminUser() {
 
     const adminUser = new User({
      name:'admin', 
-      email: 'admin@example.com',
+      email: 'adminPanel@example.com',
       password: 'adminpassword',
       isAdmin: true,
     });

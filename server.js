@@ -68,6 +68,7 @@ async function startServer() {
     app.use("/api/v1/portfolio", portfolioRoutes);
     app.use("/api/v1/privacy-policy", require("./routes/privacyPolicy"));
     app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
+    //app.use("/admin", adminRoutes);
 
     // ✅ Static file serving (Uploads)
     const uploadDirs = [
