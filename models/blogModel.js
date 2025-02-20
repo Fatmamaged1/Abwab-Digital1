@@ -67,11 +67,6 @@ const blogSchema = new mongoose.Schema(
 
 
 // Middleware: Automatically generate a slug from the title
-blogSchema.pre("save", function (next) {
-  if (this.isModified("title")) {
-    this.slug = slugify(this.title, { lower: true, strict: true });
-  }
-  next();
-});
+
 
 module.exports = mongoose.model("Blog", blogSchema);

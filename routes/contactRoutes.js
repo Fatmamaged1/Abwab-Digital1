@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const multer = require("multer");
-const { validationResult } = require('express-validator');
+const { validationResult } = require("express-validator");
 const ContactModel = require("../models/contactModel.js");
 
 const {
@@ -9,18 +9,19 @@ const {
   createContactValidator,
   updateContactValidator,
   deleteContactValidator,
-} = require("../validator/contactValidator"); // Import contact validators
+} = require("../validator/contactValidator");
+
 const {
   getContacts,
   getContact,
   createContact,
   updateContact,
   deleteContact,
-} = require("../services/contactServices"); // Import contact services
+} = require("../services/contactServices");
 
 const router = express.Router();
 
-// Set up multer to handle file uploads
+// 🟢 إعداد Multer لتحميل الصور
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, "../uploads/contact/"));
@@ -32,9 +33,18 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+// ✅ فقط السماح بتحميل الصور
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed!"), false);
+  }
+};
 
-// Error handling middleware
+const upload = multer({ storage, fileFilter });
+
+// 🛑 ميدلوير لإدارة الأخطاء العامة
 router.use((error, req, res, next) => {
   res.status(error.status || 500).json({
     status: "error",
@@ -42,112 +52,95 @@ router.use((error, req, res, next) => {
   });
 });
 
-// Create a contact with profile image upload
-router.post(
-  "/",
-
-  createContactValidator,
-  createContact
-);
-
-// Get all contacts
-router.route("/").get(async (req, res, next) => {
+// 🟢 إنشاء جهة اتصال جديدة مع تحميل الصورة
+router.post("/", upload.single("profileImage"),  async (req, res) => {
   try {
-    const contacts= await ContactModel.find();
-    res.status(200).json({
-      status: "success",
-      data: contacts,
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      errors: [{ field: "general", message: error.message }],
-    });
-  }
-});
-
-// Get a specific contact by ID
-router.route("/:id").get(
-  getContactValidator, // Assuming getContactValidator is your validation middleware
-  async (req, res, next) => {
-    // Check for validation errors from previous middleware
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: "error",
-        errors: errors.array(),
-      });
+      return res.status(400).json({ status: "error", errors: errors.array() });
     }
 
-    const contactId = req.params.id;
+    const { name, email, phone, message } = req.body;
+    if (!name ) {
+      return res.status(400).json({  success: false, message: "name is required"  });
 
-    try {
-      // Fetch the contact based on the ID
-      const contact = await ContactModel.findById(contactId);
+    }if (!email ) {
+      return res.status(400).json({  success: false, message: "email is required"  });
 
-      if (!contact) {
-        return res.status(404).json({
-          status: "error",
-          errors: [{
-            type: 'not_found',
-            msg: 'Contact not found',
-            path: 'id',
-            value: contactId,
-          }],
-        });
-      }
+    }if (!phone ) {
+      return res.status(400).json({  success: false, message: "phone is required"  });
 
-      res.status(200).json({
-        status: "success",
-        data: contact,
-      });
-    } catch (error) {
-      console.error("Error fetching contact:", error);
-      res.status(500).json({
-        status: "error",
-        errors: [{
-          type: 'server_error',
-          msg: `Error fetching contact: ${error.message}`,
-          path: 'id',
-          value: contactId,
-        }],
-      });
+    }if (!message ) {
+      return res.status(400).json({  success: false,  message: "message is required"  });
+
     }
-  }
-);
 
+    const profileImage = req.file ? req.file.filename : null;
 
-// Update a contact by ID
-router.put("/:id", updateContactValidator, async (req, res) => {
-  try {
-    const updatedContact = await updateContact(req.params.id, req.body);
-    if (!updatedContact) {
-      res.status(404).json({ status: "error", message: "Contact not found" });
-      return;
-    }
-    res.json(updatedContact);
+    const newContact = await ContactModel.create({ name, email, phone, message, profileImage });
+
+    res.status(201).json({ status: "success", data: newContact });
   } catch (error) {
-    res.status(400).json({
-      status: "error",
-      error: { statusCode: 400, message: error.message },
-    });
+    res.status(500).json({ status: "error", message: error.message });
   }
 });
 
-// Delete a contact by ID
+// 🟢 جلب جميع جهات الاتصال
+router.get("/", async (req, res) => {
+  try {
+    const contacts = await ContactModel.find();
+    res.status(200).json({ status: "success", data: contacts });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 🟢 جلب جهة اتصال واحدة عبر ID
+router.get("/:id", getContactValidator, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ status: "error", errors: errors.array() });
+  }
+
+  try {
+    const contact = await ContactModel.findById(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ status: "error", message: "Contact not found" });
+    }
+    res.status(200).json({ status: "success", data: contact });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// 🟢 تحديث جهة اتصال عبر ID
+router.put("/:id", upload.single("profileImage"), updateContactValidator, async (req, res) => {
+  try {
+    const updatedData = { ...req.body };
+    if (req.file) updatedData.profileImage = req.file.filename;
+
+    const updatedContact = await ContactModel.findByIdAndUpdate(req.params.id, updatedData, { new: true });
+
+    if (!updatedContact) {
+      return res.status(404).json({ status: "error", message: "Contact not found" });
+    }
+
+    res.json({ status: "success", data: updatedContact });
+  } catch (error) {
+    res.status(400).json({ status: "error", message: error.message });
+  }
+});
+
+// 🟢 حذف جهة اتصال عبر ID
 router.delete("/:id", deleteContactValidator, async (req, res) => {
   try {
-    const deletedContact = await deleteContact(req.params.id);
+    const deletedContact = await ContactModel.findByIdAndDelete(req.params.id);
     if (!deletedContact) {
-      res.status(404).json({ status: "error", message: "Contact not found" });
-      return;
+      return res.status(404).json({ status: "error", message: "Contact not found" });
     }
     res.json({ status: "success", message: "Contact deleted successfully" });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      error: { statusCode: 500, message: error.message },
-    });
+    res.status(500).json({ status: "error", message: error.message });
   }
 });
 

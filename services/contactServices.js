@@ -33,6 +33,24 @@ exports.resizeImage = asyncHandler(async (req, res, next) => {
 // CRUD operations using factory pattern for Contact
 exports.getContacts = factory.getAll(ContactModel, "Contact");
 exports.getContact = factory.getOne(ContactModel, "Contact");
-exports.createContact = factory.createOne(ContactModel, "Contact");
+
+exports.createContact = async (req, res) => {
+  try {
+    const { name, email, phone, message } = req.body;
+
+    // حفظ جهة الاتصال في قاعدة البيانات
+    const newContact = await ContactModel.create({ name, email, phone, message });
+
+    res.status(201).json({
+      status: "success",
+      data: newContact,
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
 exports.updateContact = factory.updateOne(ContactModel, "Contact");
 exports.deleteContact = factory.deleteOne(ContactModel, "Contact");

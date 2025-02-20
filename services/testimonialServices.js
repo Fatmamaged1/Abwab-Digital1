@@ -44,7 +44,7 @@ exports.getTestimonials= factory.getAll(TestimonialModel,"Testimonial");
       const updatedTestimonials = testimonials.map(testimonial => ({
           ...testimonial._doc,
           icon: testimonial.icon 
-              ? `http://localhost:4000/uploads/testimonials/${testimonial.icon}`
+              ? `http://91.108.102.81:4000/uploads/testimonials/${testimonial.icon}`
               : null,
       }));
 
@@ -66,7 +66,7 @@ exports.getTestimonials= factory.getAll(TestimonialModel,"Testimonial");
       
       // Construct full image URL
       const icon = req.file
-          ? `http://localhost:4000/uploads/testimonials/${req.file.filename}`
+          ? `http://91.108.102.81:4000/uploads/testimonials/${req.file.filename}`
           : null; // Use `null` if no image was uploaded
 
       const newTestimonial = new TestimonialModel({

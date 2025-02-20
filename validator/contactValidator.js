@@ -5,25 +5,26 @@ const validatorMiddleware = require("../middleware/validatorMiddleware");
 const  contact= require("../models/contactModel"); // Replace with the actual path to your schema file
 
 
-
-
 // Validation middleware for Contact schema
 exports.createContactValidator = [
   check("name")
+    .notEmpty()
+    .withMessage("Name is required")
     .isLength({ min: 3 })
-    .withMessage("Name must be at least 3 characters")
-    .notEmpty()
-    .withMessage("Name is required"),
+    .withMessage("Name must be at least 3 characters"),
+  
   check("email")
-    .isEmail()
-    .withMessage("Invalid email format")
     .notEmpty()
-    .withMessage("Email is required"),
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Invalid email format"),
+  
   check("phone")
     .optional()
     .isMobilePhone()
     .withMessage("Invalid phone number format"),
-  validatorMiddleware,
+
+  validatorMiddleware, // تمرير الأخطاء إلى الميدلوير النهائي
 ];
 
 exports.getContactValidator = [

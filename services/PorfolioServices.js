@@ -24,7 +24,7 @@ exports.createPortfolioItem = async (req, res) => {
 
         // Process uploaded images
         const images = req.files?.images ? req.files.images.map(file => ({
-            url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+            url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
             altText: file.originalname,
             caption: req.body.caption || '',
         })) : [];
@@ -32,12 +32,12 @@ exports.createPortfolioItem = async (req, res) => {
         // Process design screens for web and app
         const designScreensProcessed = {
             web: req.files?.['designScreens.web'] ? req.files['designScreens.web'].map(file => ({
-                url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+                url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
                 altText: file.originalname,
                 caption: req.body.webDesignCaption || '',
             })) : [],
             app: req.files?.['designScreens.app'] ? req.files['designScreens.app'].map(file => ({
-                url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+                url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
                 altText: file.originalname,
                 caption: req.body.appDesignCaption || '',
             })) : [],
@@ -45,7 +45,7 @@ exports.createPortfolioItem = async (req, res) => {
 
         // Process screenshots
         const screenshots = req.files?.screenshots ? req.files.screenshots.map(file => ({
-            url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+            url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
             altText: file.originalname,
         })) : [];
 
@@ -146,7 +146,7 @@ exports.updatePortfolioItem = async (req, res) => {
 
         // Process images
         const images = req.files?.images ? req.files.images.map(file => ({
-            url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+            url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
             altText: file.originalname,
             caption: req.body.caption || '',
         })) : [];
@@ -154,12 +154,12 @@ exports.updatePortfolioItem = async (req, res) => {
         // Process design screens for web and app
         const designScreensProcessed = {
             web: req.files?.webDesign ? req.files.webDesign.map(file => ({
-                url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+                url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
                 altText: file.originalname,
                 caption: req.body.webDesignCaption || '',
             })) : [],
             app: req.files?.appDesign ? req.files.appDesign.map(file => ({
-                url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+                url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
                 altText: file.originalname,
                 caption: req.body.appDesignCaption || '',
             })) : [],
@@ -167,7 +167,7 @@ exports.updatePortfolioItem = async (req, res) => {
 
         // Process screenshots
         const screenshots = req.files?.screenshots ? req.files.screenshots.map(file => ({
-            url: `http://localhost:4000/uploads/portfolio/${file.filename}`,
+            url: `http://91.108.102.81:4000/uploads/portfolio/${file.filename}`,
             altText: file.originalname,
         })) : [];
 

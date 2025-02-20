@@ -19,10 +19,11 @@ exports.createBlog = async (req, res) => {
       seo,
       similarArticles,
     } = req.body;
+   // console.log(req.body);
 
     const blogImage = req.file
       ? {
-          url: `http://localhost:4000/uploads/blogs/${req.file.filename}`,
+          url: `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`,
           altText: req.body.altText || "Blog Image",
         }
       : null;
@@ -50,7 +51,7 @@ if (section) {
 
     // Add uploaded file's URL to the section.image if file exists
     if (req.file) {
-      sectionObject.image.url = `http://localhost:4000/uploads/blogs/${req.file.filename}`;
+      sectionObject.image.url = `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`;
     }
   } catch (error) {
     console.error("Error parsing section:", error);
@@ -99,90 +100,67 @@ if (seo) {
   }
 };
 
-// Get all blogs with caching
-// Get all blogs with SEO data in both 'en' and 'ar'
+
+// Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
   try {
-    // Check Redis cache first
-    const cachedBlogs = await getCache(BLOGS_ALL_KEY);
-    if (cachedBlogs) {
-      return res
-        .status(200)
-        .json(formatSuccessResponse(cachedBlogs, "Blogs retrieved successfully from cache"));
-    }
+  
+    const blogs = await Blog.find({}, "image section.title section.description section.content section.image author createdAt categories seo content")
+      .populate("similarArticles", "title image");
 
-    // Fetch blogs and include 'en' and 'ar' SEO fields
-    const blogs = await Blog.find({}, "image section.title author createdAt categories seo").populate("similarArticles");
-
-    // Filter and format the data to include only 'en' and 'ar' languages in the SEO
     const formattedBlogs = blogs.map((blog) => ({
       ...blog._doc,
+      section: {
+        title: blog.section?.title || "",
+        description: blog.section?.description || "",
+      //  content: Array.isArray(blog.section?.content) ? blog.section.content : [],
+        image: blog.section?.image || { url: "", altText: "No Image" },
+      },
+      content: blog.content || "",
       seo: blog.seo.filter((seoData) => ["en", "ar"].includes(seoData.language)),
     }));
 
-    // Cache the formatted result
-    await setCache(BLOGS_ALL_KEY, formattedBlogs);
-
-    return res
-      .status(200)
-      .json(formatSuccessResponse(formattedBlogs, "Blogs retrieved successfully"));
+    await setCache(BLOGS_ALL_KEY, JSON.stringify(formattedBlogs)); // 🔥 تخزين البيانات كمصفوفة JSON
+    return res.status(200).json(formatSuccessResponse(formattedBlogs, "Blogs retrieved successfully"));
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json(formatErrorResponse("Failed to retrieve blogs", error.message));
+    return res.status(500).json(formatErrorResponse("Failed to retrieve blogs", error.message));
   }
 };
 
 
-
-//const BLOG_SINGLE_KEY = (id) => `blog:${id}`;
-
+// Get blog by ID with full section details and image handling
 exports.getBlogById = async (req, res) => {
   const cacheKey = BLOG_SINGLE_KEY(req.params.id);
 
   try {
-    // Check cache first
     let cachedBlog = await getCache(cacheKey);
     if (cachedBlog) {
       try {
-        cachedBlog = JSON.parse(cachedBlog); // Only parse if it's a string
+        cachedBlog = JSON.parse(cachedBlog);
       } catch (err) {
         console.warn("Cache parsing error, using raw cached data", err);
       }
-      return res.status(200).json(
-        formatSuccessResponse(
-          cachedBlog,
-          "Blog retrieved successfully from cache"
-        )
-      );
+      return res.status(200).json(formatSuccessResponse(cachedBlog, "Blog retrieved successfully from cache"));
     }
 
-    // Fetch blog with related articles
     const blog = await Blog.findById(req.params.id)
-      .populate("similarArticles", "title url image") // Populate only necessary fields
-      .lean(); // Optimize for read-only query
+      .populate("similarArticles", "title image")
+      .lean();
 
     if (!blog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    // Format blog response according to UI design
     const formattedBlog = {
       section: {
-        image: {
-          url: blog.imageUrl || "", // Ensure image field exists
-          altText: blog.title || "Blog Image"
-        },
-        title: blog.title,
-        description: blog.description
+        title: blog.section?.title || "",
+        description: blog.section?.description || "",
+        image: blog.section?.image || { url: "", altText: "No Image" },
       },
-      image: {
-        url: blog.imageUrl || "",
-        altText: blog.title
-      },
+      image: blog.image || { url: "", altText: "No Image" },
       _id: blog._id,
-      content: blog.content || [], // Ensure content structure
+      content: blog.content || [],
       categories: blog.categories || [],
       author: blog.author || "Unknown",
       publishedDate: blog.publishedAt || blog.createdAt,
@@ -209,23 +187,20 @@ exports.getBlogById = async (req, res) => {
       similarArticles: blog.similarArticles.map((article) => ({
         title: article.title,
         url: article.url,
-        image: article.image
+        image: article.image || { url: "", altText: "No Image" },
       })),
       createdAt: blog.createdAt,
       updatedAt: blog.updatedAt,
-      id: blog._id
+      id: blog._id,
     };
 
-    // Store in cache
     await setCache(cacheKey, JSON.stringify(formattedBlog));
-
     return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
   } catch (error) {
     console.error(error);
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
-
 
 // Update a blog and clear relevant caches
 exports.updateBlog = async (req, res) => {
@@ -242,7 +217,7 @@ exports.updateBlog = async (req, res) => {
 
     const image = req.file
       ? {
-          url: `http://localhost:4000/uploads/blogs/${req.file.filename}`,
+          url: `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`,
           altText: req.body.altText || "Blog Image",
         }
       : null;

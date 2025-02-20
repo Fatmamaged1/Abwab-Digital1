@@ -25,7 +25,7 @@ const HomeSchema = new mongoose.Schema({
     statistics: [ // Added statistics for position, experience, etc.
       {
         label: { type: String, required: true },
-        value: { type: Number, required: true },
+        value: { type: String, required: true },
         icon: { type: String }, // Icon for each statistic
       },
     ],
