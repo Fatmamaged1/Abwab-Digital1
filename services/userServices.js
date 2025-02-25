@@ -148,3 +148,7 @@ exports.deleteLoggedUserData = asyncHandler(async (req, res, next) => {
 
   res.status(204).json({ status: 'Success' });
 });
+// log out 
+exports.logoutUser = asyncHandler(async (req, res, next) => {
+  res.status(200).json({ message: 'Logged out successfully' });
+});

@@ -17,6 +17,7 @@ const ServiceSchema = new mongoose.Schema({
     countries: { type: String },
     projects: { type: String },
   },
+  
   keyFeatures: [
     {
       title: { type: String, required: true },

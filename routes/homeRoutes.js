@@ -11,6 +11,9 @@ router.post(
     { name: 'heroImage', maxCount: 1 },
     { name: 'aboutSectionImage', maxCount: 1 },
     { name: 'backgroundImage', maxCount: 1 },
+    { name: 'iconwhyChooseUs', maxCount: 8},
+    {  name:'technologyStackIcons',maxCount:8
+    },
   ]),
   homeController.createHome
 );

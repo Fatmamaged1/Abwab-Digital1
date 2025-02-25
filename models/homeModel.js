@@ -59,6 +59,12 @@ const HomeSchema = new mongoose.Schema({
       ref: 'Testimonial',
     },
   ],
+  // 📌 Added Spinner Section
+  spinner: {
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    number: { type: Number, required: true },
+  },
   scheduleSection: {
     title: { type: String },
     description: { type: String },
@@ -73,6 +79,8 @@ const HomeSchema = new mongoose.Schema({
     {
       title: { type: String },
       description: { type: String },
+      // 📌 Updated whyChooseUs with Background Color
+  BackgroundColor: { type: String, default: "#ffffff" },
       icon: { type: String },
     },
   ],
@@ -86,10 +94,12 @@ const HomeSchema = new mongoose.Schema({
   ],
   technologyStack: [
     {
-      name: { type: String }, // Example: "React"
-      icon: { type: String }, // Technology logo/icon
+      name: { type: String },
+      description: { type: String },
+      icon: { type: String },
     },
   ],
+  
   
   contactForm: {
     title: { type: String },
