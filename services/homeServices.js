@@ -18,7 +18,7 @@ exports.createHome = async (req, res) => {
     let homeData = await Home.findOne();
     const isNew = !homeData;
 
-    // Parse JSON fields
+    // Parse JSON fields safely
     const heroSection = parseJSON(req.body.heroSection, {});
     const seo = parseJSON(req.body.seo, []);
     let statistics = parseJSON(req.body.statistics, []);
@@ -26,7 +26,12 @@ exports.createHome = async (req, res) => {
     const trustedPartners = parseJSON(req.body.trustedPartners, []);
     let whyChooseUs = parseJSON(req.body.whyChooseUs, []);
     const footer = parseJSON(req.body.footer, {});
-    let spinner = parseJSON(req.body.spinner, {}); // 📌 Handle spinner JSON parsing
+
+    // 📌 Ensure `spinner` is always an array (fixes the issue)
+    let spinner = parseJSON(req.body.spinner, []);
+    if (!Array.isArray(spinner)) {
+      spinner = [];
+    }
 
     // Convert IDs to ObjectId
     const services = req.body.services ? new mongoose.Types.ObjectId(req.body.services) : null;
@@ -44,15 +49,12 @@ exports.createHome = async (req, res) => {
     if (!heroSection.title || !heroSection.description) {
       return res.status(400).json({ success: false, message: "Hero Section title and description are required." });
     }
-    if (!spinner.title || !spinner.description || !spinner.number) {
-      return res.status(400).json({ success: false, message: "Spinner section requires title, description, and number." });
-    }
 
     // Map uploaded whyChooseUs icons
     whyChooseUs = whyChooseUs.map((item, index) => ({
       ...item,
       icon: uploadedWhyChooseUsIcons[index] ? `/uploads/${uploadedWhyChooseUsIcons[index].filename}` : item.icon || null,
-      BackgroundColor: item.BackgroundColor || "#ffffff", // Ensure default BackgroundColor
+      BackgroundColor: item.BackgroundColor || "#ffffff",
     }));
 
     // Home update object
@@ -63,7 +65,7 @@ exports.createHome = async (req, res) => {
         heroImage,
         statistics,
       },
-      spinner, // 📌 Added spinner section
+      spinner, // ✅ Always an array, even if missing or invalid
       availableDates,
       trustedPartners,
       whyChooseUs,
@@ -114,7 +116,7 @@ exports.getHomeData = async (req, res) => {
       .populate("portfolio", "name description images category")
       .populate("testimonials")
       .populate("services", "title description")
-      .populate("aboutSection", "hero values")
+      .populate("aboutSection","hero values")
       .lean();
 
     if (!homeData) {

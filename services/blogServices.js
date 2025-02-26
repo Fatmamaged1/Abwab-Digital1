@@ -73,6 +73,14 @@ exports.createBlog = async (req, res) => {
         return res.status(400).json({ message: "Invalid JSON format for tags" });
       }
     }
+   
+    try {
+      sectionArray = JSON.parse(section);
+    } catch (error) {
+      console.error("Error parsing section:", error);
+      return res.status(400).json({ message: "Invalid JSON format for section" });
+    }
+
 
     const newBlog = new Blog({
       title,

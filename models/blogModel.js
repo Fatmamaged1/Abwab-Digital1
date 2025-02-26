@@ -23,14 +23,14 @@ const blogSchema = new mongoose.Schema(
     title: { type: String, required: true },
     description: { type: String, required: true },
     slug: { type: String, unique: true, lowercase: true },
-    section: {
+    section: [{
       title: { type: String, required: true },
       description: { type: String, required: true },
       image: {
         url: { type: String, required: true },
         altText: { type: String, default: "Section Image" },
       },
-    },
+    }],
     content: { type: String, required: true },
     categories: [
       { type: String, enum: ["Digital Marketing Services", "Web & App Development", "Other"] },

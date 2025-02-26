@@ -131,44 +131,10 @@ router.route("/:id").get(
 
 
 // Update a testimonial by ID
-router.put("/:id", updateTestimonialValidator, async (req, res) => {
-  try {
-    const updatedTestimonial = await updateTestimonial(req.params.id, req.body);
-    if (!updatedTestimonial) {
-      res
-        .status(404)
-        .json({ status: "error", message: "Testimonial not found" });
-      return;
-    }
-    res.json(updatedTestimonial);
-  } catch (error) {
-    res.status(400).json({
-      status: "error",
-      error: { statusCode: 400, message: error.message },
-    });
-  }
-});
+router.put("/:id",  updateTestimonial);
 
 // Delete a testimonial by ID
-router.delete("/:id", deleteTestimonialValidator, async (req, res) => {
-  try {
-    const deletedTestimonial = await deleteTestimonial(req.params.id);
-    if (!deletedTestimonial) {
-      res
-        .status(404)
-        .json({ status: "error", message: "Testimonial not found" });
-      return;
-    }
-    res.json({
-      status: "success",
-      message: "Testimonial deleted successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      error: { statusCode: 500, message: error.message },
-    });
-  }
-});
+router.delete("/:id",  deleteTestimonial);
 
 module.exports = router;
+   

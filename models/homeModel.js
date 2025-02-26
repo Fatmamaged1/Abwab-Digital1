@@ -60,11 +60,11 @@ const HomeSchema = new mongoose.Schema({
     },
   ],
   // 📌 Added Spinner Section
-  spinner: {
+  spinner: [{
     title: { type: String, required: true },
     description: { type: String, required: true },
     number: { type: Number, required: true },
-  },
+  }],
   scheduleSection: {
     title: { type: String },
     description: { type: String },
