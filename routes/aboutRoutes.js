@@ -8,33 +8,47 @@ const {
 } = require("../services/aboutServices");
 
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// Ensure uploads directory exists
+const uploadDir = "uploads/about";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Configure Multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/about");
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
+
 const upload = multer({ storage });
 
 const router = express.Router();
 
 // Routes
-router.get("/", getAllAbout); // Get all data
-router.get("/:id", getAboutById); // Get data by ID
+router.get("/", getAllAbout); // Get all about page data
+router.get("/:id", getAboutById); // Get about page data by ID
 
+// Upload fields dynamically
 router.post(
   "/",
   upload.fields([
     { name: "hero", maxCount: 1 }, // Main image
-    { name: "stats[0][icon]", maxCount: 1 },
-    { name: "stats[1][icon]", maxCount: 1 },
-    { name: "stats[2][icon]", maxCount: 1 }, 
-    {name:"values[0][icon]",maxCount:1}// Add more fields if necessary
+    { name: "values[0][icon]", maxCount: 1 },
+    { name: "values[1][icon]", maxCount: 1 },
+    { name: "values[2][icon]", maxCount: 1 },
+    { name: "features[0][icon]", maxCount: 1 },
+    { name: "features[1][icon]", maxCount: 1 },
+    { name: "features[2][icon]", maxCount: 1 },
+    { name: "features[3][icon]", maxCount: 1 },
+    { name: "features[4][icon]", maxCount: 1 }
   ]),
   createOrUpdateAbout
 ); // Create or update about page
@@ -42,13 +56,19 @@ router.post(
 router.put(
   "/:id",
   upload.fields([
-    { name: "image", maxCount: 1 },
+    { name: "hero", maxCount: 1 },
+    { name: "values[0][icon]", maxCount: 1 },
+    { name: "values[1][icon]", maxCount: 1 },
+    { name: "values[2][icon]", maxCount: 1 },
     { name: "features[0][icon]", maxCount: 1 },
     { name: "features[1][icon]", maxCount: 1 },
+    { name: "features[2][icon]", maxCount: 1 },
+    { name: "features[3][icon]", maxCount: 1 },
+    { name: "features[4][icon]", maxCount: 1 }
   ]),
   updateAboutById
-); // Update data by ID
+); // Update specific about page by ID
 
-router.delete("/:id", deleteAboutById); // Delete data by ID
+router.delete("/:id", deleteAboutById); // Delete about page by ID
 
 module.exports = router;

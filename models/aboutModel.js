@@ -42,12 +42,13 @@ const AboutSchema = new mongoose.Schema(
     portfolio: [
      {type: mongoose.Schema.Types.ObjectId, ref: 'Portfolio'}
     ],
+    home: {type: mongoose.Schema.Types.ObjectId, ref: 'Home'},
     footer: {
-      companyName: { type: String, required: true }, // e.g., "Abwab Digital"
+      companyName: { type: String, required: false }, // e.g., "Abwab Digital"
       socialLinks: [
         {
-          platform: { type: String, required: true }, // e.g., "Facebook"
-          link: { type: String, required: true }, // URL to the social page
+          platform: { type: String, required: false }, // e.g., "Facebook"
+          link: { type: String, required: false }, // URL to the social page
         },
       ],
     },

@@ -20,6 +20,8 @@ const tagSchema = new mongoose.Schema({
 // Blog Schema
 const blogSchema = new mongoose.Schema(
   {
+    title: { type: String, required: true },
+    description: { type: String, required: true },
     section: {
       title: { type: String, required: true }, // Title moved here
       description: { type: String, required: true }, // Description moved here

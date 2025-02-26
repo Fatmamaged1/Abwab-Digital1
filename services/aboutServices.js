@@ -12,23 +12,13 @@ const CACHE_KEY_PREFIX_ID = "about:id:";
 // Get All About Page Data (with Redis cache)
 exports.getAllAbout = async (req, res) => {
   try {
-    // Check if data is cached
-    const cachedData = await getCache(CACHE_KEY_ALL);
-    if (cachedData) {
-      return res
-        .status(200)
-        .json(
-          formatSuccessResponse(
-            cachedData,
-            "Data fetched successfully from cache"
-          )
-        );
-    }
+   
 
     // Fetch data from DB, populating related fields
     const aboutData = await About.find()
-      .populate("services")
-      .populate("portfolio");
+    .populate("portfolio", "name description images category")
+    .populate("home", "whyChooseUs technologyStack ")
+    .populate("services", "title description")
 
     if (!aboutData.length)
       return res.status(404).json(formatErrorResponse("No data found"));
@@ -85,7 +75,7 @@ exports.getAboutById = async (req, res) => {
 // Create or Update About Page
 // Create or Update About Page
 exports.createOrUpdateAbout = async (req, res) => {
-  const { hero, stats, values, features, services, technologies, portfolio, footer } = req.body;
+  const { hero, stats, values, features, services, home, portfolio } = req.body;
   console.log("Body:", req.body);
   console.log("Files:", req.files);
 
@@ -102,16 +92,25 @@ exports.createOrUpdateAbout = async (req, res) => {
         }))
       : aboutData ? aboutData.values : [];
 
+    // ✅ Process `features` to ensure `icon` is assigned correctly
+    const processedFeatures = features
+      ? features.map((feature, index) => ({
+          ...feature,
+          icon: req.files[`features[${index}][icon]`]
+            ? `/uploads/about/${req.files[`features[${index}][icon]`][0].filename}`
+            : feature.icon, // Keep existing icon if not updated
+        }))
+      : aboutData ? aboutData.features : [];
+
     if (aboutData) {
       // Update existing data
       aboutData.hero = hero || aboutData.hero;
       aboutData.stats = stats || aboutData.stats;
       aboutData.values = processedValues || aboutData.values;
-      aboutData.features = features || aboutData.features;
+      aboutData.features = processedFeatures || aboutData.features;
       aboutData.services = services || aboutData.services;
-      aboutData.technologies = technologies || aboutData.technologies;
+      aboutData.home = home || aboutData.home;
       aboutData.portfolio = portfolio || aboutData.portfolio;
-      aboutData.footer = footer || aboutData.footer;
 
       await aboutData.save();
 
@@ -128,11 +127,10 @@ exports.createOrUpdateAbout = async (req, res) => {
       hero,
       stats,
       values: processedValues,
-      features,
+      features: processedFeatures,
       services,
-      technologies,
       portfolio,
-      footer,
+      home,
     });
     await aboutData.save();
 
@@ -147,6 +145,7 @@ exports.createOrUpdateAbout = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Server error", error.message));
   }
 };
+
 
 
 // Delete About Page Data by ID (with Redis invalidation)
