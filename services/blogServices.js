@@ -11,15 +11,7 @@ const BLOG_SINGLE_KEY = (id) => `blog:${id}`;
 
 exports.createBlog = async (req, res) => {
   try {
-    const {
-      section,
-      content,
-      categories,
-      author,
-      seo,
-      similarArticles,
-    } = req.body;
-   // console.log(req.body);
+    const { title, description, section, content, categories, author, seo, tags, similarArticles } = req.body;
 
     const blogImage = req.file
       ? {
@@ -43,48 +35,55 @@ exports.createBlog = async (req, res) => {
     }
 
     // Parse section safely
-    // Parse section safely
-let sectionObject = null;
-if (section) {
-  try {
-    sectionObject = JSON.parse(section);
+    let sectionObject = null;
+    if (section) {
+      try {
+        sectionObject = JSON.parse(section);
 
-    // Add uploaded file's URL to the section.image if file exists
-    if (req.file) {
-      sectionObject.image.url = `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`;
-    }
-  } catch (error) {
-    console.error("Error parsing section:", error);
-    return res.status(400).json({ message: "Invalid JSON format for section" });
-  }
-} else {
-  return res.status(400).json({ message: "Section is required" });
-}
-
-let seoObject = null;
-
-if (seo) {
-  try {
-    const parsedSeo = JSON.parse(seo);
-
-    if (Array.isArray(parsedSeo)) {
-      seoObject = parsedSeo[0]; // Use the first object in the array
+        // Add uploaded file's URL to the section.image if file exists
+        if (req.file) {
+          sectionObject.image.url = `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`;
+        }
+      } catch (error) {
+        console.error("Error parsing section:", error);
+        return res.status(400).json({ message: "Invalid JSON format for section" });
+      }
     } else {
-      seoObject = parsedSeo;
+      return res.status(400).json({ message: "Section is required" });
     }
-  } catch (error) {
-    console.error("Error parsing SEO:", error);
-    return res.status(400).json({ message: "Invalid JSON format for SEO" });
-  }
-}
+
+    // Parse SEO safely
+    let seoArray = [];
+    if (seo) {
+      try {
+        seoArray = JSON.parse(seo);
+      } catch (error) {
+        console.error("Error parsing SEO:", error);
+        return res.status(400).json({ message: "Invalid JSON format for SEO" });
+      }
+    }
+
+    // Parse tags safely
+    let tagsArray = [];
+    if (tags) {
+      try {
+        tagsArray = JSON.parse(tags);
+      } catch (error) {
+        console.error("Error parsing tags:", error);
+        return res.status(400).json({ message: "Invalid JSON format for tags" });
+      }
+    }
 
     const newBlog = new Blog({
-      section: sectionObject, // Add parsed section here
+      title,
+      description,
+      section: sectionObject,
       content,
       categories: categoriesArray,
       author,
-      seo: seoObject, // Add parsed SEO here
-      similarArticles: similarArticlesArray, // Set similarArticles
+      tags: tagsArray,
+      seo: seoArray,
+      similarArticles: similarArticlesArray,
       image: blogImage,
     });
 
@@ -100,7 +99,54 @@ if (seo) {
   }
 };
 
+// Update a blog
+exports.updateBlog = async (req, res) => {
+  try {
+    const { title, description, section, content, categories, author, tags, seo } = req.body;
 
+    const image = req.file
+      ? {
+          url: `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`,
+          altText: req.body.altText || "Blog Image",
+        }
+      : null;
+
+    // Parse data safely
+    let sectionObject = section ? JSON.parse(section) : null;
+    let seoArray = seo ? JSON.parse(seo) : [];
+    let tagsArray = tags ? JSON.parse(tags) : [];
+    const categoriesArray = categories ? categories.split(",") : [];
+
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      req.params.id,
+      {
+        title,
+        description,
+        section: sectionObject,
+        content,
+        categories: categoriesArray,
+        author,
+        tags: tagsArray,
+        seo: seoArray,
+        image,
+      },
+      { new: true }
+    );
+
+    if (!updatedBlog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
+
+    // Update caches
+    await setCache(BLOG_SINGLE_KEY(req.params.id), JSON.stringify(updatedBlog));
+    await deleteCache(BLOGS_ALL_KEY);
+
+    return res.status(200).json(formatSuccessResponse(updatedBlog, "Blog updated successfully"));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(formatErrorResponse("Failed to update blog", error.message));
+  }
+};
 // Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
   try {
@@ -131,18 +177,10 @@ exports.getAllBlogs = async (req, res) => {
 
 // Get blog by ID with full section details and image handling
 exports.getBlogById = async (req, res) => {
-  const cacheKey = BLOG_SINGLE_KEY(req.params.id);
+ // const cacheKey = BLOG_SINGLE_KEY(req.params.id);
 
   try {
-    let cachedBlog = await getCache(cacheKey);
-    if (cachedBlog) {
-      try {
-        cachedBlog = JSON.parse(cachedBlog);
-      } catch (err) {
-        console.warn("Cache parsing error, using raw cached data", err);
-      }
-      return res.status(200).json(formatSuccessResponse(cachedBlog, "Blog retrieved successfully from cache"));
-    }
+    
 
     const blog = await Blog.findById(req.params.id)
       .populate("similarArticles", "title image")
@@ -153,6 +191,8 @@ exports.getBlogById = async (req, res) => {
     }
 
     const formattedBlog = {
+      title: blog.title || "",
+      description: blog.description || "",
       section: {
         title: blog.section?.title || "",
         description: blog.section?.description || "",
@@ -192,9 +232,9 @@ exports.getBlogById = async (req, res) => {
       createdAt: blog.createdAt,
       updatedAt: blog.updatedAt,
       id: blog._id,
-    };
+    };  
 
-    await setCache(cacheKey, JSON.stringify(formattedBlog));
+   // await setCache(cacheKey, JSON.stringify(formattedBlog));
     return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
   } catch (error) {
     console.error(error);
@@ -202,56 +242,7 @@ exports.getBlogById = async (req, res) => {
   }
 };
 
-// Update a blog and clear relevant caches
-exports.updateBlog = async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      content,
-      categories,
-      author,
-      tags,
-      seo,
-    } = req.body;
 
-    const image = req.file
-      ? {
-          url: `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`,
-          altText: req.body.altText || "Blog Image",
-        }
-      : null;
-
-    const updatedBlog = await Blog.findByIdAndUpdate(
-      req.params.id,
-      {
-        title,
-        description,
-        content,
-        categories: categories.split(","),
-        author,
-        tags: JSON.parse(tags),
-        seo, // Update the SEO object
-        image,
-      },
-      { new: true }
-    );
-
-    if (!updatedBlog) {
-      return res.status(404).json(formatErrorResponse("Blog not found"));
-    }
-
-    await setCache(BLOG_SINGLE_KEY(req.params.id), updatedBlog);
-    await deleteCache(BLOGS_ALL_KEY);
-
-    return res
-      .status(200)
-      .json(formatSuccessResponse(updatedBlog, "Blog updated successfully"));
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json(formatErrorResponse("Failed to update blog", error.message));
-  }
-};
 
 // Delete a blog and clear relevant caches
 exports.deleteBlog = async (req, res) => {

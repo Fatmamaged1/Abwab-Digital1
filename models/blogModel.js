@@ -22,42 +22,27 @@ const blogSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
+    slug: { type: String, unique: true, lowercase: true },
     section: {
-      title: { type: String, required: true }, // Title moved here
-      description: { type: String, required: true }, // Description moved here
-      image: { // Section image
+      title: { type: String, required: true },
+      description: { type: String, required: true },
+      image: {
         url: { type: String, required: true },
         altText: { type: String, default: "Section Image" },
       },
     },
-    slug: {
-      type: String,
-      unique: true,
-      lowercase: true,
-    },
-    content: {
-      type: String,
-      required: true,
-    },
+    content: { type: String, required: true },
     categories: [
-      {
-        type: String,
-        enum: ["Digital Marketing Services", "Web & App Development", "Other"],
-      },
+      { type: String, enum: ["Digital Marketing Services", "Web & App Development", "Other"] },
     ],
-    author: {
-      type: String,
-      required: true,
-    },
-    publishedDate: {
-      type: Date,
-      default: Date.now,
-    },
+    author: { type: String, required: true },
+    tags: [tagSchema], // Added tags
+    publishedDate: { type: Date, default: Date.now },
     image: {
       url: { type: String, required: true },
       altText: { type: String, default: "Blog Image" },
     },
-    seo: [seoSchema],
+    seo: [seoSchema], // Ensuring an array of SEO objects
     similarArticles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" }],
   },
   {
@@ -67,8 +52,12 @@ const blogSchema = new mongoose.Schema(
   }
 );
 
-
-// Middleware: Automatically generate a slug from the title
-
+// Middleware: Automatically generate a slug from the title before saving
+blogSchema.pre("save", function (next) {
+  if (this.isModified("title")) {
+    this.slug = slugify(this.title, { lower: true, strict: true });
+  }
+  next();
+});
 
 module.exports = mongoose.model("Blog", blogSchema);
