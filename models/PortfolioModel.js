@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const portfolioSchema = new mongoose.Schema({
+  projectName: { type: String, required: true, trim: true },
   name: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
 
@@ -8,11 +9,25 @@ const portfolioSchema = new mongoose.Schema({
   seo: {
     metaTitle: { type: String, required: true, trim: true },
     metaDescription: { type: String, required: true, trim: true },
-    canonical: { type: String, trim: true }, // Auto-generated canonical URL
+    canonical: { type: String, trim: true },
   },
 
   // SEO-Friendly URL - Must be unique
   url: { type: String, required: true, unique: true, trim: true },
+
+  // Hero Section 📌 Added hero details
+  hero: {
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    downloads: { type: Number, default: 0 }, // App/Software Downloads
+    platforms: [{ type: String, trim: true }], // Supported platforms (e.g., iOS, Android, Web)
+    tech: [
+      {
+        icon: { type: String, required: true }, // 📌 Tech stack icon (e.g., React, Node.js)
+      },
+    ],
+    region: { type: String, required: true, trim: true }, // Project Region
+  },
 
   // Main images for the project with SEO-friendly alt text
   images: [
@@ -52,35 +67,18 @@ const portfolioSchema = new mongoose.Schema({
   // Project Category
   category: {
     type: String,
-    enum: ["Mobile App", "Website", "E-Commerce", "Dashboard", "Other"],
+    enum: ["Mobile Application", "Website", "Stores", "Marketing", "Brand Identity"],
     required: true,
   },
-
-  client: { type: String }, // Optional Client Name
-  downloads: { type: Number, default: 0 }, // App/Software Downloads
-
-  platform: {
-    type: String,
-    enum: ["Mobile Application", "Website", "Desktop Software"],
-    required: true,
-  },
-
-  region: { type: String, required: true }, // Location of the project
-  technologies: [{ type: String }], // Tech stack used (e.g., React, Node.js)
 
   // Related projects
-  relatedProjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Portfolio" }],
+  relatedProjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Portfolio" }], // Related projects
 
-  // Multilingual Support
-  content: {
-    en: {
-      title: { type: String, required: true, trim: true },
-      description: { type: String, required: true, trim: true },
-    },
-    ar: {
-      title: { type: String, required: true, trim: true },
-      description: { type: String, required: true, trim: true },
-    },
+  // 📌 Added Response Section
+  responsive: {
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    image: { type: String, required: true }, // URL to the response image
   },
 
   createdAt: { type: Date, default: Date.now },

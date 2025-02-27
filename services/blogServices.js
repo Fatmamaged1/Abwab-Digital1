@@ -21,71 +21,44 @@ exports.createBlog = async (req, res) => {
       : null;
 
     // Ensure categories is an array
-    const categoriesArray = categories.split(",");
+    const categoriesArray = categories ? categories.split(",") : [];
 
-    // Parse similarArticles safely
-    let similarArticlesArray = [];
-    if (similarArticles) {
+    // Parse JSON fields safely
+    const parseJSON = (data, defaultValue) => {
       try {
-        similarArticlesArray = JSON.parse(similarArticles);
+        return data ? JSON.parse(data) : defaultValue;
       } catch (error) {
-        console.error("Error parsing similarArticles:", error);
-        return res.status(400).json({ message: "Invalid JSON format for similarArticles" });
+        console.error(`Error parsing JSON field: ${error.message}`);
+        return defaultValue;
       }
+    };
+
+    // Parse all JSON fields safely
+    const similarArticlesArray = parseJSON(similarArticles, []);
+    const seoArray = parseJSON(seo, []);
+    const tagsArray = parseJSON(tags, []);
+
+    // 📌 Ensure `section` is always an array
+    let sectionArray = parseJSON(section, []);
+    if (!Array.isArray(sectionArray)) {
+      sectionArray = [];
     }
 
-    // Parse section safely
-    let sectionObject = null;
-    if (section) {
-      try {
-        sectionObject = JSON.parse(section);
-
-        // Add uploaded file's URL to the section.image if file exists
-        if (req.file) {
-          sectionObject.image.url = `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`;
-        }
-      } catch (error) {
-        console.error("Error parsing section:", error);
-        return res.status(400).json({ message: "Invalid JSON format for section" });
-      }
-    } else {
-      return res.status(400).json({ message: "Section is required" });
+    // Add uploaded file's URL to section.image if it exists
+    if (req.file && sectionArray.length > 0) {
+      sectionArray = sectionArray.map((item) => ({
+        ...item,
+        image: {
+          url: `http://91.108.102.81:4000/uploads/blogs/${req.file.filename}`,
+          altText: item.image?.altText || "Section Image",
+        },
+      }));
     }
-
-    // Parse SEO safely
-    let seoArray = [];
-    if (seo) {
-      try {
-        seoArray = JSON.parse(seo);
-      } catch (error) {
-        console.error("Error parsing SEO:", error);
-        return res.status(400).json({ message: "Invalid JSON format for SEO" });
-      }
-    }
-
-    // Parse tags safely
-    let tagsArray = [];
-    if (tags) {
-      try {
-        tagsArray = JSON.parse(tags);
-      } catch (error) {
-        console.error("Error parsing tags:", error);
-        return res.status(400).json({ message: "Invalid JSON format for tags" });
-      }
-    }
-   
-    try {
-      sectionArray = JSON.parse(section);
-    } catch (error) {
-      console.error("Error parsing section:", error);
-      return res.status(400).json({ message: "Invalid JSON format for section" });
-    }
-
 
     const newBlog = new Blog({
       title,
       description,
-      section: sectionObject,
+      section: sectionArray, // ✅ Always an array
       content,
       categories: categoriesArray,
       author,
@@ -106,6 +79,7 @@ exports.createBlog = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Failed to create blog", error.message));
   }
 };
+
 
 // Update a blog
 exports.updateBlog = async (req, res) => {
@@ -185,11 +159,7 @@ exports.getAllBlogs = async (req, res) => {
 
 // Get blog by ID with full section details and image handling
 exports.getBlogById = async (req, res) => {
- // const cacheKey = BLOG_SINGLE_KEY(req.params.id);
-
   try {
-    
-
     const blog = await Blog.findById(req.params.id)
       .populate("similarArticles", "title image")
       .lean();
@@ -198,57 +168,63 @@ exports.getBlogById = async (req, res) => {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
+    // 📌 Ensure `section` is always an array
+    const sectionArray = Array.isArray(blog.section)
+      ? blog.section.map((sec) => ({
+          title: sec.title || "",
+          description: sec.description || "",
+          image: sec.image || { url: "", altText: "No Image" },
+        }))
+      : [];
+
+    // Format the blog response
     const formattedBlog = {
       title: blog.title || "",
       description: blog.description || "",
-      section: {
-        title: blog.section?.title || "",
-        description: blog.section?.description || "",
-        image: blog.section?.image || { url: "", altText: "No Image" },
-      },
+      section: sectionArray, // ✅ Always an array
       image: blog.image || { url: "", altText: "No Image" },
       _id: blog._id,
       content: blog.content || [],
       categories: blog.categories || [],
       author: blog.author || "Unknown",
       publishedDate: blog.publishedAt || blog.createdAt,
-      seo: [
-        {
-          language: "en",
-          metaTitle: blog.seo?.metaTitle || blog.title,
-          metaDescription: blog.seo?.metaDescription || blog.description,
-          keywords: blog.seo?.keywords || [],
-          canonicalTag: blog.seo?.canonicalTag || "",
-          structuredData: {
-            "@context": "https://schema.org",
-            "@type": "Article",
-            "headline": blog.title,
-            "description": blog.description,
-            "author": {
-              "@type": "Organization",
-              "name": "Abwab Digital",
-              "url": "https://yourwebsite.com"
-            }
-          }
-        }
-      ],
+      seo: Array.isArray(blog.seo)
+        ? blog.seo.map((s) => ({
+            language: s.language || "en",
+            metaTitle: s.metaTitle || blog.title,
+            metaDescription: s.metaDescription || blog.description,
+            keywords: s.keywords || [],
+            canonicalTag: s.canonicalTag || "",
+            structuredData: {
+              "@context": "https://schema.org",
+              "@type": "Article",
+              "headline": blog.title,
+              "description": blog.description,
+              "author": {
+                "@type": "Organization",
+                "name": "Abwab Digital",
+                "url": "https://yourwebsite.com",
+              },
+            },
+          }))
+        : [],
       similarArticles: blog.similarArticles.map((article) => ({
         title: article.title,
-        url: article.url,
+        url: article.url || "#", // Ensure `url` is always present
         image: article.image || { url: "", altText: "No Image" },
       })),
       createdAt: blog.createdAt,
       updatedAt: blog.updatedAt,
       id: blog._id,
-    };  
+    };
 
-   // await setCache(cacheKey, JSON.stringify(formattedBlog));
     return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
   } catch (error) {
     console.error(error);
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
+
 
 
 

@@ -21,14 +21,19 @@ router.post('/', upload.fields([
     { name: 'images', maxCount: 10 },
     { name: 'designScreens.web', maxCount: 10 },
     { name: 'designScreens.app', maxCount: 10 },
-    { name: 'screenshots', maxCount: 10 }
+    { name: 'screenshots', maxCount: 10 },
+    { name: 'hero.tech[0].icon', maxCount: 1 },
+    {name :'images[0].url',maxCount:1},
+    {name:'responsive.image',maxCount:1}
 ]), portfolioController.createPortfolioItem);
     
 router.put('/:id', upload.fields([
     { name: 'images', maxCount: 10 },
     { name: 'designScreens.web', maxCount: 10 },
     { name: 'designScreens.app', maxCount: 10 },
-    { name: 'screenshots', maxCount: 10 }
+    { name: 'screenshots', maxCount: 10 },
+    { name: 'hero.tech[0].icon', maxCount: 1 },
+    {name :'images[0].url',maxCount:1}
 ]), portfolioController.updatePortfolioItem);
 
 // Other CRUD routes
