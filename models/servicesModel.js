@@ -58,13 +58,13 @@ const ServiceSchema = new mongoose.Schema({
     title: { type: String, required: true },
     desc: { type: String, required: true },
     image: { type: String }, // Image URL
-    satisfiedClientValues: [
+    satisfiedClientValues: 
       {
         title: { type: String, required: true },
-        desc: { type: String, required: true },
+        
       },
 
-    ],
+    
     values: [
       {
         title: { type: String, required: true },

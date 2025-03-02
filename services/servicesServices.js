@@ -83,12 +83,17 @@ exports.createService = async (req, res) => {
 // Get all services
 exports.getAllServices = async (req, res) => {
   try {
-    const services = await Service.find().populate("testimonials").populate("recentProjects");
+    // Fetch all services with only the required fields
+    const services = await Service.find().select("description category");
+
     res.status(200).json({ success: true, data: services });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false, message: "Error fetching services", error: error.message });
   }
 };
+
+
 
 // Get a single service by ID
 exports.getServiceById = async (req, res) => {
