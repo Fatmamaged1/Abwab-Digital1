@@ -10,50 +10,80 @@ const seoSchema = new mongoose.Schema({
 });
 
 const ServiceSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+ // title: { type: String, required: true },
   description: { type: String, required: true },
-  stats: {
-    clients: { type: String },
-    countries: { type: String },
-    projects: { type: String },
+  category: {
+    type: String,
+    enum: [
+      "Mobile Application",
+      "Website",
+      "Graphic Design",
+      "Online Store",
+      "Corporate System",
+      "Motion Graphic",
+      "Web Hosting",
+      "AI Services",
+      "SEO",
+      "Social Marketing"
+    ],
+    required: true,
   },
-  
-  keyFeatures: [
-    {
-      title: { type: String, required: true },
-      alt: { type: String, required: true },
-      description: { type: String, required: true },
-      icon: { type: String }, // URL for the icon
-    },
-  ],
+ image: {
+    url: { type: String, required: false },
+    altText: { type: String, default: "Service Image" },
+  },
+ 
+
   importance: [
     {
-      point: { type: String, required: true }, // Importance point
+      desc: { type: String, required: true }, // Changed `point` to `desc`
     },
   ],
   recentProjects: [
-    {
-      image: { type: String, required: true }, // Project image URL
-      alt: { type: String, required: true },
-      title: { type: String, required: true }, // Project title
-      description: { type: String }, // Project description
-    },
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Portfolio' },
   ],
   testimonials: [
     { type: mongoose.Schema.Types.ObjectId, ref: 'Testimonial' },
   ],
-  footer: {
-    copyright: { type: String },
-    quickLinks: [String],
-    mainLinks: [String],
-    socialLinks: [
+  // Added 'esUs' field
+  distingoshesUs: [
+    {
+      icon: { type: String, required: false }, // Icon URL
+      description: { type: String, required: true }, // Description
+    },
+  ],
+  
+  // Added 'designPhase' field
+  designPhase: {
+    title: { type: String, required: true },
+    desc: { type: String, required: true },
+    image: { type: String }, // Image URL
+    satisfiedClientValues: [
       {
-        platform: { type: String },
-        url: { type: String },
+        title: { type: String, required: true },
+        desc: { type: String, required: true },
+      },
+
+    ],
+    values: [
+      {
+        title: { type: String, required: true },
+        desc: { type: String, required: true },
       },
     ],
   },
+
+  // Added 'techUsedInService' field
+  techUsedInService: [
+    {
+      icon: { type: String, required: false }, // Icon URL
+      title: { type: String, required: true }, // Title of tech
+      desc: { type: String, required: true }, // Description of tech
+    },
+  ],
+
   seo: [seoSchema],
+
   createdAt: {
     type: Date,
     default: Date.now,

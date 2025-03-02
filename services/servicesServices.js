@@ -1,302 +1,143 @@
-const Service = require("../models/servicesModel");
-const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
-const { deleteCache, getCache ,setCache} = require("../utils/cache");
-const Joi = require("joi");
-
-const SERVICE_CACHE_KEY = id => `service:${id}`;
-const SERVICES_CACHE_KEY = "services:all";
-
-// Helper: Get full URL for file paths
-const getFullPath = (req, filePath) => {
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
-  return `${baseUrl}/${filePath.replace(/^C:\\Users\\elaqsa\\ApiOfWibsite\\/, "").replace(/\\/g, "/")}`;
-};
-
-// Helper: Safely parse JSON with fallback
-const safeParse = (input, fallback = []) => {
-  try {
-    return JSON.parse(input || JSON.stringify(fallback));
-  } catch (error) {
-    console.warn(`Failed to parse JSON: ${input}`);
-    return fallback;
-  }
-};
-
-
+const upload = require("../middleware/upload"); // Import multer middleware
+const Service = require("../models/servicesModel"); // Import model
+const Portfolio = require("../models/PortfolioModel");
+const Testimonial = require("../models/testimonialModel");
 exports.createService = async (req, res) => {
   try {
-    // Validate input
-    const schema = Joi.object({
-      title: Joi.string().required(),
-      description: Joi.string().required(),
-      stats: Joi.string().optional(),
-      importance: Joi.string().optional(),
-      footer: Joi.string().optional(),
-      seo: Joi.string().optional(),
-      keyFeatures: Joi.string().optional(),
-      recentProjects: Joi.string().optional(),
-      testimonials: Joi.array().items(Joi.string()).optional(),
-      services: Joi.string().optional(),
-    });
-
-    const { error, value } = schema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        details: error.details[0].message,
-      });
-    }
-
     const {
-      title,
       description,
-      stats,
+      category,
       importance,
-      footer,
-      seo,
-      keyFeatures,
-      recentProjects,
-      testimonials,
-      services,
-    } = value;
+      techUsedInService,
+      distingoshesUs,
+      designPhase
+    } = req.body;
 
-    // Parse JSON strings safely
-    const parsedKeyFeatures = safeParse(keyFeatures, []);
-    const parsedRecentProjects = safeParse(recentProjects, []);
-    const parsedTestimonials = safeParse(testimonials, []);
-    const parsedServices = safeParse(services, []);
+    console.log("Uploaded Files:", req.files); // Debugging uploaded files
 
-    // Map key features and assign icon paths
-    const mappedKeyFeatures = parsedKeyFeatures.map((feature, index) => {
-      // Match icon file by index
-      const iconFile = req.files?.icon?.[index]?.path;
-    
-      // Map the icon to the key feature
-      return {
-        title: feature.title || `Default Feature ${index + 1}`,
-        description: feature.description || `Default Description ${index + 1}`,
-        icon: iconFile ? getFullPath(req, iconFile) : null, // Set the icon path
-        alt: feature.alt || `Default Alt Text ${index + 1}`,
-      };
-    });
-    
-    // Validate that all key features have icons
-    const missingIcons = mappedKeyFeatures.some((feature, index) => {
-      if (!feature.icon) {
-        console.error(`Missing icon for key feature at index ${index + 1}`);
-        return true;
-      }
-      return false;
-    });
-    
-    if (missingIcons) {
+    // Parse JSON fields
+    const parsedImportance = JSON.parse(importance || "[]");
+    const parsedTechUsedInService = JSON.parse(techUsedInService || "[]");
+    const parsedDistingoshesUs = JSON.parse(distingoshesUs || "[]");
+    const parsedDesignPhase = JSON.parse(designPhase || "{}");
+
+    // Base URL for serving images
+    const baseUrl = "http://91.108.102.81:4000/uploads/";
+
+    // Assign the main service image URL
+    const imageUrl = req.files.image?.[0]?.filename
+      ? baseUrl + req.files.image[0].filename
+      : null;
+
+    if (!imageUrl) {
       return res.status(400).json({
         success: false,
-        message: "Validation error",
-        details: "All key features must have an associated icon.",
-      });
-    }
-    
-    // Map recent projects and assign image paths
-    const mappedRecentProjects = parsedRecentProjects.map((project, index) => {
-      const imageFile = req.files?.image?.[index]?.path; // Match image by index
-      return {
-        title: project.title || `Default Project ${index + 1}`,
-        description: project.description || `Default Description ${index + 1}`,
-        image: imageFile ? getFullPath(req, imageFile) : project.image || null,
-        alt: project.alt || `Default Alt Text ${index + 1}`,
-      };
-    });
-
-
-    
-
-    // Validate that all recent projects have images
-    const missingImages = mappedRecentProjects.some((project, index) => {
-      if (!project.image) {
-        console.error(`Missing image for recent project at index ${index + 1}`);
-        return true;  
-      }
-      return false;
-    });
-
-    if (missingImages) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        details: "All recent projects must have an associated image.",
+        message: "Image is required.",
       });
     }
 
-    // Create a new service instance
+    // Assign icons for techUsedInService
+    parsedTechUsedInService.forEach((item, index) => {
+      item.icon = req.files.techUsedInServiceIcons?.[index]
+        ? baseUrl + req.files.techUsedInServiceIcons[index].filename
+        : "";
+    });
+
+    // Assign icons for distingoshesUs
+    parsedDistingoshesUs.forEach((item, index) => {
+      item.icon = req.files.distingoshesUsIcons?.[index]
+        ? baseUrl + req.files.distingoshesUsIcons[index].filename
+        : "";
+    });
+
+    // ✅ Assign designPhase.image from uploaded file
+    if (req.files.designPhaseImage?.[0]) {
+      parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
+    }
+
+    // Create Service Object
     const newService = new Service({
-      title,
       description,
-      stats: safeParse(stats),
-      importance: safeParse(importance, []),
-      footer: safeParse(footer),
-      seo: safeParse(seo, []),
-      keyFeatures: mappedKeyFeatures,
-      recentProjects: mappedRecentProjects,
-      testimonials: parsedTestimonials,
-      services: parsedServices,
+      category,
+      image: { url: imageUrl, altText: "Service Image" }, // ✅ Set the main image
+      importance: parsedImportance,
+      techUsedInService: parsedTechUsedInService,
+      distingoshesUs: parsedDistingoshesUs,
+      designPhase: parsedDesignPhase, // ✅ Now includes designPhase.image
     });
 
-    // Save to database
-    const savedService = await newService.save();
+    // Save to Database
+    await newService.save();
 
-    res.status(201).json({
-      success: true,
-      message: "Service created successfully",
-      data: savedService,
-    });
-  } catch (error) {
-    console.error("Error in createService:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create service",
-      details: error.message,
-    });
-  }
-};
+    res.status(201).json({ success: true, message: "Service created successfully", data: newService });
 
-
-// Update an existing service
-exports.updateService = async (req, res) => {
-  try {
-    const { title, description, stats, keyFeatures, importance, recentProjects, testimonials, footer, seo } = req.body;
-
-    const parsedKeyFeatures = JSON.parse(keyFeatures || "[]").map((feature) => ({
-      ...service,
-      image: service.image || getFilePath(req.files?.image?.[0]),
-    }));
-
-    const parsedFeatures = parseJSON(features, []).map((feature) => ({
-      ...feature,
-      icon: feature.icon || getFilePath(req.files?.icon?.[0]),
-    }));
-
-    const parsedSeo = parseJSON(seo, []);
-
-    const updatedService = await Service.findByIdAndUpdate(
-      req.params.id,
-      {
-        title,
-        description,
-        stats: JSON.parse(stats || "{}"),
-        keyFeatures: parsedKeyFeatures,
-        importance: JSON.parse(importance || "[]"),
-        recentProjects: parsedRecentProjects,
-        testimonials: parsedTestimonials,
-        footer: JSON.parse(footer || "{}"),
-        seo: parsedSeo,
-      },
-      { new: true }
-    );
-
-    if (!updatedService) {
-      return res.status(404).json(formatErrorResponse("Service not found"));
-    }
-
-    // Invalidate relevant caches
-    await deleteCache(SERVICES_CACHE_KEY);
-    await deleteCache(SERVICE_CACHE_KEY(req.params.id));
-
-    res
-      .status(200)
-      .json(formatSuccessResponse(updatedService, "Service updated successfully"));
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json(formatErrorResponse("Failed to update service", error.message));
+    res.status(500).json({ success: false, message: "Error creating service", error: error.message });
   }
 };
 
-// Get all services with caching and selected fields (footer, description, title, icon, and _id)
+
+
+
+// Get all services
 exports.getAllServices = async (req, res) => {
   try {
-  
-
-    const services = await Service.find({}, 'title description footer keyFeatures _id');
-
-    const enhancedServices = services.map(service => {
-      const enhancedService = {
-        _id: service._id,
-        title: service.title || "Default Title",
-        description: service.description || "Default Description",
-       // footer: service.footer || { copyright: "© 2025 Your Company", quickLinks: [], socialLinks: [] },
-        icon: service.keyFeatures?.[0]?.icon || null, // Get icon from keyFeatures
-        enhancedIconLink: service.keyFeatures?.[0]?.icon ? getFullPath(req, service.keyFeatures[0].icon) : null, // Construct the full path for icon
-      };
-
-      return enhancedService;
-    });
-
-    // Cache the result
-    await setCache(SERVICES_CACHE_KEY, enhancedServices);
-
-    res
-      .status(200)
-      .json(formatSuccessResponse(enhancedServices, "Services retrieved successfully"));
+    const services = await Service.find().populate("testimonials").populate("recentProjects");
+    res.status(200).json({ success: true, data: services });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json(formatErrorResponse("Failed to retrieve services", error.message));
+    res.status(500).json({ success: false, message: "Error fetching services", error: error.message });
   }
 };
 
-
-// Get a service by ID with caching
+// Get a single service by ID
 exports.getServiceById = async (req, res) => {
   try {
-    const cacheKey = SERVICE_CACHE_KEY(req.params.id);
+    const service = await Service.findById(req.params.id)
+    // Last 4 recent projects
 
-    const cachedService = await getCache(cacheKey);
-    if (cachedService) {
-      return res
-        .status(200)
-        .json(formatSuccessResponse(cachedService, "Service retrieved from cache"));
-    }
-
-    const service = await Service.findById(req.params.id);
     if (!service) {
-      return res.status(404).json(formatErrorResponse("Service not found"));
+      return res.status(404).json({ success: false, message: "Service not found" });
     }
 
-    await setCache(cacheKey, service);
+    // Fetch last 4 testimonials from the entire database (not just the service)
+    const testimonials = await Testimonial.find({})
+      .sort({ createdAt: -1 }) // Sort by latest
+      .limit(4);
 
-    res
-      .status(200)
-      .json(formatSuccessResponse(service, "Service retrieved successfully"));
+    // Fetch last 4 related portfolio projects from the same category (excluding the current service's projects)
+    const relatedPortfolios = await Portfolio.find({
+      category: service.category,
+      _id: { $nin: service.recentProjects.map((p) => p._id) }, // Exclude projects already in service.recentProjects
+    })
+      .sort({ createdAt: -1 })
+      .limit(4);
+
+    // Return the response with testimonials, recentProjects, and related portfolios
+    res.status(200).json({
+      success: true,
+      data: {
+        ...service.toObject(), // Convert Mongoose document to plain object
+        testimonials, // Last 4 testimonials from the entire database
+        relatedPortfolios, // Last 4 related portfolio projects from the same category
+      },
+    });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json(formatErrorResponse("Failed to retrieve service", error.message));
+    res.status(500).json({ success: false, message: "Error fetching service", error: error.message });
   }
 };
 
-// Delete a service and invalidate caches
+
+// Delete a service
 exports.deleteService = async (req, res) => {
   try {
     const service = await Service.findByIdAndDelete(req.params.id);
     if (!service) {
-      return res.status(404).json(formatErrorResponse("Service not found"));
+      return res.status(404).json({ success: false, message: "Service not found" });
     }
-
-    await deleteCache(SERVICES_CACHE_KEY);
-    await deleteCache(SERVICE_CACHE_KEY(req.params.id));
-
-    res
-      .status(200)
-      .json(formatSuccessResponse(null, "Service deleted successfully"));
+    res.status(200).json({ success: true, message: "Service deleted successfully" });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json(formatErrorResponse("Failed to delete service", error.message));
+    res.status(500).json({ success: false, message: "Error deleting service", error: error.message });
   }
 };
