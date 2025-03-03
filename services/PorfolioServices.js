@@ -235,7 +235,7 @@ exports.getPortfolioItemById = async (req, res) => {
         const relatedProjects = await Portfolio.find({
             category: item.category, // Match category
             _id: { $ne: item._id } // Exclude the current item
-        }).select("hero category name projectName url images"); // Select necessary fields
+        }).select("name description images category"); // Select necessary fields
 
         // Attach related projects to the item
         const responseData = {
