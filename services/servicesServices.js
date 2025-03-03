@@ -118,7 +118,7 @@ exports.getServiceById = async (req, res) => {
       category: service.category,
       _id: { $nin: service.recentProjects.map((p) => p._id) }, // Exclude projects already in service.recentProjects
     })
-      .select("hero category name projectName url images") // Select necessary fields
+      .select("name description images category") // Select necessary fields
       .sort({ createdAt: -1 })
       .limit(4);
 
