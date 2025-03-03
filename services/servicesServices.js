@@ -10,7 +10,8 @@ exports.createService = async (req, res) => {
       importance,
       techUsedInService,
       distingoshesUs,
-      designPhase
+      designPhase,
+      seo
     } = req.body;
 
     console.log("Uploaded Files:", req.files); // Debugging uploaded files
@@ -20,6 +21,7 @@ exports.createService = async (req, res) => {
     const parsedTechUsedInService = JSON.parse(techUsedInService || "[]");
     const parsedDistingoshesUs = JSON.parse(distingoshesUs || "[]");
     const parsedDesignPhase = JSON.parse(designPhase || "{}");
+    const parsedSeo = JSON.parse(seo || "{}");
 
     // Base URL for serving images
     const baseUrl = "http://91.108.102.81:4000/uploads/";
@@ -64,6 +66,7 @@ exports.createService = async (req, res) => {
       techUsedInService: parsedTechUsedInService,
       distingoshesUs: parsedDistingoshesUs,
       designPhase: parsedDesignPhase, // ✅ Now includes designPhase.image
+      seo:parsedSeo,
     });
 
     // Save to Database
@@ -115,6 +118,7 @@ exports.getServiceById = async (req, res) => {
       category: service.category,
       _id: { $nin: service.recentProjects.map((p) => p._id) }, // Exclude projects already in service.recentProjects
     })
+      .select("hero category name projectName url images") // Select necessary fields
       .sort({ createdAt: -1 })
       .limit(4);
 
