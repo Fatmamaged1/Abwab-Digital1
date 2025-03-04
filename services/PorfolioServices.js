@@ -211,8 +211,8 @@ exports.getAllPortfolioItems = async (req, res) => {
     try {
         // Fetch portfolio items with only hero and category fields
         const items = await Portfolio.find()
-            .select("hero category") // Select only hero and category fields
-            .populate("hero category"); // Populate if they are references
+            .select("name description images category"); // Select only hero and category fields
+           // Populate if they are references
 
         return res.status(200).json(formatSuccessResponse(items, "Portfolio items retrieved successfully"));
     } catch (error) {

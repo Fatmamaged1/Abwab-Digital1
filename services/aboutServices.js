@@ -73,7 +73,6 @@ exports.getAboutById = async (req, res) => {
 };
 
 // Create or Update About Page
-// Create or Update About Page
 exports.createOrUpdateAbout = async (req, res) => {
   const { hero, stats, values, features, services, home, portfolio } = req.body;
   console.log("Body:", req.body);
@@ -82,15 +81,24 @@ exports.createOrUpdateAbout = async (req, res) => {
   try {
     let aboutData = await About.findOne();
 
-    // Process `values` to ensure `icon` is assigned correctly
+    // ✅ Process `hero` to include title, description, and image
+    const processedHero = {
+      title: hero?.title || (aboutData?.hero?.title ?? ""),
+      description: hero?.description || (aboutData?.hero?.description ?? ""),
+      image: req.files["hero"]?.[0]?.filename
+        ? `/uploads/about/${req.files["hero"][0].filename}`
+        : aboutData?.hero?.image ?? "", // Keep existing image if not updated
+    };
+
+    // ✅ Process `values` to ensure `icon` is assigned correctly
     const processedValues = values
       ? values.map((value, index) => ({
           ...value,
           icon: req.files[`values[${index}][icon]`]
             ? `/uploads/about/${req.files[`values[${index}][icon]`][0].filename}`
-            : value.icon, // Keep existing icon if not updated
+            : value.icon ?? aboutData?.values?.[index]?.icon ?? "", // Keep existing icon if not updated
         }))
-      : aboutData ? aboutData.values : [];
+      : aboutData?.values ?? [];
 
     // ✅ Process `features` to ensure `icon` is assigned correctly
     const processedFeatures = features
@@ -98,13 +106,13 @@ exports.createOrUpdateAbout = async (req, res) => {
           ...feature,
           icon: req.files[`features[${index}][icon]`]
             ? `/uploads/about/${req.files[`features[${index}][icon]`][0].filename}`
-            : feature.icon, // Keep existing icon if not updated
+            : feature.icon ?? aboutData?.features?.[index]?.icon ?? "", // Keep existing icon if not updated
         }))
-      : aboutData ? aboutData.features : [];
+      : aboutData?.features ?? [];
 
     if (aboutData) {
-      // Update existing data
-      aboutData.hero = hero || aboutData.hero;
+      // ✅ Update existing data
+      aboutData.hero = processedHero;
       aboutData.stats = stats || aboutData.stats;
       aboutData.values = processedValues || aboutData.values;
       aboutData.features = processedFeatures || aboutData.features;
@@ -122,9 +130,9 @@ exports.createOrUpdateAbout = async (req, res) => {
         .json(formatSuccessResponse(aboutData, "About page updated successfully"));
     }
 
-    // Create new data
+    // ✅ Create new data
     aboutData = new About({
-      hero,
+      hero: processedHero,
       stats,
       values: processedValues,
       features: processedFeatures,
@@ -132,6 +140,7 @@ exports.createOrUpdateAbout = async (req, res) => {
       portfolio,
       home,
     });
+
     await aboutData.save();
 
     // Invalidate cache

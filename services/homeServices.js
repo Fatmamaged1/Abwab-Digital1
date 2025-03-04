@@ -23,7 +23,7 @@ exports.createHome = async (req, res) => {
     const seo = parseJSON(req.body.seo, []);
     let statistics = parseJSON(req.body.statistics, []);
     const availableDates = parseJSON(req.body.availableDates, []);
-    const trustedPartners = parseJSON(req.body.trustedPartners, []);
+    let trustedPartners = parseJSON(req.body.trustedPartners, []);
     let whyChooseUs = parseJSON(req.body.whyChooseUs, []);
     const footer = parseJSON(req.body.footer, {});
 
@@ -44,7 +44,13 @@ exports.createHome = async (req, res) => {
     const heroImage = req.files?.heroImage?.[0]?.path || homeData?.heroSection?.heroImage || null;
     const backgroundImage = req.files?.backgroundImage?.[0]?.path || homeData?.backgroundImage || null;
     const uploadedWhyChooseUsIcons = req.files?.iconwhyChooseUs || [];
-
+// ✅ Handle trustedPartners logos
+trustedPartners = trustedPartners.map((partner, index) => ({
+  ...partner,
+  logo: req.files[`trustedPartners[${index}][logo]`]
+    ? `uploads/${req.files[`trustedPartners[${index}][logo]`][0].filename}`
+    : partner.logo ?? homeData?.trustedPartners?.[index]?.logo ?? null,
+}));
     // Validate required fields
     if (!heroSection.title || !heroSection.description) {
       return res.status(400).json({ success: false, message: "Hero Section title and description are required." });
@@ -115,7 +121,7 @@ exports.getHomeData = async (req, res) => {
       .populate("blogSection", "section image categories")
       .populate("portfolio", "name description images category")
       .populate("testimonials")
-      .populate("services", "title description")
+      .populate("services", "category description")
       .populate("aboutSection","hero values")
       .lean();
 

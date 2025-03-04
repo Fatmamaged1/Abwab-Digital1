@@ -132,23 +132,33 @@ exports.updateBlog = async (req, res) => {
 // Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
   try {
-  
-    const blogs = await Blog.find({}, "image section.title section.description section.content section.image author createdAt categories seo content")
+    const blogs = await Blog.find({}, "image section title description content author createdAt categories seo")
       .populate("similarArticles", "title image");
 
+    // Format blogs to ensure section consistency
     const formattedBlogs = blogs.map((blog) => ({
-      ...blog._doc,
-      section: {
-        title: blog.section?.title || "",
-        description: blog.section?.description || "",
-      //  content: Array.isArray(blog.section?.content) ? blog.section.content : [],
-        image: blog.section?.image || { url: "", altText: "No Image" },
-      },
-      content: blog.content || "",
-      seo: blog.seo.filter((seoData) => ["en", "ar"].includes(seoData.language)),
+      _id: blog._id,
+      title: blog.title || "",
+      description: blog.description || "",
+      image: blog.image || { url: "", altText: "No Image" },
+      section: Array.isArray(blog.section)
+        ? blog.section.map((sec) => ({
+            title: sec.title || "",
+            description: sec.description || "",
+            image: sec.image || { url: "", altText: "No Image" },
+          }))
+        : [],
+      content: blog.content || [],
+      categories: blog.categories || [],
+      author: blog.author || "Unknown",
+      seo: Array.isArray(blog.seo)
+        ? blog.seo.filter((seoData) => ["en", "ar"].includes(seoData.language))
+        : [],
+      createdAt: blog.createdAt,
     }));
 
-    await setCache(BLOGS_ALL_KEY, JSON.stringify(formattedBlogs)); // 🔥 تخزين البيانات كمصفوفة JSON
+    await setCache(BLOGS_ALL_KEY, JSON.stringify(formattedBlogs)); // 🔥 Cache the formatted data
+
     return res.status(200).json(formatSuccessResponse(formattedBlogs, "Blogs retrieved successfully"));
   } catch (error) {
     console.error(error);
@@ -224,7 +234,6 @@ exports.getBlogById = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
-
 
 
 
