@@ -1,5 +1,13 @@
 const mongoose = require("mongoose");
-
+// Schema for SEO fields
+const seoSchema = new mongoose.Schema({
+  language: { type: String, enum: ['en', 'ar'], required: true },
+  metaTitle: { type: String, required: true },
+  metaDescription: { type: String, required: true },
+  keywords: { type: String, required: true },
+  canonicalTag: { type: String },
+  structuredData: { type: mongoose.Schema.Types.Mixed },
+});
 // Define Schema
 const AboutSchema = new mongoose.Schema(
   {
@@ -52,6 +60,7 @@ const AboutSchema = new mongoose.Schema(
         },
       ],
     },
+    seo: [seoSchema],
   },
   { timestamps: true } // Enables createdAt and updatedAt
 );
