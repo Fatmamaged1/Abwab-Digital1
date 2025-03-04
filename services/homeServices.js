@@ -118,7 +118,7 @@ exports.getHomeData = async (req, res) => {
     const { language } = req.query;
 
     const homeData = await Home.findOne()
-      .populate("blogSection", "section image categories")
+      .populate("blogSection", "title description section image categories")
       .populate("portfolio", "name description images category")
       .populate("testimonials")
       .populate("services", "category description")

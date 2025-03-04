@@ -18,7 +18,7 @@ exports.getAllAbout = async (req, res) => {
     const aboutData = await About.find()
     .populate("portfolio", "name description images category")
     .populate("home", "whyChooseUs technologyStack ")
-    .populate("services", "title description")
+    .populate("services", "category description")
 
     if (!aboutData.length)
       return res.status(404).json(formatErrorResponse("No data found"));
