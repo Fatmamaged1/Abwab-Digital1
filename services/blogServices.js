@@ -132,34 +132,56 @@ exports.updateBlog = async (req, res) => {
 // Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
   try {
+    // Extract requested language from query string (default: "en")
+    const language = req.query.language || "en";
+
+    // Fetch blogs with the required fields and populate similarArticles
     const blogs = await Blog.find({}, "image section title description content author createdAt categories seo")
       .populate("similarArticles", "title image");
 
-    // Format blogs to ensure section consistency
-    const formattedBlogs = blogs.map((blog) => ({
-      _id: blog._id,
-      title: blog.title || "",
-      description: blog.description || "",
-      image: blog.image || { url: "", altText: "No Image" },
-      section: Array.isArray(blog.section)
-        ? blog.section.map((sec) => ({
+    // Format blogs to ensure section consistency and process SEO
+    const formattedBlogs = blogs.map((blog) => {
+      const blogObj = blog.toObject();
+      
+      // Ensure section is always an array
+      blogObj.section = Array.isArray(blogObj.section)
+        ? blogObj.section.map(sec => ({
             title: sec.title || "",
             description: sec.description || "",
-            image: sec.image || { url: "", altText: "No Image" },
+            image: sec.image || { url: "", altText: "No Image" }
           }))
-        : [],
-      content: blog.content || [],
-      categories: blog.categories || [],
-      author: blog.author || "Unknown",
-      seo: Array.isArray(blog.seo)
-        ? blog.seo.filter((seoData) => ["en", "ar"].includes(seoData.language))
-        : [],
-      createdAt: blog.createdAt,
-    }));
+        : [];
+      
+      // Process SEO for each blog: if an SEO array exists, pick the entry for the requested language (fallback to the first)
+      if (Array.isArray(blogObj.seo) && blogObj.seo.length > 0) {
+        blogObj.seo = blogObj.seo.find(seo => seo.language === language) || blogObj.seo[0];
+      } else {
+        blogObj.seo = {};
+      }
+      
+      // Process similarArticles if needed
+      blogObj.similarArticles = blogObj.similarArticles.map(article => ({
+        title: article.title,
+        url: article.url || "#",
+        image: article.image || { url: "", altText: "No Image" }
+      }));
 
-    await setCache(BLOGS_ALL_KEY, JSON.stringify(formattedBlogs)); // 🔥 Cache the formatted data
+      return blogObj;
+    });
 
-    return res.status(200).json(formatSuccessResponse(formattedBlogs, "Blogs retrieved successfully"));
+    // Global SEO for the entire blogs page
+    const globalSeo = {
+      language,
+      metaTitle: language === "en" ? "Our Blogs" : "مدوناتنا",
+      metaDescription: language === "en"
+        ? "Discover our latest articles and insights."
+        : "اكتشف أحدث مقالاتنا وأفكارنا.",
+      keywords: language === "en" ? "blogs, articles, insights" : "مدونات, مقالات, آراء",
+      canonicalTag: "",
+      structuredData: {}
+    };
+
+    return res.status(200).json(formatSuccessResponse({ globalSeo, blogs: formattedBlogs }, "Blogs retrieved successfully"));
   } catch (error) {
     console.error(error);
     return res.status(500).json(formatErrorResponse("Failed to retrieve blogs", error.message));
@@ -170,6 +192,9 @@ exports.getAllBlogs = async (req, res) => {
 // Get blog by ID with full section details and image handling
 exports.getBlogById = async (req, res) => {
   try {
+    const language = req.query.language || "en";
+
+    // Fetch the blog by ID, populate similarArticles, and convert to plain object
     const blog = await Blog.findById(req.params.id)
       .populate("similarArticles", "title image")
       .lean();
@@ -178,54 +203,43 @@ exports.getBlogById = async (req, res) => {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    // 📌 Ensure `section` is always an array
+    // Ensure section is an array
     const sectionArray = Array.isArray(blog.section)
-      ? blog.section.map((sec) => ({
+      ? blog.section.map(sec => ({
           title: sec.title || "",
           description: sec.description || "",
-          image: sec.image || { url: "", altText: "No Image" },
+          image: sec.image || { url: "", altText: "No Image" }
         }))
       : [];
+
+    // Process SEO data: select the SEO entry for the requested language (fallback to the first)
+    let seoData = {};
+    if (Array.isArray(blog.seo) && blog.seo.length > 0) {
+      seoData = blog.seo.find(seo => seo.language === language) || blog.seo[0];
+    } else {
+      seoData = {};
+    }
 
     // Format the blog response
     const formattedBlog = {
       title: blog.title || "",
       description: blog.description || "",
-      section: sectionArray, // ✅ Always an array
+      section: sectionArray,
       image: blog.image || { url: "", altText: "No Image" },
       _id: blog._id,
       content: blog.content || [],
       categories: blog.categories || [],
       author: blog.author || "Unknown",
       publishedDate: blog.publishedAt || blog.createdAt,
-      seo: Array.isArray(blog.seo)
-        ? blog.seo.map((s) => ({
-            language: s.language || "en",
-            metaTitle: s.metaTitle || blog.title,
-            metaDescription: s.metaDescription || blog.description,
-            keywords: s.keywords || [],
-            canonicalTag: s.canonicalTag || "",
-            structuredData: {
-              "@context": "https://schema.org",
-              "@type": "Article",
-              "headline": blog.title,
-              "description": blog.description,
-              "author": {
-                "@type": "Organization",
-                "name": "Abwab Digital",
-                "url": "https://yourwebsite.com",
-              },
-            },
-          }))
-        : [],
-      similarArticles: blog.similarArticles.map((article) => ({
+      seo: seoData,
+      similarArticles: blog.similarArticles.map(article => ({
         title: article.title,
-        url: article.url || "#", // Ensure `url` is always present
-        image: article.image || { url: "", altText: "No Image" },
+        url: article.url || "#",
+        image: article.image || { url: "", altText: "No Image" }
       })),
       createdAt: blog.createdAt,
       updatedAt: blog.updatedAt,
-      id: blog._id,
+      id: blog._id
     };
 
     return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
@@ -234,6 +248,7 @@ exports.getBlogById = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
+
 
 
 

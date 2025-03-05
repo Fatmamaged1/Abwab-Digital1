@@ -1,16 +1,22 @@
 const mongoose = require("mongoose");
+// SEO Fields
+const seoSchema = new mongoose.Schema({
+  language: { type: String, enum: ["en", "ar"], required: true },
+  metaTitle: { type: String, required: true },
+  metaDescription: { type: String, required: true },
+  keywords: { type: String, required: true },
+  canonicalTag: { type: String },
+  structuredData: { type: mongoose.Schema.Types.Mixed },
+});
 
+// Portfolio Schema
 const portfolioSchema = new mongoose.Schema({
   projectName: { type: String, required: true, trim: true },
   name: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
 
   // SEO Fields
-  seo: {
-    metaTitle: { type: String, required: true, trim: true },
-    metaDescription: { type: String, required: true, trim: true },
-    canonical: { type: String, trim: true },
-  },
+  seo: [seoSchema],
 
   // SEO-Friendly URL - Must be unique
   url: { type: String, required: true, unique: true, trim: true },
