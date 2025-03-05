@@ -105,22 +105,22 @@ exports.getAllServices = async (req, res) => {
     // Extract requested language (default to "en")
     const language = req.query.language || "en";
 
-    // Fetch all services (all fields, including SEO)
+    // Fetch all services (all fields, including the SEO array)
     const services = await Service.find().select("description category seo");
 
-    // Process each service to select the appropriate SEO data
+    // Process each service to select the appropriate SEO data for that service
     const processedServices = services.map(service => {
       const serviceObj = service.toObject();
 
-      // Process SEO data: if there's an SEO array with entries, try to find the one matching the requested language.
-      // Otherwise, set a default SEO object.
       let seoData = {};
       if (Array.isArray(serviceObj.seo) && serviceObj.seo.length > 0) {
+        // Look for the SEO entry matching the requested language,
+        // or use the first entry if none match.
         seoData = serviceObj.seo.find(entry => entry.language === language) || serviceObj.seo[0];
       } else {
-        // Default SEO object if no SEO data exists.
+        // Default SEO object for individual service if no SEO data exists.
         seoData = {
-          language: language,
+          language,
           metaTitle: "Default Meta Title",
           metaDescription: "Default meta description for the service.",
           keywords: "default,service,seo",
@@ -132,12 +132,34 @@ exports.getAllServices = async (req, res) => {
       return serviceObj;
     });
 
-    return res.status(200).json({ success: true, data: processedServices });
+    // Global SEO for the "All Services" page header.
+    // You can modify these values or load them from a configuration.
+    const globalSeo = {
+      language,
+      metaTitle: language === "en" ? "Our Services" : "خدماتنا",
+      metaDescription: language === "en" ? "Discover our wide range of services." : "اكتشف مجموعة خدماتنا المتنوعة.",
+      keywords: language === "en" ? "services, company, solutions" : "خدمات, شركة, حلول",
+      canonicalTag: "",
+      structuredData: {}
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        globalSeo,
+        services: processedServices
+      }
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: "Error fetching services", error: error.message });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Error fetching services", 
+      error: error.message 
+    });
   }
 };
+
 
 
 
