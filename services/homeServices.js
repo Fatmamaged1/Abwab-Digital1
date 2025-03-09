@@ -45,12 +45,14 @@ exports.createHome = async (req, res) => {
     const backgroundImage = req.files?.backgroundImage?.[0]?.path || homeData?.backgroundImage || null;
     const uploadedWhyChooseUsIcons = req.files?.iconwhyChooseUs || [];
 // ✅ Handle trustedPartners logos
+// ✅ Handle trustedPartners logos
 trustedPartners = trustedPartners.map((partner, index) => ({
   ...partner,
-  logo: req.files[`trustedPartners[${index}][logo]`]
+  logo: req.files?.[`trustedPartners[${index}][logo]`]?.[0]?.path 
     ? `uploads/${req.files[`trustedPartners[${index}][logo]`][0].filename}`
-    : partner.logo ?? homeData?.trustedPartners?.[index]?.logo ?? null,
+    : partner.logo || homeData?.trustedPartners?.[index]?.logo || null,
 }));
+
     // Validate required fields
     if (!heroSection.title || !heroSection.description) {
       return res.status(400).json({ success: false, message: "Hero Section title and description are required." });
@@ -168,4 +170,3 @@ exports.getHomeData = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Error retrieving homepage data", error.message));
   }
 };
-
