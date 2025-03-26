@@ -82,13 +82,13 @@ async function startServer() {
 
     // Load SSL Certificate
     const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/fullchain.pem"),
-      cert: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/privkey.pem"),
+      key: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/privkey.pem"),
+      cert: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/fullchain.pem"),
     };
 
     // HTTPS Server
-    https.createServer(options, app).listen(9999, () => {
-      console.log("🚀 HTTPS server is running on port 9999");
+    https.createServer(options, app).listen(4000, () => {
+      console.log("🚀 HTTPS server is running on port 4000");
     });
 
     // HTTP to HTTPS Redirection
