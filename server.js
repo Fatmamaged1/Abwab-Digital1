@@ -4,6 +4,10 @@ const morgan = require("morgan");
 const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
+const fs = require("fs");
+const https = require("https");
+const http = require("http");
+const mongoose = require("mongoose");
 
 const globalError = require("./middleware/errorMiddleware");
 const connectDB = require("./config/database");
@@ -26,32 +30,32 @@ const homeRoutes = require("./routes/homeRoutes");
 const portfolioRoutes = require("./routes/PortfolioRoutes");
 const mailingListRoutes = require("./routes/mailingListRoutes");
 
-// ✅ Configure CORS
 const corsConfig = {
   origin: "*",
-  credentials: true, // ✅ Fix: Correct key
+  credentials: true,
   methods: ["GET", "POST", "DELETE", "PUT"],
 };
 
-// ✅ Initialize Express
 const app = express();
 
-// ✅ Connect to database with error handling
 async function startServer() {
   try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is not defined in the environment variables");
+    }
+
     await connectDB();
     console.log("✅ Connected to MongoDB");
 
-    // ✅ Middleware Setup
-    app.use(cors(corsConfig)); // CORS for all routes
-    app.use(helmet()); // Security headers
-    app.use(express.json()); // Parse JSON requests
-    app.use(morgan("dev")); // Logging
-    app.set("views", path.join(__dirname, "views")); // Set views directory
-    app.set("view engine", "ejs"); // View engine
-    app.use(express.static(path.join(__dirname, "public"))); // Static assets
+    app.use(cors(corsConfig));
+    app.use(helmet());
+    app.use(express.json());
+    app.use(morgan("dev"));
+    app.set("views", path.join(__dirname, "views"));
+    app.set("view engine", "ejs");
+    app.use(express.static(path.join(__dirname, "public")));
 
-    // ✅ API Routes
+    // API Routes
     app.use("/api/v1/about", aboutRoutes);
     app.use("/api/v1/blogs", blogRoutes);
     app.use("/api/v1/employee", employeeRoutes);
@@ -68,55 +72,36 @@ async function startServer() {
     app.use("/api/v1/portfolio", portfolioRoutes);
     app.use("/api/v1/privacy-policy", require("./routes/privacyPolicy"));
     app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
-    //app.use("/admin", adminRoutes);
 
-    // ✅ Static file serving (Uploads)
-    const uploadDirs = [
-      "blogs",
-      "employee",
-      "about",
-      "services",
-      "technology",
-      "testimonial",
-      "client",
-      "contact",
-      "project",
-      "user",
-      "auth",
-      "portfolio",
-    ];
-
-    uploadDirs.forEach((dir) => {
-      app.use(`/uploads/${dir}`, express.static(path.join(__dirname, `uploads/${dir}`)));
-    });
-
-    app.use("/public", express.static("public"));
-    app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-    // ✅ Setup AdminJS
-    const { adminJs, router } = await setupAdminJS();
-    app.use(adminJs.options.rootPath, router);
-
-    // ✅ Handle 404 Errors
+    // Handle 404 Errors
     app.all("*", (req, res, next) => {
-      console.log("req.body:", req.body);
-      console.log("req.originalUrl:", req.originalUrl);
       next(new ApiError(`Can't find ${req.originalUrl} on this server`, 404));
     });
 
-    // ✅ Error Handling Middleware
     app.use(globalError);
 
-    // ✅ Start Server
-    const PORT = process.env.PORT || 4000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://91.108.102.81:${PORT}`);
+    // Load SSL Certificate
+    const options = {
+      key: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/fullchain.pem"),
+      cert: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/privkey.pem"),
+    };
+
+    // HTTPS Server
+    https.createServer(options, app).listen(9999, () => {
+      console.log("🚀 HTTPS server is running on port 9999");
+    });
+
+    // HTTP to HTTPS Redirection
+    http.createServer((req, res) => {
+      res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+      res.end();
+    }).listen(8080, () => {
+      console.log("🌐 HTTP server is redirecting to HTTPS on port 8080");
     });
   } catch (err) {
     console.error("❌ Server startup failed:", err);
-    process.exit(1); // Exit process if connection fails
+    process.exit(1);
   }
 }
 
-// ✅ Start the server
 startServer();

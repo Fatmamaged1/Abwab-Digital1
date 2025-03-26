@@ -37,7 +37,7 @@ exports.createService = async (req, res) => {
     }
 
     // Base URL for serving images
-    const baseUrl = "http://91.108.102.81:4000/uploads/";
+    const baseUrl = "https://backend.abwabdigital.com/uploads/";
 
     // Assign the main service image URL
     const imageUrl = req.files.image?.[0]?.filename
