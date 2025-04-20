@@ -225,3 +225,96 @@ exports.deleteService = async (req, res) => {
     res.status(500).json({ success: false, message: "Error deleting service", error: error.message });
   }
 };
+exports.updateService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      description,
+      category,
+      importance,
+      techUsedInService,
+      distingoshesUs,
+      designPhase,
+      seo
+    } = req.body;
+
+    const existingService = await Service.findById(id);
+    if (!existingService) {
+      return res.status(404).json({ success: false, message: "Service not found" });
+    }
+
+    // Parse JSON fields
+    const parsedImportance = importance ? JSON.parse(importance) : existingService.importance;
+    const parsedTechUsedInService = techUsedInService ? JSON.parse(techUsedInService) : existingService.techUsedInService;
+    const parsedDistingoshesUs = distingoshesUs ? JSON.parse(distingoshesUs) : existingService.distingoshesUs;
+    const parsedDesignPhase = designPhase ? JSON.parse(designPhase) : existingService.designPhase;
+
+    let parsedSeo = existingService.seo;
+    if (seo) {
+      try {
+        parsedSeo = JSON.parse(seo);
+        if (!Array.isArray(parsedSeo)) {
+          parsedSeo = [parsedSeo];
+        }
+      } catch (error) {
+        return res.status(400).json({ success: false, message: "Invalid SEO data format", error: error.message });
+      }
+    }
+
+    const baseUrl = "https://backend.abwabdigital.com/uploads/";
+
+    // تحديث صورة الخدمة إذا تم رفع صورة جديدة
+    const imageUrl = req.files.image?.[0]?.filename
+      ? baseUrl + req.files.image[0].filename
+      : existingService.image.url;
+
+    // تحديث الأيقونات الخاصة بـ techUsedInService
+    if (techUsedInService && req.files.techUsedInServiceIcons) {
+      parsedTechUsedInService.forEach((item, index) => {
+        item.icon = req.files.techUsedInServiceIcons?.[index]
+          ? baseUrl + req.files.techUsedInServiceIcons[index].filename
+          : item.icon || "";
+      });
+    }
+
+    // تحديث الأيقونات الخاصة بـ distingoshesUs
+    if (distingoshesUs && req.files.distingoshesUsIcons) {
+      parsedDistingoshesUs.forEach((item, index) => {
+        item.icon = req.files.distingoshesUsIcons?.[index]
+          ? baseUrl + req.files.distingoshesUsIcons[index].filename
+          : item.icon || "";
+      });
+    }
+
+    // تحديث صورة designPhase إن وُجدت
+    if (req.files.designPhaseImage?.[0]) {
+      parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
+    }
+
+    // تحديث الحقول
+    existingService.description = description || existingService.description;
+    existingService.category = category || existingService.category;
+    existingService.image = { url: imageUrl, altText: "Service Image" };
+    existingService.importance = parsedImportance;
+    existingService.techUsedInService = parsedTechUsedInService;
+    existingService.distingoshesUs = parsedDistingoshesUs;
+    existingService.designPhase = parsedDesignPhase;
+    existingService.seo = parsedSeo;
+
+    await existingService.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Service updated successfully",
+      data: existingService
+    });
+
+  } catch (error) {
+    console.error("Update Service Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating service",
+      error: error.message
+    });
+  }
+};
