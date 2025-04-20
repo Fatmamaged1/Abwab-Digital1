@@ -24,5 +24,11 @@ router.get("/:id", serviceController.getServiceById);
 
 // Delete a service
 router.delete("/:id", serviceController.deleteService);
-
+// update service
+router.put("/:id", upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "techUsedInServiceIcons", maxCount: 5 },
+  { name: "distingoshesUsIcons", maxCount: 5 },
+  { name: "designPhaseImage", maxCount: 1 },
+]), serviceController.updateService);
 module.exports = router;
