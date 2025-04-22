@@ -261,7 +261,7 @@ exports.updateService = async (req, res) => {
       }
     }
 
-    const baseUrl = "https://backend.abwabdigital.com:4000/uploads/services";
+    const baseUrl = "https://backend.abwabdigital.com:4000/uploads/services/";
 
     // تحديث صورة الخدمة إذا تم رفع صورة جديدة
     const imageUrl = req.files.image?.[0]?.filename
