@@ -225,6 +225,14 @@ exports.deleteService = async (req, res) => {
     res.status(500).json({ success: false, message: "Error deleting service", error: error.message });
   }
 };
+const parseJSONField = (field, defaultValue) => {
+  try {
+    return field ? JSON.parse(field) : defaultValue;
+  } catch (error) {
+    return defaultValue;
+  }
+};
+
 exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
@@ -243,12 +251,13 @@ exports.updateService = async (req, res) => {
       return res.status(404).json({ success: false, message: "Service not found" });
     }
 
-    // Parse JSON fields
-    const parsedImportance = importance ? JSON.parse(importance) : existingService.importance;
-    const parsedTechUsedInService = techUsedInService ? JSON.parse(techUsedInService) : existingService.techUsedInService;
-    const parsedDistingoshesUs = distingoshesUs ? JSON.parse(distingoshesUs) : existingService.distingoshesUs;
-    const parsedDesignPhase = designPhase ? JSON.parse(designPhase) : existingService.designPhase;
+    // استخدم دالة مساعدّة لقراءة وتحويل JSON الحقول
+    const parsedImportance = parseJSONField(importance, existingService.importance);
+    const parsedTechUsedInService = parseJSONField(techUsedInService, existingService.techUsedInService);
+    const parsedDistingoshesUs = parseJSONField(distingoshesUs, existingService.distingoshesUs);
+    const parsedDesignPhase = parseJSONField(designPhase, existingService.designPhase);
 
+    // التحقق من التنسيق الصحيح لـ SEO
     let parsedSeo = existingService.seo;
     if (seo) {
       try {
@@ -318,3 +327,4 @@ exports.updateService = async (req, res) => {
     });
   }
 };
+
