@@ -15,7 +15,7 @@ exports.createBlog = async (req, res) => {
 
     const blogImage = req.file
       ? {
-          url: `https://backend.abwabdigital.com:4000/uploads/blogs/${req.file.filename}`,
+          url: `https://abwabdigital.com:4000/uploads/blogs/${req.file.filename}`,
           altText: req.body.altText || "Blog Image",
         }
       : null;
@@ -49,7 +49,7 @@ exports.createBlog = async (req, res) => {
       sectionArray = sectionArray.map((item) => ({
         ...item,
         image: {
-          url: `https://backend.abwabdigital.com:4000/uploads/blogs/${req.file.filename}`,
+          url: `https://abwabdigital.com:4000/uploads/blogs/${req.file.filename}`,
           altText: item.image?.altText || "Section Image",
         },
       }));
@@ -88,7 +88,7 @@ exports.updateBlog = async (req, res) => {
 
     const image = req.file
       ? {
-          url: `https://backend.abwabdigital.com:4000/uploads/blogs/${req.file.filename}`,
+          url: `https://abwabdigital.com:4000/uploads/blogs/${req.file.filename}`,
           altText: req.body.altText || "Blog Image",
         }
       : null;
