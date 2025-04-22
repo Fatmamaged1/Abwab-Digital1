@@ -7,7 +7,7 @@ const slugify = require("slugify");
 // Cache keys
 const PORTFOLIO_ALL_KEY = "allPortfolioItems";
 const PORTFOLIO_SINGLE_KEY = (id) => `portfolioItem:${id}`;
-const BASE_URL = process.env.FILE_STORAGE_URL || "https://backend.abwabdigital.com/uploads/portfolio/";
+const BASE_URL = process.env.FILE_STORAGE_URL || "https://backend.abwabdigital.com:4000/uploads/portfolio/";
 
 exports.createPortfolioItem = async (req, res) => {
     try {
