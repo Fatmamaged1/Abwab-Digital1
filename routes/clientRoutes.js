@@ -79,43 +79,54 @@ router.route("/").get(async (req, res, next) => {
 });
 
 // Get a specific client by ID
-router.put(
-  "/:id",
-  upload.single("profileImage"),
-  updateClientValidator,
-  async (req, res) => {
+router.route("/:id").get(
+  getClientValidator, // Assuming getClientValidator is your validation middleware
+  async (req, res, next) => {
+    // Check for validation errors from previous middleware
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "error",
+        errors: errors.array(),
+      });
+    }
+
+    const clientId = req.params.id;
+
     try {
-      const updateData = { ...req.body };
-      if (req.file) {
-        updateData.profileImage = req.file.filename;
-      }
+      // Fetch the client based on the ID
+      const client = await ClientModel.findById(clientId);
 
-      const updatedClient = await updateClient(req.params.id, updateData);
-
-      if (!updatedClient) {
+      if (!client) {
         return res.status(404).json({
           status: "error",
-          message: "Client not found",
+          errors: [{
+            type: 'not_found',
+            msg: 'Client not found',
+            path: 'id',
+            value: clientId,
+          }],
         });
       }
 
       res.status(200).json({
         status: "success",
-        data: updatedClient,
+        data: client,
       });
     } catch (error) {
-      console.error("Update Client Error:", error.message);
-      res.status(400).json({
+      console.error("Error fetching client:", error);
+      res.status(500).json({
         status: "error",
-        error: {
-          statusCode: 400,
-          message: error.message,
-        },
+        errors: [{
+          type: 'server_error',
+          msg: `Error fetching client: ${error.message}`,
+          path: 'id',
+          value: clientId,
+        }],
       });
     }
   }
 );
-
 
 
 // Update a client by ID
