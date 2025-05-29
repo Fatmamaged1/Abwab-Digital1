@@ -31,20 +31,25 @@ exports.deleteOne = (Model) =>
     });
   });
 
-  exports.updateClient = async (id, data) => {
-    const client = await ClientModel.findById(id);
-    if (!client) {
-      return null;
-    }
+  exports.updateOne = (Model) =>
+    asyncHandler(async (req, res, next) => {
+      // ✳️ إزالة id من body لحماية البيانات
+      if (req.body.id) {
+        delete req.body.id;
+      }
   
-    // تحديث القيم الموجودة فقط
-    Object.keys(data).forEach((key) => {
-      client[key] = data[key];
+      const document = await Model.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+      });
+  
+      if (!document) {
+        return next(
+          new ApiError(`No document for this id ${req.params.id}`, 404)
+        );
+      }
+  
+      res.status(200).json({ success: true, data: document });
     });
-  
-    await client.save();
-    return client;
-  };
   
 exports.createOne = (Model) => async (req, res, next) => {
   try {
