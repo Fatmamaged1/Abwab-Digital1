@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/ApiError");
 const ApiFeatures = require("../utils/apiFeatures");
 const marked = require("marked");
+const mongoose = require("mongoose");
 // Common error handler function
 const handleErrors = (error, next) => {
   next(new ApiError(`Error: ${error.message}`, 500));
@@ -10,31 +11,46 @@ const handleErrors = (error, next) => {
 exports.deleteOne = (Model) =>
   asyncHandler(async (req, res, next) => {
     const { id } = req.params;
+
+    // ✅ التحقق من أن الـ id صحيح (ObjectId)
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return next(new ApiError(`Invalid ID format: ${id}`, 400));
+    }
+
     const document = await Model.findByIdAndDelete(id);
 
     if (!document) {
-      return next(new ApiError(`No document for this id ${id}`, 404));
+      return next(new ApiError(`No document found for ID ${id}`, 404));
     }
 
-    res.status(200).json({ success: true, data: {} });
-    // Add return statement if necessary
-  });
-
-exports.updateOne = (Model) =>
-  asyncHandler(async (req, res, next) => {
-    const document = await Model.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    // ✅ تم الحذف بنجاح
+    res.status(200).json({
+      success: true,
+      message: `Document with ID ${id} deleted successfully`,
+      data: {}, // يمكنك هنا إرجاع `document` لو أحببت
     });
-
-    if (!document) {
-      return next(
-        new ApiError(`No document for this id ${req.params.id}`, 404)
-      );
-    }
-
-    res.status(200).json({ success: true, data: document });
-    // Add return statement if necessary
   });
+
+  exports.updateOne = (Model) =>
+    asyncHandler(async (req, res, next) => {
+      // ✳️ إزالة id من body لحماية البيانات
+      if (req.body.id) {
+        delete req.body.id;
+      }
+  
+      const document = await Model.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+      });
+  
+      if (!document) {
+        return next(
+          new ApiError(`No document for this id ${req.params.id}`, 404)
+        );
+      }
+  
+      res.status(200).json({ success: true, data: document });
+    });
+  
 exports.createOne = (Model) => async (req, res, next) => {
   try {
     const doc = await Model.create(req.body);
