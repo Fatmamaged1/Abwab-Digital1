@@ -83,8 +83,8 @@ async function startServer() {
 
     // Load SSL Certificate
     const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/abwabdigital.com/privkey.pem"),
-      cert: fs.readFileSync("/etc/letsencrypt/live/abwabdigital.com/fullchain.pem"),
+      key: fs.readFileSync("/etc/letsencrypt/live/Backend.abwabdigital.com/privkey.pem"),
+      cert: fs.readFileSync("/etc/letsencrypt/live/Backend.abwabdigital.com/fullchain.pem"),
     };
 
     // HTTPS Server
