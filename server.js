@@ -5,12 +5,14 @@ const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
 const fs = require("fs");
+const https = require("https");
 const http = require("http");
 const mongoose = require("mongoose");
 
 const globalError = require("./middleware/errorMiddleware");
 const connectDB = require("./config/database");
 const ApiError = require("./utils/ApiError");
+const setupAdminJS = require("./admin");
 
 // Import API routes
 const aboutRoutes = require("./routes/aboutRoutes");
@@ -72,19 +74,31 @@ async function startServer() {
     app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
     app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-    // 404 handler
+    // Handle 404 Errors
     app.all("*", (req, res, next) => {
       next(new ApiError(`Can't find ${req.originalUrl} on this server`, 404));
     });
 
-    // Global error handler
     app.use(globalError);
 
-    // Start HTTP server
-    http.createServer(app).listen(4000, () => {
-      console.log("🚀 Server is running on HTTP port 4000");
+    // Load SSL Certificate
+    const options = {
+      key: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/privkey.pem"),
+      cert: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/fullchain.pem"),
+    };
+
+    // HTTPS Server
+    https.createServer(options, app).listen(4000, () => {
+      console.log("🚀 HTTPS server is running on port 4000");
     });
 
+    // HTTP to HTTPS Redirection
+    http.createServer((req, res) => {
+      res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+      res.end();
+    }).listen(8080, () => {
+      console.log("🌐 HTTP server is redirecting to HTTPS on port 8080");
+    });
   } catch (err) {
     console.error("❌ Server startup failed:", err);
     process.exit(1);
