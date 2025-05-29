@@ -131,27 +131,44 @@ router.route("/:id").get(
 
 // Update a client by ID
 // Update a client by ID (with optional profile image upload)
+// Update a client by ID (with optional profile image upload)
 router.put(
   "/:id",
-  upload.single("profileImage"), // لقراءة form-data + صورة
+  upload.single("profileImage"),
   updateClientValidator,
   async (req, res) => {
     try {
-      // اجلب بيانات التحديث من body
+      const clientId = req.params.id;
       const updateData = { ...req.body };
 
-      // إذا تم رفع صورة، أضفها
+      // ابحث عن العميل أولاً
+      const client = await ClientModel.findById(clientId);
+      if (!client) {
+        return res.status(404).json({
+          status: "error",
+          message: "Client not found",
+        });
+      }
+
+      // إذا تم رفع صورة جديدة
       if (req.file) {
+        // حذف الصورة القديمة إن وجدت
+        if (client.profileImage) {
+          const oldImagePath = path.join(__dirname, "../uploads/client/", client.profileImage);
+          fs.unlink(oldImagePath, (err) => {
+            if (err) console.warn("Failed to delete old image:", err.message);
+          });
+        }
+
+        // أضف الصورة الجديدة إلى البيانات
         updateData.profileImage = req.file.filename;
       }
 
-      const updatedClient = await updateClient(req.params.id, updateData);
-
-      if (!updatedClient) {
-        return res
-          .status(404)
-          .json({ status: "error", message: "Client not found" });
-      }
+      // تحديث بيانات العميل
+      const updatedClient = await ClientModel.findByIdAndUpdate(clientId, updateData, {
+        new: true, // ترجع النسخة بعد التحديث
+        runValidators: true,
+      });
 
       res.status(200).json({
         status: "success",
@@ -166,6 +183,7 @@ router.put(
     }
   }
 );
+
 
 
 // Delete a client by ID
