@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const multer = require("multer");
+const fs = require("fs");
 const { validationResult } = require('express-validator');
 const ClientModel =require("../models/clientModel");
 const {
@@ -129,30 +130,71 @@ router.route("/:id").get(
 
 
 // Update a client by ID
-router.put("/:id", updateClientValidator, async (req, res) => {
-  try {
-    const updatedClient = await updateClient(req.params.id, req.body);
-    if (!updatedClient) {
-      res.status(404).json({ status: "error", message: "Client not found" });
-      return;
-    }
-    res.json(updatedClient);
-  } catch (error) {
-    res.status(400).json({
-      status: "error",
-      error: { statusCode: 400, message: error.message },
-    });
-  }
-});
+// Update a client by ID (with optional profile image upload)
+router.put(
+  "/:id",
+  upload.single("profileImage"), // لقراءة form-data + صورة
+  updateClientValidator,
+  async (req, res) => {
+    try {
+      // اجلب بيانات التحديث من body
+      const updateData = { ...req.body };
 
+      // إذا تم رفع صورة، أضفها
+      if (req.file) {
+        updateData.profileImage = req.file.filename;
+      }
+
+      const updatedClient = await updateClient(req.params.id, updateData);
+
+      if (!updatedClient) {
+        return res
+          .status(404)
+          .json({ status: "error", message: "Client not found" });
+      }
+
+      res.status(200).json({
+        status: "success",
+        data: updatedClient,
+      });
+    } catch (error) {
+      console.error("Update Client Error:", error);
+      res.status(400).json({
+        status: "error",
+        error: { statusCode: 400, message: error.message },
+      });
+    }
+  }
+);
+
+
+// Delete a client by ID
 // Delete a client by ID
 router.delete("/:id", deleteClientValidator, async (req, res) => {
   try {
-    const deletedClient = await deleteClient(req.params.id);
-    if (!deletedClient) {
-      res.status(404).json({ status: "error", message: "Client not found" });
-      return;
+    const client = await ClientModel.findById(req.params.id);
+
+    if (!client) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Client not found" });
     }
+
+    // احذف الصورة من مجلد الرفع إذا كانت موجودة
+    if (client.profileImage) {
+      const imagePath = path.join(
+        __dirname,
+        "../uploads/client/",
+        client.profileImage
+      );
+      fs.unlink(imagePath, (err) => {
+        if (err) console.warn("Failed to delete image:", err.message);
+      });
+    }
+
+    // احذف العميل
+    await client.deleteOne();
+
     res.json({ status: "success", message: "Client deleted successfully" });
   } catch (error) {
     res.status(500).json({
@@ -161,5 +203,6 @@ router.delete("/:id", deleteClientValidator, async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;
