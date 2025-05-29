@@ -37,7 +37,7 @@ exports.createService = async (req, res) => {
     }
 
     // Base URL for serving images
-    const baseUrl = "https://Backend.abwabdigital.com:4000/uploads/";
+    const baseUrl = "https://Backend.abwabdigital.com/uploads/";
 
     // Assign the main service image URL
     const imageUrl = req.files.image?.[0]?.filename
@@ -270,7 +270,7 @@ exports.updateService = async (req, res) => {
       }
     }
 
-    const baseUrl = "https://Backend.abwabdigital.com:4000/uploads/";
+    const baseUrl = "https://Backend.abwabdigital.com/uploads/";
 
     // تحديث صورة الخدمة إذا تم رفع صورة جديدة
     const imageUrl = req.files.image?.[0]?.filename
