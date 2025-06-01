@@ -4,6 +4,8 @@ const multer = require("multer");
 const fs = require("fs");
 const { validationResult } = require('express-validator');
 const ClientModel =require("../models/clientModel");
+const BASE_IMAGE_URL = "https://Backend.abwabdigital.com/uploads/client/";
+
 const {
   getClientValidator,
   createClientValidator,
@@ -66,9 +68,19 @@ router.post(
 router.route("/").get(async (req, res, next) => {
   try {
     const clients = await ClientModel.find();
+
+    const updatedClients = clients.map(client => {
+      const clientObj = client.toObject();
+      if (clientObj.profileImage) {
+        clientObj.profileImage = `${BASE_IMAGE_URL}${clientObj.profileImage}`;
+      }
+      return clientObj;
+    });
+
     res.status(200).json({
       status: "success",
-      data: clients,
+      message: updatedClients.some(c => c.profileImage) ? "image return successfully" : undefined,
+      data: updatedClients,
     });
   } catch (error) {
     res.status(500).json({
@@ -78,11 +90,11 @@ router.route("/").get(async (req, res, next) => {
   }
 });
 
+
 // Get a specific client by ID
 router.route("/:id").get(
-  getClientValidator, // Assuming getClientValidator is your validation middleware
+  getClientValidator,
   async (req, res, next) => {
-    // Check for validation errors from previous middleware
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -94,7 +106,6 @@ router.route("/:id").get(
     const clientId = req.params.id;
 
     try {
-      // Fetch the client based on the ID
       const client = await ClientModel.findById(clientId);
 
       if (!client) {
@@ -109,9 +120,14 @@ router.route("/:id").get(
         });
       }
 
+      const clientObj = client.toObject();
+      if (clientObj.profileImage) {
+        clientObj.profileImage = `${BASE_IMAGE_URL}${clientObj.profileImage}`;
+      }
+
       res.status(200).json({
         status: "success",
-        data: client,
+        data: clientObj,
       });
     } catch (error) {
       console.error("Error fetching client:", error);
@@ -127,6 +143,7 @@ router.route("/:id").get(
     }
   }
 );
+
 
 
 // Update a client by ID
