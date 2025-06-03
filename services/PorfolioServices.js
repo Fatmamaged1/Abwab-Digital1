@@ -29,6 +29,8 @@ exports.createPortfolioItem = async (req, res) => {
         status,
         screenTypes
       } = req.body;
+      console.log("Received Body:", req.body);
+      console.log("Received Files:", req.files);
   
       if (!name || !description) {
         return res.status(400).json(formatErrorResponse("Name and description are required"));
