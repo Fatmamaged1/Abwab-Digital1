@@ -193,17 +193,16 @@ exports.getAllBlogs = async (req, res) => {
 exports.getBlogById = async (req, res) => {
   try {
     const language = req.query.language || "en";
+    const similarLimit = parseInt(req.query.limit) || 5; // ← تحديد عدد المقالات المشابهة، افتراضيًا 5
 
-    // Fetch the blog by ID, populate similarArticles, and convert to plain object
-    const blog = await Blog.findById(req.params.id)
-      .populate("similarArticles", "title image")
-      .lean();
+    // 1. Get the main blog
+    const blog = await Blog.findById(req.params.id).lean();
 
     if (!blog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    // Ensure section is an array
+    // 2. Prepare section
     const sectionArray = Array.isArray(blog.section)
       ? blog.section.map(sec => ({
           title: sec.title || "",
@@ -212,15 +211,22 @@ exports.getBlogById = async (req, res) => {
         }))
       : [];
 
-    // Process SEO data: select the SEO entry for the requested language (fallback to the first)
+    // 3. SEO data
     let seoData = {};
     if (Array.isArray(blog.seo) && blog.seo.length > 0) {
       seoData = blog.seo.find(seo => seo.language === language) || blog.seo[0];
-    } else {
-      seoData = {};
     }
 
-    // Format the blog response
+    // 4. Get similar articles
+    const similarArticles = await Blog.find({
+      _id: { $ne: blog._id },
+      categories: { $in: blog.categories },
+    })
+      .limit(similarLimit) // ← limit مرن
+      .select("title image")
+      .lean();
+
+    // 5. Format response
     const formattedBlog = {
       title: blog.title || "",
       description: blog.description || "",
@@ -232,9 +238,9 @@ exports.getBlogById = async (req, res) => {
       author: blog.author || "Unknown",
       publishedDate: blog.publishedAt || blog.createdAt,
       seo: seoData,
-      similarArticles: blog.similarArticles.map(article => ({
+      similarArticles: similarArticles.map(article => ({
         title: article.title,
-        url: article.url || "#",
+        url: `/blog/${article._id}`,
         image: article.image || { url: "", altText: "No Image" }
       })),
       createdAt: blog.createdAt,
@@ -248,9 +254,6 @@ exports.getBlogById = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
-
-
-
 
 // Delete a blog and clear relevant caches
 exports.deleteBlog = async (req, res) => {
