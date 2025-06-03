@@ -1,3 +1,4 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 
@@ -43,7 +44,10 @@ const blogSchema = new mongoose.Schema(
       altText: { type: String, default: "Blog Image" },
     },
     seo: [seoSchema], // Ensuring an array of SEO objects
-    similarArticles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" }],
+    similarArticles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" ,
+      required:false
+
+    }],
   },
   {
     timestamps: true,

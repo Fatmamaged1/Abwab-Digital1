@@ -239,6 +239,7 @@ exports.getBlogById = async (req, res) => {
       publishedDate: blog.publishedAt || blog.createdAt,
       seo: seoData,
       similarArticles: similarArticles.map(article => ({
+        id: article._id,
         title: article.title,
         url: `https://Backend.abwabdigital.com/blog/${article._id}`,
         image: article.image || { url: "", altText: "No Image" }
