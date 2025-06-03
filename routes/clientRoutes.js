@@ -158,7 +158,6 @@ router.put(
       const clientId = req.params.id;
       const updateData = { ...req.body };
 
-      // ابحث عن العميل أولاً
       const client = await ClientModel.findById(clientId);
       if (!client) {
         return res.status(404).json({
