@@ -74,9 +74,25 @@ exports.createBlog = async (req, res) => {
     await deleteCache(BLOGS_ALL_KEY);
 
     return res.status(201).json(formatSuccessResponse(savedBlog, "Blog created successfully"));
-  } catch (error) {
+  }catch (error) {
     console.error(error);
-    return res.status(500).json(formatErrorResponse("Failed to create blog", error.message));
+
+    // ✅ في حال وجود تكرار في قيمة فريدة (مثل slug أو title)
+    if (error.code === 11000) {
+      const duplicatedField = Object.keys(error.keyValue)[0];
+      const duplicatedValue = error.keyValue[duplicatedField];
+
+      return res.status(400).json({
+        success: false,
+        message: "Failed to create blog",
+        data: `The ${duplicatedField} '${duplicatedValue}' is already in use.`,
+      });
+    }
+
+    // ❌ أي خطأ آخر
+    return res
+      .status(500)
+      .json(formatErrorResponse("Failed to create blog", error.message));
   }
 };
 
