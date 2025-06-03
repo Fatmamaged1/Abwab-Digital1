@@ -240,7 +240,7 @@ exports.getBlogById = async (req, res) => {
       seo: seoData,
       similarArticles: similarArticles.map(article => ({
         title: article.title,
-        url: `/blog/${article._id}`,
+        url: `${BASE_URL}/blog/${article._id}`,
         image: article.image || { url: "", altText: "No Image" }
       })),
       createdAt: blog.createdAt,
