@@ -37,9 +37,15 @@ router.post(
    router.put(
     "/blogs/:id",
     upload.fields([
-      { name: "image", maxCount: 1 },          // صورة رئيسية
-      { name: "sectionImage" },                // صور السكاشن
-      { name: "tagIcons" },                    // أيقونات التاجات (إن وُجدت)
+      { name: "image", maxCount: 1 },          // Main image
+      { name: "sectionImage[0]" }, 
+      { name: "sectionImage[1]" },  
+      { name: "sectionImage[2]" }, 
+      { name: "sectionImage[3]" },               // Section images
+      { name: "tagIcons[0]" },                 // Tag icon 1 (indexed field)
+      { name: "tagIcons[1]" },  
+      {name:"tagIcons[2]"}, 
+      {name:"tagIcons[3]"} 
     ]),
     blogController.updateBlog
   );
