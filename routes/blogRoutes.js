@@ -21,7 +21,10 @@ router.post(
   "/",
   upload.fields([
     { name: "image", maxCount: 1 },          // Main image
-    { name: "sectionImage" },                // Section images
+    { name: "sectionImage[0]" }, 
+    { name: "sectionImage[1]" },  
+    { name: "sectionImage[2]" }, 
+    { name: "sectionImage[3]" },               // Section images
     { name: "tagIcons[0]" },                 // Tag icon 1 (indexed field)
     { name: "tagIcons[1]" },  
     {name:"tagIcons[2]"}, 
