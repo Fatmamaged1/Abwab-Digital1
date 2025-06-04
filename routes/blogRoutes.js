@@ -20,21 +20,22 @@ const upload = multer({ storage });
 router.post(
     "/",
     upload.fields([
-      { name: "image", maxCount: 3 },
-      { name: "tagIcons", maxCount: 10 },
+      { name: "image", maxCount: 1 },          // صورة رئيسية
+      { name: "sectionImage" },                // صور السكاشن
+      { name: "tagIcons" },                    // أيقونات التاجات (إن وُجدت)
     ]),
     blogController.createBlog
   );
-  
-  router.put(
-    "/:id",
+   router.put(
+    "/blogs/:id",
     upload.fields([
-      { name: "image", maxCount: 3 },
-      { name: "tagIcons", maxCount: 10 },
+      { name: "image", maxCount: 1 },          // صورة رئيسية
+      { name: "sectionImage" },                // صور السكاشن
+      { name: "tagIcons" },                    // أيقونات التاجات (إن وُجدت)
     ]),
     blogController.updateBlog
   );
-  router.get("/", blogController.getAllBlogs);
+router.get("/", blogController.getAllBlogs);
 router.get("/:id", blogController.getBlogById);
 //router.put("/:id", upload.single("image"), { name: "tagIcons", maxCount: 10 },blogController.updateBlog);
 router.delete("/:id", blogController.deleteBlog);

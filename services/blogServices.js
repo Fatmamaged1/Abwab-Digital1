@@ -14,102 +14,93 @@ exports.createBlog = async (req, res) => {
     const {
       title,
       description,
-      section,
       content,
       categories,
       author,
       seo,
-      tags,
       similarArticles,
       altText,
     } = req.body;
 
-    // ✅ معالجة الصورة الرئيسية
-    const mainImageFile = req.files?.image?.[0];
+    const files = req.files || {};
+
+    // ✅ معالجة صورة الغلاف
+    const mainImageFile = files.image?.[0];
     const blogImage = mainImageFile
       ? {
           url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
           altText: altText || "Blog Image",
         }
-      : {
-          url: "", // لتفادي خطأ Mongoose إذا الصورة غير مرفقة
-          altText: "No Image Provided",
-        };
+      : { url: "", altText: "No Image Provided" };
 
-    // ✅ تأكد أن categories مصفوفة
+    // ✅ التعامل مع الأقسام
+    const sectionArray = [];
+    const sectionTitles = Object.entries(req.body).filter(([key]) =>
+      key.startsWith("section[") && key.endsWith("]title")
+    );
+
+    for (const [key, value] of sectionTitles) {
+      const index = key.match(/\[(\d+)\]/)[1];
+      const title = value;
+      const description = req.body[`section[${index}]description`] || "";
+      const alt = req.body[`section[${index}]alt`] || "Section Image";
+      const imageFile = files[`sectionImage[${index}]`]?.[0];
+
+      sectionArray.push({
+        title,
+        description,
+        image: {
+          url: imageFile
+            ? `https://Backend.abwabdigital.com/uploads/blogs/${imageFile.filename}`
+            : "",
+          altText: alt,
+        },
+      });
+    }
+
+    // ✅ التعامل مع التاجات
+    const tagArray = [];
+    const tagNames = Object.entries(req.body).filter(([key]) =>
+      key.startsWith("tagname[")
+    );
+
+    for (const [key, value] of tagNames) {
+      const index = key.match(/\[(\d+)\]/)[1];
+      const name = value;
+      const iconFile = files[`tagIcon[${index}]`]?.[0];
+
+      tagArray.push({
+        name,
+        icon: iconFile
+          ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
+          : "",
+      });
+    }
+
+    // ✅ بقية البيانات
     const categoriesArray = categories ? categories.split(",") : [];
 
-    // ✅ دالة آمنة لتحليل JSON
     const parseJSON = (data, defaultValue) => {
       try {
         return data ? JSON.parse(data) : defaultValue;
-      } catch (error) {
-        console.error(`❌ JSON Parse Error: ${error.message}`);
+      } catch (e) {
+        console.error("❌ JSON parse error:", e.message);
         return defaultValue;
       }
     };
 
-    // ✅ تحليل الحقول المركبة
-    const similarArticlesArray = parseJSON(similarArticles, []);
     const seoArray = parseJSON(seo, []);
-    let tagsArray = parseJSON(tags, []);
-
-    // ✅ أيقونات التاجات
-    const tagIcons = req.files?.tagIcons || [];
-    if (tagsArray.length > 0 && tagIcons.length > 0) {
-      tagsArray = tagsArray.map((tag, index) => {
-        const iconFile = tagIcons[index];
-    
-        // إدراج الأيقونة فقط إذا كانت موجودة
-        const iconUrl = iconFile
-          ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
-          : "";
-    
-        return {
-          ...tag,
-          icon: iconUrl,
-        };
-      });
-    }
-    
-    
-
-    // ✅ معالجة قسم section ليكون دائمًا مصفوفة
-    let sectionArray = parseJSON(section, []);
-    if (!Array.isArray(sectionArray)) sectionArray = [];
-
-    // ✅ إضافة صورة لكل قسم إن لم تكن موجودة
-    sectionArray = sectionArray.map((item) => {
-      if (item.image && item.image.url) return item;
-
-      if (mainImageFile) {
-        return {
-          ...item,
-          image: {
-            url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
-            altText: item.image?.altText || "Section Image",
-          },
-        };
-      }
-
-      return {
-        ...item,
-        image: {
-          url: "",
-          altText: "Image missing",
-        },
-      };
-    });
+    const similarArticlesArray = parseJSON(similarArticles, []);
 
     // ✅ إنشاء المدونة
     const newBlog = new Blog({
       title,
       description,
-      section: sectionArray,
       content,
-      categories: categoriesArray,
       author,
-      tags: tagsArray,
+      categories: categoriesArray,
+      section: sectionArray,
+      tags: tagArray,
       seo: seoArray,
       similarArticles: similarArticlesArray,
       image: blogImage,
@@ -117,7 +108,6 @@ exports.createBlog = async (req, res) => {
 
     const savedBlog = await newBlog.save();
 
-    // ✅ حذف الكاش المؤقت (إذا كنت تستخدم Redis أو غيره)
     await deleteCache(BLOGS_ALL_KEY);
 
     return res
@@ -126,7 +116,6 @@ exports.createBlog = async (req, res) => {
   } catch (error) {
     console.error(error);
 
-    // ✅ التحقق من الأخطاء الفريدة مثل التكرار في title أو slug
     if (error.code === 11000) {
       const duplicatedField = Object.keys(error.keyValue)[0];
       const duplicatedValue = error.keyValue[duplicatedField];
@@ -146,36 +135,75 @@ exports.createBlog = async (req, res) => {
 
 
 
+
 // Update a blog
 exports.updateBlog = async (req, res) => {
   try {
-    const { title, description, section, content, categories, author, tags, seo } = req.body;
+    const {
+      title,
+      description,
+      content,
+      categories,
+      author,
+      seo,
+      altText,
+    } = req.body;
 
-    const image = req.file
-      ? {
-          url: `https://Backend.abwabdigital.com/uploads/blogs/${req.file.filename}`,
-          altText: req.body.altText || "Blog Image",
-        }
-      : null;
-
-    // Parse data safely
-    let sectionObject = section ? JSON.parse(section) : null;
-    let seoArray = seo ? JSON.parse(seo) : [];
-    let tagsArray = tags ? JSON.parse(tags) : [];
     const categoriesArray = categories ? categories.split(",") : [];
 
+    // ✅ تحليل الـ SEO
+    const seoArray = seo ? JSON.parse(seo) : [];
+
+    // ✅ معالجة الصورة الرئيسية
+    const mainImage = req.files?.image?.[0];
+    const blogImage = mainImage
+      ? {
+          url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImage.filename}`,
+          altText: altText || "Blog Image",
+        }
+      : undefined; // لتفادي حذفها إذا لم تُرسل
+
+    // ✅ تجميع التاجات من tagname[n] + tagIcons[n]
+    const tagnames = Array.isArray(req.body.tagname) ? req.body.tagname : [req.body.tagname];
+    const tagIcons = req.files?.tagIcons || [];
+
+    const tagsArray = tagnames.map((name, i) => ({
+      name,
+      icon: tagIcons[i]
+        ? `https://Backend.abwabdigital.com/uploads/tags/${tagIcons[i].filename}`
+        : "",
+    }));
+
+    // ✅ تجميع السكاشن من section[n]title/desc/alt + الصور
+    const sectionTitles = Array.isArray(req.body["sectionTitle"]) ? req.body["sectionTitle"] : [req.body["sectionTitle"]];
+    const sectionDescs = Array.isArray(req.body["sectionDesc"]) ? req.body["sectionDesc"] : [req.body["sectionDesc"]];
+    const sectionAlts = Array.isArray(req.body["sectionAlt"]) ? req.body["sectionAlt"] : [req.body["sectionAlt"]];
+    const sectionImages = req.files?.sectionImages || [];
+
+    const sectionArray = sectionTitles.map((title, i) => ({
+      title,
+      description: sectionDescs[i] || "",
+      image: {
+        url: sectionImages[i]
+          ? `https://Backend.abwabdigital.com/uploads/blogs/${sectionImages[i].filename}`
+          : "",
+        altText: sectionAlts[i] || "Section Image",
+      },
+    }));
+
+    // ✅ تحديث البيانات
     const updatedBlog = await Blog.findByIdAndUpdate(
       req.params.id,
       {
-        title,
-        description,
-        section: sectionObject,
-        content,
-        categories: categoriesArray,
-        author,
-        tags: tagsArray,
-        seo: seoArray,
-        image,
+        ...(title && { title }),
+        ...(description && { description }),
+        ...(content && { content }),
+        ...(categoriesArray && { categories: categoriesArray }),
+        ...(author && { author }),
+        ...(tagsArray && { tags: tagsArray }),
+        ...(seoArray && { seo: seoArray }),
+        ...(sectionArray && { section: sectionArray }),
+        ...(blogImage && { image: blogImage }),
       },
       { new: true }
     );
@@ -184,7 +212,6 @@ exports.updateBlog = async (req, res) => {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    // Update caches
     await setCache(BLOG_SINGLE_KEY(req.params.id), JSON.stringify(updatedBlog));
     await deleteCache(BLOGS_ALL_KEY);
 
@@ -194,6 +221,7 @@ exports.updateBlog = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Failed to update blog", error.message));
   }
 };
+
 // Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
   try {
