@@ -21,6 +21,7 @@ exports.createBlog = async (req, res) => {
       similarArticles,
       altText,
     } = req.body;
+    console.log('Request Body:', req.body);  // Log to see if tagname[] is coming through
 
     const files = req.files || {};
 
