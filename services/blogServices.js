@@ -36,7 +36,25 @@ exports.createBlog = async (req, res) => {
     // Parse all JSON fields safely
     const similarArticlesArray = parseJSON(similarArticles, []);
     const seoArray = parseJSON(seo, []);
-    const tagsArray = parseJSON(tags, []);
+    // Parse tags array (name فقط)
+let tagsArray = parseJSON(tags, []);
+
+// Handle uploaded tag icons (req.files["tagIcons"])
+const tagIcons = req.files?.tagIcons || [];
+
+if (tagsArray.length > 0 && tagIcons.length > 0) {
+  // ربط كل tag بالصورة بناءً على الترتيب
+  tagsArray = tagsArray.map((tag, index) => {
+    const iconFile = tagIcons[index];
+    return {
+      ...tag,
+      icon: iconFile
+        ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
+        : "",
+    };
+  });
+}
+
 
     // 📌 Ensure `section` is always an array
     let sectionArray = parseJSON(section, []);
