@@ -45,16 +45,18 @@ exports.createBlog = async (req, res) => {
     }
 
     // Add uploaded file's URL to section.image if it exists
-    if (req.file && sectionArray.length > 0) {
+    if (sectionArray.length > 0) {
       sectionArray = sectionArray.map((item) => ({
         ...item,
-        image: {
-          url: `https://Backend.abwabdigital.com/uploads/blogs/${req.file.filename}`,
-          altText: item.image?.altText || "Section Image",
-        },
+        image: item.image || (req.file
+          ? {
+              url: `https://Backend.abwabdigital.com/uploads/blogs/${req.file.filename}`,
+              altText: item.image?.altText || "Section Image",
+            }
+          : undefined),
       }));
     }
-
+    
     const newBlog = new Blog({
       title,
       description,
