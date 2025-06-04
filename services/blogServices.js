@@ -21,9 +21,11 @@ exports.createBlog = async (req, res) => {
       similarArticles,
       altText,
     } = req.body;
-    console.log('Request Body:', req.body);  // Log to see if tagname[] is coming through
 
     const files = req.files || {};
+
+    // Debug: Log the incoming body to see if tags are coming through
+    console.log('Request Body:', req.body);  // Add this line to see the request body
 
     // ✅ Handle Main Blog Image (Cover Image)
     const mainImageFile = files.image?.[0];
@@ -59,28 +61,26 @@ exports.createBlog = async (req, res) => {
       });
     }
 
-    // ✅ Handle Tags (Handle like sections)
+    // ✅ Handle Tags (Handle tagname[] correctly)
     const tagArray = [];
-    const tagNames = Object.entries(req.body).filter(([key]) =>
-      key.startsWith("tagname[")
-    );
+    if (req.body.tagname) {
+      // Ensure that tagname is an array
+      req.body.tagname.forEach((name, index) => {
+        const iconFile = files[`tagIcon[${index}]`]?.[0];
 
-    console.log('Found Tag Entries:', tagNames);  // Debugging: Check all tag entries
+        console.log(`Tag ${index} - Name: ${name}, Icon: ${iconFile ? iconFile.filename : 'No Icon'}`);  // Debugging tag names and icon filenames
 
-    for (const [key, value] of tagNames) {
-      const index = key.match(/\[(\d+)\]/)[1];
-      const name = value;
-      const iconFile = files[`tagIcon[${index}]`]?.[0];
-
-      console.log(`Tag ${index} - Name: ${name}, Icon: ${iconFile ? iconFile.filename : 'No Icon'}`);  // Debugging tag names and icon filenames
-
-      tagArray.push({
-        name,
-        icon: iconFile
-          ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
-          : "",
+        tagArray.push({
+          name,
+          icon: iconFile
+            ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
+            : "",
+        });
       });
     }
+
+    // Debug: Check if the tags were processed correctly
+    console.log('Processed Tags:', tagArray);
 
     // ✅ Parse Categories
     const categoriesArray = categories ? categories.split(",") : [];
