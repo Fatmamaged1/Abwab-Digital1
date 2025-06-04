@@ -34,7 +34,7 @@ router.post(
     ]),
     blogController.updateBlog
   );
-  
+  router.get("/", blogController.getAllBlogs);
 router.get("/:id", blogController.getBlogById);
 //router.put("/:id", upload.single("image"), { name: "tagIcons", maxCount: 10 },blogController.updateBlog);
 router.delete("/:id", blogController.deleteBlog);
