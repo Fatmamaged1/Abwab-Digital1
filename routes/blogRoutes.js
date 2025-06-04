@@ -18,14 +18,19 @@ const upload = multer({ storage });
 
 // Define blog routes
 router.post(
-    "/",
-    upload.fields([
-      { name: "image", maxCount: 1 },          // صورة رئيسية
-      { name: "sectionImage" },                // صور السكاشن
-      { name: "tagIcons" },                    // أيقونات التاجات (إن وُجدت)
-    ]),
-    blogController.createBlog
-  );
+  "/",
+  upload.fields([
+    { name: "image", maxCount: 1 },          // Main image
+    { name: "sectionImage" },                // Section images
+    { name: "tagIcons[0]" },                 // Tag icon 1 (indexed field)
+    { name: "tagIcons[1]" },  
+    {name:"tagIcons[2]"}, 
+    {name:"tagIcons[3]"}              // Tag icon 2 (indexed field)
+    // Add more if needed
+  ]),
+  blogController.createBlog
+);
+
    router.put(
     "/blogs/:id",
     upload.fields([
