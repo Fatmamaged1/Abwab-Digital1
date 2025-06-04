@@ -131,7 +131,7 @@ router.route("/:id").get(
 
 
 // Update a testimonial by ID
-router.put("/:id",  updateTestimonial);
+router.put("/:id", upload.single("icon"), updateTestimonial);
 
 // Delete a testimonial by ID
 router.delete("/:id",  deleteTestimonial);
