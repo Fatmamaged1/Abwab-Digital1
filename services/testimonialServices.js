@@ -5,6 +5,9 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/ApiError.js");
 const factory = require("./handlerFactory.js");
 const TestimonialModel = require("../models/testimonialModel.js");
+const upload = multer({ storage });
+const path = require("path");
+const fs = require("fs");
 //const blogModel = require("../models/blogModel.js"); // This line is unnecessary if not used
 
 // Assume you have a 'ServicesModel' imported from somewhere
