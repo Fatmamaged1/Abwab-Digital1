@@ -59,14 +59,20 @@ exports.createBlog = async (req, res) => {
     if (tagsArray.length > 0 && tagIcons.length > 0) {
       tagsArray = tagsArray.map((tag, index) => {
         const iconFile = tagIcons[index];
+    
+        // إدراج الأيقونة فقط إذا كانت موجودة
+        const iconUrl = iconFile
+          ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
+          : "";
+    
         return {
           ...tag,
-          icon: iconFile
-            ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
-            : "",
+          icon: iconUrl,
         };
       });
     }
+    
+    
 
     // ✅ معالجة قسم section ليكون دائمًا مصفوفة
     let sectionArray = parseJSON(section, []);
