@@ -24,7 +24,7 @@ exports.createBlog = async (req, res) => {
 
     const files = req.files || {};
 
-    // ✅ معالجة صورة الغلاف
+    // ✅ Handle Main Blog Image (Cover Image)
     const mainImageFile = files.image?.[0];
     const blogImage = mainImageFile
       ? {
@@ -33,7 +33,7 @@ exports.createBlog = async (req, res) => {
         }
       : { url: "", altText: "No Image Provided" };
 
-    // ✅ التعامل مع الأقسام
+    // ✅ Handle Sections (Same as before)
     const sectionArray = [];
     const sectionTitles = Object.entries(req.body).filter(([key]) =>
       key.startsWith("section[") && key.endsWith("]title")
@@ -58,16 +58,20 @@ exports.createBlog = async (req, res) => {
       });
     }
 
-    // ✅ التعامل مع التاجات
+    // ✅ Handle Tags (Handle like sections)
     const tagArray = [];
     const tagNames = Object.entries(req.body).filter(([key]) =>
       key.startsWith("tagname[")
     );
 
+    console.log('Found Tag Entries:', tagNames);  // Debugging: Check all tag entries
+
     for (const [key, value] of tagNames) {
       const index = key.match(/\[(\d+)\]/)[1];
       const name = value;
       const iconFile = files[`tagIcon[${index}]`]?.[0];
+
+      console.log(`Tag ${index} - Name: ${name}, Icon: ${iconFile ? iconFile.filename : 'No Icon'}`);  // Debugging tag names and icon filenames
 
       tagArray.push({
         name,
@@ -77,9 +81,10 @@ exports.createBlog = async (req, res) => {
       });
     }
 
-    // ✅ بقية البيانات
+    // ✅ Parse Categories
     const categoriesArray = categories ? categories.split(",") : [];
 
+    // ✅ Parse SEO and Similar Articles JSON (Handle errors gracefully)
     const parseJSON = (data, defaultValue) => {
       try {
         return data ? JSON.parse(data) : defaultValue;
@@ -92,7 +97,7 @@ exports.createBlog = async (req, res) => {
     const seoArray = parseJSON(seo, []);
     const similarArticlesArray = parseJSON(similarArticles, []);
 
-    // ✅ إنشاء المدونة
+    // ✅ Create New Blog
     const newBlog = new Blog({
       title,
       description,
@@ -100,21 +105,25 @@ exports.createBlog = async (req, res) => {
       author,
       categories: categoriesArray,
       section: sectionArray,
-      tags: tagArray,
+      tags: tagArray,  // This now includes tags as objects with name and icon
       seo: seoArray,
       similarArticles: similarArticlesArray,
       image: blogImage,
     });
 
+    // Save Blog to Database
     const savedBlog = await newBlog.save();
 
+    // Optional: Clear Cache if needed (if using caching)
     await deleteCache(BLOGS_ALL_KEY);
 
+    // Return Success Response
     return res
       .status(201)
       .json(formatSuccessResponse(savedBlog, "Blog created successfully"));
+
   } catch (error) {
-    console.error(error);
+    console.error('Error creating blog:', error);
 
     if (error.code === 11000) {
       const duplicatedField = Object.keys(error.keyValue)[0];
@@ -132,6 +141,7 @@ exports.createBlog = async (req, res) => {
       .json(formatErrorResponse("Failed to create blog", error.message));
   }
 };
+
 
 
 
