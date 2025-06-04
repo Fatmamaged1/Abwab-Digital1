@@ -17,10 +17,26 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Define blog routes
-router.post("/", upload.single("image"), { name: "tagIcons", maxCount: 10 }, blogController.createBlog);
-router.get("/", blogController.getAllBlogs);
+router.post(
+    "/",
+    upload.fields([
+      { name: "image", maxCount: 1 },
+      { name: "tagIcons", maxCount: 10 },
+    ]),
+    blogController.createBlog
+  );
+  
+  router.put(
+    "/:id",
+    upload.fields([
+      { name: "image", maxCount: 1 },
+      { name: "tagIcons", maxCount: 10 },
+    ]),
+    blogController.updateBlog
+  );
+  
 router.get("/:id", blogController.getBlogById);
-router.put("/:id", upload.single("image"), { name: "tagIcons", maxCount: 10 },blogController.updateBlog);
+//router.put("/:id", upload.single("image"), { name: "tagIcons", maxCount: 10 },blogController.updateBlog);
 router.delete("/:id", blogController.deleteBlog);
 
 module.exports = router;
