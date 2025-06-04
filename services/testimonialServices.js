@@ -95,41 +95,45 @@ exports.getTestimonials= factory.getAll(TestimonialModel,"Testimonial");
 };
 // Update a Testimonial
 exports.updateTestimonial = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { client, name, content, rating } = req.body;
-  
-    const testimonial = await TestimonialModel.findById(id);
-    if (!testimonial) {
-      return res.status(404).json({ status: "error", message: "Testimonial not found" });
-    }
-  
-    // Handle image update
-    let updatedIcon = testimonial.icon;
-    if (req.file) {
-      // Delete old image file if exists
-      if (testimonial.icon) {
-        const oldImagePath = path.join(__dirname, `../uploads/testimonials/${testimonial.icon}`);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
+  const { id } = req.params;
+  const { client, name, content, rating } = req.body;
+
+  const testimonial = await TestimonialModel.findById(id);
+  if (!testimonial) {
+    return res.status(404).json({ status: "error", message: "Testimonial not found" });
+  }
+
+  // تحديث الصورة
+  if (req.file) {
+    // حذف الصورة القديمة إن وجدت
+    if (testimonial.icon) {
+      const oldImagePath = path.join(__dirname, `../uploads/testimonials/${testimonial.icon}`);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
       }
-  
-      updatedIcon = req.file.filename;
     }
-  
-    // Update the testimonial
-    const updatedTestimonial = await TestimonialModel.findByIdAndUpdate(
-      id,
-      { client, name, content, rating, icon: updatedIcon },
-      { new: true }
-    );
-  
-    res.status(200).json({
-      status: "success",
-      message: "Testimonial updated successfully",
-      data: updatedTestimonial,
-    });
+  }
+
+  // تجهيز الحقول المراد تحديثها
+  const updateFields = {};
+  if (client !== undefined) updateFields.client = client;
+  if (name !== undefined) updateFields.name = name;
+  if (content !== undefined) updateFields.content = content;
+  if (rating !== undefined) updateFields.rating = rating;
+  if (req.file) updateFields.icon = req.file.filename;
+
+  // التحديث
+  const updatedTestimonial = await TestimonialModel.findByIdAndUpdate(id, updateFields, {
+    new: true,
   });
+
+  res.status(200).json({
+    status: "success",
+    message: "Testimonial updated successfully",
+    data: updatedTestimonial,
+  });
+});
+
   
   // Delete a Testimonial
   exports.deleteTestimonial = asyncHandler(async (req, res) => {
