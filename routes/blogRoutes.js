@@ -20,7 +20,7 @@ const upload = multer({ storage });
 router.post(
     "/",
     upload.fields([
-      { name: "image", maxCount: 1 },
+      { name: "image", maxCount: 3 },
       { name: "tagIcons", maxCount: 10 },
     ]),
     blogController.createBlog
@@ -29,7 +29,7 @@ router.post(
   router.put(
     "/:id",
     upload.fields([
-      { name: "image", maxCount: 1 },
+      { name: "image", maxCount: 3 },
       { name: "tagIcons", maxCount: 10 },
     ]),
     blogController.updateBlog

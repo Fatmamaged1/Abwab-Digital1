@@ -28,7 +28,7 @@ const blogSchema = new mongoose.Schema(
       title: { type: String, required: true },
       description: { type: String, required: true },
       image: {
-        url: { type: String, required: true },
+        url: { type: String, required: false },
         altText: { type: String, default: "Section Image" },
       },
     }],
