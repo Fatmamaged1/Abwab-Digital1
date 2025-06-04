@@ -98,31 +98,34 @@ exports.updateTestimonial = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { client, name, content, rating } = req.body;
 
+  console.log("Incoming body:", req.body);
+  console.log("Incoming file:", req.file);
+
   const testimonial = await TestimonialModel.findById(id);
   if (!testimonial) {
     return res.status(404).json({ status: "error", message: "Testimonial not found" });
   }
 
-  // تحديث الصورة
-  if (req.file) {
-    // حذف الصورة القديمة إن وجدت
-    if (testimonial.icon) {
-      const oldImagePath = path.join(__dirname, `../uploads/testimonials/${testimonial.icon}`);
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
-      }
+  // حذف الصورة القديمة إن وجدت
+  if (req.file && testimonial.icon) {
+    const oldImagePath = path.join(
+      __dirname,
+      `../uploads/testimonials/${path.basename(testimonial.icon)}`
+    );
+    if (fs.existsSync(oldImagePath)) {
+      fs.unlinkSync(oldImagePath);
     }
   }
 
-  // تجهيز الحقول المراد تحديثها
   const updateFields = {};
   if (client !== undefined) updateFields.client = client;
   if (name !== undefined) updateFields.name = name;
   if (content !== undefined) updateFields.content = content;
   if (rating !== undefined) updateFields.rating = rating;
-  if (req.file) updateFields.icon = req.file.filename;
+  if (req.file) {
+    updateFields.icon = `https://Backend.abwabdigital.com/uploads/testimonials/${req.file.filename}`;
+  }
 
-  // التحديث
   const updatedTestimonial = await TestimonialModel.findByIdAndUpdate(id, updateFields, {
     new: true,
   });
@@ -133,6 +136,7 @@ exports.updateTestimonial = asyncHandler(async (req, res) => {
     data: updatedTestimonial,
   });
 });
+
 
   
   // Delete a Testimonial
