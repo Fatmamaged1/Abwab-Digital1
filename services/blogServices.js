@@ -46,15 +46,30 @@ exports.createBlog = async (req, res) => {
 
     // Add uploaded file's URL to section.image if it exists
     if (sectionArray.length > 0) {
-      sectionArray = sectionArray.map((item) => ({
-        ...item,
-        image: item.image || (req.file
-          ? {
+      sectionArray = sectionArray.map((item) => {
+        // إذا فيه صورة كاملة داخل القسم → استخدمها كما هي
+        if (item.image && item.image.url) return item;
+      
+        // إذا ما فيه صورة، وكان فيه ملف مرفوع → استخدمه
+        if (req.file) {
+          return {
+            ...item,
+            image: {
               url: `https://Backend.abwabdigital.com/uploads/blogs/${req.file.filename}`,
               altText: item.image?.altText || "Section Image",
-            }
-          : undefined),
-      }));
+            },
+          };
+        }
+      
+        // إذا لا يوجد صورة لا في القسم ولا في المرفقات → حط صورة افتراضية أو فارغة
+        return {
+          ...item,
+          image: {
+            url: "", // ✅ لتجنب خطأ الـ Validation
+            altText: "Image missing",
+          },
+        };
+      });
     }
     
     const newBlog = new Blog({
