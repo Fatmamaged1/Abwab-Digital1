@@ -262,7 +262,7 @@ exports.updateBlog = async (req, res) => {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    await setCache(BLOG_SINGLE_KEY(req.params.id), JSON.stringify(updatedBlog));
+   // await setCache(BLOG_SINGLE_KEY(req.params.id), JSON.stringify(updatedBlog));
     await deleteCache(BLOGS_ALL_KEY);
 
     return res.status(200).json(formatSuccessResponse(updatedBlog, "Blog updated successfully"));
