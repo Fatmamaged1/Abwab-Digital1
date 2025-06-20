@@ -1,16 +1,12 @@
+const slugify = require("slugify");
 const Blog = require("../models/blogModel");
 const {
   formatSuccessResponse,
   formatErrorResponse,
 } = require("../utils/responseFormatter");
-const { setCache, getCache, deleteCache } = require("../utils/cache");
+const { deleteCache } = require("../utils/cache");
 
-// Cache keys
 const BLOGS_ALL_KEY = "allBlogs";
-const BLOG_SINGLE_KEY = (id) => `blog:${id}`;
-
-
-const slugify = require("slugify");
 
 exports.createBlog = async (req, res) => {
   try {
@@ -32,12 +28,16 @@ exports.createBlog = async (req, res) => {
 
     // ✅ Handle Main Blog Image
     const mainImageFile = files.image?.[0];
+    const parsedAltText = altText ? JSON.parse(altText) : { ar: "صورة التدوينة", en: "Blog Image" };
     const blogImage = mainImageFile
       ? {
           url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
-          altText: altText || "Blog Image",
+          altText: parsedAltText,
         }
-      : { url: "", altText: "No Image Provided" };
+      : {
+          url: "",
+          altText: { ar: "لا توجد صورة", en: "No Image Provided" },
+        };
 
     // ✅ Handle Sections
     const sectionArray = [];
@@ -47,12 +47,16 @@ exports.createBlog = async (req, res) => {
 
     for (const [key, value] of sectionTitles) {
       const index = key.match(/\[(\d+)\]/)[1];
-      const title = { ar: value, en: req.body[`section[${index}]titleEn`] || "" };
+      const title = {
+        ar: value,
+        en: req.body[`section[${index}]titleEn`] || "",
+      };
       const description = {
         ar: req.body[`section[${index}]descriptionAr`] || "",
         en: req.body[`section[${index}]descriptionEn`] || "",
       };
-      const alt = req.body[`section[${index}]alt`] || "Section Image";
+      const altRaw = req.body[`section[${index}]alt`] || "{}";
+      const altParsed = JSON.parse(altRaw);
       const imageFile = files[`sectionImage[${index}]`]?.[0];
 
       sectionArray.push({
@@ -62,7 +66,7 @@ exports.createBlog = async (req, res) => {
           url: imageFile
             ? `https://Backend.abwabdigital.com/uploads/blogs/${imageFile.filename}`
             : "",
-          altText: alt,
+          altText: altParsed,
         },
       });
     }
@@ -91,7 +95,7 @@ exports.createBlog = async (req, res) => {
     // ✅ Parse Categories
     const categoriesArray = categories ? categories.split(",") : [];
 
-    // ✅ Parse JSON
+    // ✅ Parse JSON fields
     const parseJSON = (data, defaultValue) => {
       try {
         return data ? JSON.parse(data) : defaultValue;
@@ -145,7 +149,6 @@ exports.createBlog = async (req, res) => {
     );
   }
 };
-
 
 
 
