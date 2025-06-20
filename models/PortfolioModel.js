@@ -1,4 +1,9 @@
 const mongoose = require("mongoose");
+// Reusable localized string field
+const localizedString = {
+  ar: { type: String, required: true },
+  en: { type: String, required: true },
+};
 // SEO Fields
 const seoSchema = new mongoose.Schema({
   language: { type: String, enum: ["en", "ar"], required: true },
@@ -11,9 +16,9 @@ const seoSchema = new mongoose.Schema({
 
 // Portfolio Schema
 const portfolioSchema = new mongoose.Schema({
-  projectName: { type: String, required: true, trim: true },
-  name: { type: String, required: true, trim: true },
-  description: { type: String, required: true, trim: true },
+  projectName: localizedString,
+  name: localizedString,
+  description: localizedString,
 
   // SEO Fields
   seo: [seoSchema],
@@ -23,8 +28,8 @@ const portfolioSchema = new mongoose.Schema({
 
   // Hero Section 📌 Added hero details
   hero: {
-    title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
+    title: localizedString,
+    description: localizedString,
     downloads: { type: Number, default: 0 }, // App/Software Downloads
     platforms: [{ type: String, trim: true }], // Supported platforms (e.g., iOS, Android, Web)
     tech: [
@@ -82,8 +87,8 @@ const portfolioSchema = new mongoose.Schema({
 
   // 📌 Added Response Section
   responsive: {
-    title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
+    title: localizedString,
+    description: localizedString,
     image: { type: String, required: true }, // URL to the response image
   },
 

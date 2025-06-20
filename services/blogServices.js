@@ -152,73 +152,107 @@ exports.createBlog = async (req, res) => {
 
 
 
-// Update a blog
+// Update a blog with multilingual support
 exports.updateBlog = async (req, res) => {
   try {
     const {
-      title,
-      description,
-      content,
+      titleAr,
+      titleEn,
+      descriptionAr,
+      descriptionEn,
+      contentAr,
+      contentEn,
       categories,
       author,
       seo,
+      similarArticles,
       altText,
     } = req.body;
 
+    const files = req.files || {};
     const categoriesArray = categories ? categories.split(",") : [];
+    const parseJSON = (data, defaultValue) => {
+      try {
+        return data ? JSON.parse(data) : defaultValue;
+      } catch (e) {
+        console.error("❌ JSON parse error:", e.message);
+        return defaultValue;
+      }
+    };
 
-    // ✅ تحليل الـ SEO
-    const seoArray = seo ? JSON.parse(seo) : [];
+    const seoArray = parseJSON(seo, []);
+    const similarArticlesArray = parseJSON(similarArticles, []);
 
-    // ✅ معالجة الصورة الرئيسية
-    const mainImage = req.files?.image?.[0];
-    const blogImage = mainImage
+    const mainImageFile = files.image?.[0];
+    const blogImage = mainImageFile
       ? {
-          url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImage.filename}`,
-          altText: altText || "Blog Image",
+          url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
+          altText: parseJSON(altText, { ar: "", en: "" })
         }
-      : undefined; // لتفادي حذفها إذا لم تُرسل
+      : undefined;
 
-    // ✅ تجميع التاجات من tagname[n] + tagIcons[n]
-    const tagnames = Array.isArray(req.body.tagname) ? req.body.tagname : [req.body.tagname];
-    const tagIcons = req.files?.tagIcons || [];
+    // ✅ Handle Sections
+    const sectionArray = [];
+    const sectionTitles = Object.entries(req.body).filter(([key]) =>
+      key.startsWith("section[") && key.endsWith("]titleAr")
+    );
 
-    const tagsArray = tagnames.map((name, i) => ({
-      name,
-      icon: tagIcons[i]
-        ? `https://Backend.abwabdigital.com/uploads/tags/${tagIcons[i].filename}`
-        : "",
-    }));
+    for (const [key, value] of sectionTitles) {
+      const index = key.match(/\[(\d+)\]/)[1];
+      const title = { ar: value, en: req.body[`section[${index}]titleEn`] || "" };
+      const description = {
+        ar: req.body[`section[${index}]descriptionAr`] || "",
+        en: req.body[`section[${index}]descriptionEn`] || "",
+      };
+      const alt = parseJSON(req.body[`section[${index}]alt`], { ar: "", en: "" });
+      const imageFile = files[`sectionImage[${index}]`]?.[0];
 
-    // ✅ تجميع السكاشن من section[n]title/desc/alt + الصور
-    const sectionTitles = Array.isArray(req.body["sectionTitle"]) ? req.body["sectionTitle"] : [req.body["sectionTitle"]];
-    const sectionDescs = Array.isArray(req.body["sectionDesc"]) ? req.body["sectionDesc"] : [req.body["sectionDesc"]];
-    const sectionAlts = Array.isArray(req.body["sectionAlt"]) ? req.body["sectionAlt"] : [req.body["sectionAlt"]];
-    const sectionImages = req.files?.sectionImages || [];
+      sectionArray.push({
+        title,
+        description,
+        image: {
+          url: imageFile
+            ? `https://Backend.abwabdigital.com/uploads/blogs/${imageFile.filename}`
+            : "",
+          altText: alt,
+        },
+      });
+    }
 
-    const sectionArray = sectionTitles.map((title, i) => ({
-      title,
-      description: sectionDescs[i] || "",
-      image: {
-        url: sectionImages[i]
-          ? `https://Backend.abwabdigital.com/uploads/blogs/${sectionImages[i].filename}`
-          : "",
-        altText: sectionAlts[i] || "Section Image",
-      },
-    }));
+    // ✅ Handle Tags
+    const tagArray = [];
+    if (req.body.tagnameAr && req.body.tagnameEn) {
+      const tagnameAr = Array.isArray(req.body.tagnameAr) ? req.body.tagnameAr : [req.body.tagnameAr];
+      const tagnameEn = Array.isArray(req.body.tagnameEn) ? req.body.tagnameEn : [req.body.tagnameEn];
 
-    // ✅ تحديث البيانات
+      tagnameAr.forEach((nameAr, index) => {
+        const iconFile = files[`tagIcon[${index}]`]?.[0];
+
+        tagArray.push({
+          name: {
+            ar: nameAr,
+            en: tagnameEn[index] || "",
+          },
+          icon: iconFile
+            ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
+            : "",
+        });
+      });
+    }
+
+    // ✅ Update Blog
     const updatedBlog = await Blog.findByIdAndUpdate(
       req.params.id,
       {
-        ...(title && { title }),
-        ...(description && { description }),
-        ...(content && { content }),
+        ...(titleAr && titleEn && { title: { ar: titleAr, en: titleEn } }),
+        ...(descriptionAr && descriptionEn && { description: { ar: descriptionAr, en: descriptionEn } }),
+        ...(contentAr && contentEn && { content: { ar: contentAr, en: contentEn } }),
         ...(categoriesArray && { categories: categoriesArray }),
         ...(author && { author }),
-        ...(tagsArray && { tags: tagsArray }),
-        ...(seoArray && { seo: seoArray }),
-        ...(sectionArray && { section: sectionArray }),
+        ...(tagArray.length && { tags: tagArray }),
+        ...(seoArray.length && { seo: seoArray }),
+        ...(sectionArray.length && { section: sectionArray }),
+        ...(similarArticlesArray.length && { similarArticles: similarArticlesArray }),
         ...(blogImage && { image: blogImage }),
       },
       { new: true }
@@ -233,10 +267,11 @@ exports.updateBlog = async (req, res) => {
 
     return res.status(200).json(formatSuccessResponse(updatedBlog, "Blog updated successfully"));
   } catch (error) {
-    console.error(error);
+    console.error("Error updating blog:", error);
     return res.status(500).json(formatErrorResponse("Failed to update blog", error.message));
   }
 };
+
 
 // Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
