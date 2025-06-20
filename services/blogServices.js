@@ -276,44 +276,47 @@ exports.updateBlog = async (req, res) => {
 // Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
   try {
-    // Extract requested language from query string (default: "en")
-    const language = req.query.language || "en";
+    const language = req.query.language === "ar" ? "ar" : "en";
 
-    // Fetch blogs with the required fields and populate similarArticles
     const blogs = await Blog.find({}, "image section title description content author createdAt categories seo")
       .populate("similarArticles", "title image");
 
-    // Format blogs to ensure section consistency and process SEO
     const formattedBlogs = blogs.map((blog) => {
       const blogObj = blog.toObject();
-      
-      // Ensure section is always an array
+
+      blogObj.title = blogObj.title?.[language] || "";
+      blogObj.description = blogObj.description?.[language] || "";
+      blogObj.content = blogObj.content?.[language] || "";
+
       blogObj.section = Array.isArray(blogObj.section)
         ? blogObj.section.map(sec => ({
-            title: sec.title || "",
-            description: sec.description || "",
-            image: sec.image || { url: "", altText: "No Image" }
+            title: sec.title?.[language] || "",
+            description: sec.description?.[language] || "",
+            image: {
+              url: sec.image?.url || "",
+              altText: sec.image?.altText?.[language] || "No Image"
+            }
           }))
         : [];
-      
-      // Process SEO for each blog: if an SEO array exists, pick the entry for the requested language (fallback to the first)
-      if (Array.isArray(blogObj.seo) && blogObj.seo.length > 0) {
-        blogObj.seo = blogObj.seo.find(seo => seo.language === language) || blogObj.seo[0];
-      } else {
-        blogObj.seo = {};
-      }
-      
-      // Process similarArticles if needed
-      blogObj.similarArticles = blogObj.similarArticles.map(article => ({
-        title: article.title,
+
+      blogObj.image = {
+        url: blogObj.image?.url || "",
+        altText: blogObj.image?.altText?.[language] || "No Image"
+      };
+
+      blogObj.seo = Array.isArray(blogObj.seo)
+        ? blogObj.seo.find(seo => seo.language === language) || {}
+        : {};
+
+      blogObj.similarArticles = blogObj.similarArticles?.map(article => ({
+        title: article.title?.[language] || "",
         url: article.url || "#",
         image: article.image || { url: "", altText: "No Image" }
-      }));
+      })) || [];
 
       return blogObj;
     });
 
-    // Global SEO for the entire blogs page
     const globalSeo = {
       language,
       metaTitle: language === "en" ? "Our Blogs" : "مدوناتنا",
@@ -336,61 +339,61 @@ exports.getAllBlogs = async (req, res) => {
 // Get blog by ID with full section details and image handling
 exports.getBlogById = async (req, res) => {
   try {
-    const language = req.query.language || "en";
-    const similarLimit = parseInt(req.query.limit) || 5; // ← تحديد عدد المقالات المشابهة، افتراضيًا 5
+    const language = req.query.language === "ar" ? "ar" : "en";
+    const similarLimit = parseInt(req.query.limit) || 5;
 
-    // 1. Get the main blog
     const blog = await Blog.findById(req.params.id).lean();
 
     if (!blog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    // 2. Prepare section
     const sectionArray = Array.isArray(blog.section)
       ? blog.section.map(sec => ({
-          title: sec.title || "",
-          description: sec.description || "",
-          image: sec.image || { url: "", altText: "No Image" }
+          title: sec.title?.[language] || "",
+          description: sec.description?.[language] || "",
+          image: {
+            url: sec.image?.url || "",
+            altText: sec.image?.altText?.[language] || "No Image"
+          }
         }))
       : [];
 
-    // 3. SEO data
-    let seoData = {};
-    if (Array.isArray(blog.seo) && blog.seo.length > 0) {
-      seoData = blog.seo.find(seo => seo.language === language) || blog.seo[0];
-    }
+    const seoData = Array.isArray(blog.seo)
+      ? blog.seo.find(seo => seo.language === language) || {}
+      : {};
 
-    // 4. Get similar articles
     const similarArticles = await Blog.find({
       _id: { $ne: blog._id },
       categories: { $in: blog.categories },
     })
-      .limit(similarLimit) // ← limit مرن
+      .limit(similarLimit)
       .select("title image")
       .lean();
 
-    // 5. Format response
     const formattedBlog = {
-      title: blog.title || "",
-      description: blog.description || "",
-      section: sectionArray,
-      image: blog.image || { url: "", altText: "No Image" },
       _id: blog._id,
-      content: blog.content || [],
+      id: blog._id,
+      title: blog.title?.[language] || "",
+      description: blog.description?.[language] || "",
+      content: blog.content?.[language] || "",
+      section: sectionArray,
       categories: blog.categories || [],
       author: blog.author || "Unknown",
+      image: {
+        url: blog.image?.url || "",
+        altText: blog.image?.altText?.[language] || "No Image"
+      },
       publishedDate: blog.publishedAt || blog.createdAt,
+      createdAt: blog.createdAt,
+      updatedAt: blog.updatedAt,
       seo: seoData,
       similarArticles: similarArticles.map(article => ({
         id: article._id,
-        title: article.title,
+        title: article.title?.[language] || "",
         url: `https://Backend.abwabdigital.com/blog/${article._id}`,
         image: article.image || { url: "", altText: "No Image" }
       })),
-      createdAt: blog.createdAt,
-      updatedAt: blog.updatedAt,
-      id: blog._id
     };
 
     return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
