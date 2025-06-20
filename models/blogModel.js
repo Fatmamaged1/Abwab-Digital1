@@ -1,65 +1,71 @@
-const { required } = require("joi");
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 
+// Reusable localized string field
+const localizedString = {
+  ar: { type: String, required: true },
+  en: { type: String, required: true },
+};
+
 // SEO Schema
 const seoSchema = new mongoose.Schema({
-  language: { type: String, enum: ["en", "ar"], required: true },
-  metaTitle: { type: String, required: true },
-  metaDescription: { type: String, required: true },
-  keywords: { type: String, required: true },
+  metaTitle: localizedString,
+  metaDescription: localizedString,
+  keywords: localizedString,
   canonicalTag: { type: String },
   structuredData: { type: mongoose.Schema.Types.Mixed },
 });
 
 // Tag Schema
 const tagSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  icon: { type: String }, // Optional icon for tags
+  name: localizedString,
+  icon: { type: String },
 });
 
 // Blog Schema
-const blogSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    slug: { type: String, unique: true, lowercase: true },
-    section: [{
-      title: { type: String, required: true },
-      description: { type: String, required: true },
+const blogSchema = new mongoose.Schema({
+  title: localizedString,
+  description: localizedString,
+  slug: { type: String, unique: true, lowercase: true },
+  section: [
+    {
+      title: localizedString,
+      description: localizedString,
       image: {
-        url: { type: String, required: false },
-        altText: { type: String, default: "Section Image" },
+        url: { type: String },
+        altText: localizedString,
       },
-    }],
-    content: { type: String, required: true },
-    categories: [
-      { type: String, enum: ["Digital Marketing Services", "Web & App Development", "Other"] },
-    ],
-    author: { type: String, required: true },
-    tags: [tagSchema], // Added tags
-    publishedDate: { type: Date, default: Date.now },
-    image: {
-      url: { type: String, required: true },
-      altText: { type: String, default: "Blog Image" },
     },
-    seo: [seoSchema], // Ensuring an array of SEO objects
-    similarArticles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" ,
-      required:false
-
-    }],
+  ],
+  content: localizedString,
+  categories: [
+    {
+      type: String,
+      enum: [
+        "Digital Marketing Services",
+        "Web & App Development",
+        "Other",
+      ],
+    },
+  ],
+  author: { type: String, required: true },
+  tags: [tagSchema],
+  publishedDate: { type: Date, default: Date.now },
+  image: {
+    url: { type: String, required: true },
+    altText: localizedString,
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
-);
+  seo: [seoSchema],
+  similarArticles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" }],
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+});
 
-// Middleware: Automatically generate a slug from the title before saving
 blogSchema.pre("save", function (next) {
   if (this.isModified("title")) {
-    this.slug = slugify(this.title, { lower: true, strict: true });
+    this.slug = slugify(this.title.en, { lower: true, strict: true });
   }
   next();
 });

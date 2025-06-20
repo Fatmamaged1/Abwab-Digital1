@@ -9,12 +9,18 @@ const { setCache, getCache, deleteCache } = require("../utils/cache");
 const BLOGS_ALL_KEY = "allBlogs";
 const BLOG_SINGLE_KEY = (id) => `blog:${id}`;
 
+
+const slugify = require("slugify");
+
 exports.createBlog = async (req, res) => {
   try {
     const {
-      title,
-      description,
-      content,
+      titleAr,
+      titleEn,
+      descriptionAr,
+      descriptionEn,
+      contentAr,
+      contentEn,
       categories,
       author,
       seo,
@@ -24,10 +30,7 @@ exports.createBlog = async (req, res) => {
 
     const files = req.files || {};
 
-    // Debug: Log the incoming body to see if tags are coming through
-    console.log('Request Body:', req.body);  // Add this line to see the request body
-
-    // ✅ Handle Main Blog Image (Cover Image)
+    // ✅ Handle Main Blog Image
     const mainImageFile = files.image?.[0];
     const blogImage = mainImageFile
       ? {
@@ -36,16 +39,19 @@ exports.createBlog = async (req, res) => {
         }
       : { url: "", altText: "No Image Provided" };
 
-    // ✅ Handle Sections (Same as before)
+    // ✅ Handle Sections
     const sectionArray = [];
     const sectionTitles = Object.entries(req.body).filter(([key]) =>
-      key.startsWith("section[") && key.endsWith("]title")
+      key.startsWith("section[") && key.endsWith("]titleAr")
     );
 
     for (const [key, value] of sectionTitles) {
       const index = key.match(/\[(\d+)\]/)[1];
-      const title = value;
-      const description = req.body[`section[${index}]description`] || "";
+      const title = { ar: value, en: req.body[`section[${index}]titleEn`] || "" };
+      const description = {
+        ar: req.body[`section[${index}]descriptionAr`] || "",
+        en: req.body[`section[${index}]descriptionEn`] || "",
+      };
       const alt = req.body[`section[${index}]alt`] || "Section Image";
       const imageFile = files[`sectionImage[${index}]`]?.[0];
 
@@ -61,17 +67,20 @@ exports.createBlog = async (req, res) => {
       });
     }
 
-    // ✅ Handle Tags (Handle tagname[] correctly)
+    // ✅ Handle Tags
     const tagArray = [];
-    if (req.body.tagname) {
-      // Ensure that tagname is an array
-      req.body.tagname.forEach((name, index) => {
+    if (req.body.tagnameAr && req.body.tagnameEn) {
+      const tagnameAr = Array.isArray(req.body.tagnameAr) ? req.body.tagnameAr : [req.body.tagnameAr];
+      const tagnameEn = Array.isArray(req.body.tagnameEn) ? req.body.tagnameEn : [req.body.tagnameEn];
+
+      tagnameAr.forEach((nameAr, index) => {
         const iconFile = files[`tagIcon[${index}]`]?.[0];
 
-        console.log(`Tag ${index} - Name: ${name}, Icon: ${iconFile ? iconFile.filename : 'No Icon'}`);  // Debugging tag names and icon filenames
-
         tagArray.push({
-          name,
+          name: {
+            ar: nameAr,
+            en: tagnameEn[index] || "",
+          },
           icon: iconFile
             ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
             : "",
@@ -79,13 +88,10 @@ exports.createBlog = async (req, res) => {
       });
     }
 
-    // Debug: Check if the tags were processed correctly
-    console.log('Processed Tags:', tagArray);
-
     // ✅ Parse Categories
     const categoriesArray = categories ? categories.split(",") : [];
 
-    // ✅ Parse SEO and Similar Articles JSON (Handle errors gracefully)
+    // ✅ Parse JSON
     const parseJSON = (data, defaultValue) => {
       try {
         return data ? JSON.parse(data) : defaultValue;
@@ -98,33 +104,30 @@ exports.createBlog = async (req, res) => {
     const seoArray = parseJSON(seo, []);
     const similarArticlesArray = parseJSON(similarArticles, []);
 
-    // ✅ Create New Blog
+    // ✅ Create Blog Document
     const newBlog = new Blog({
-      title,
-      description,
-      content,
+      title: { ar: titleAr, en: titleEn },
+      description: { ar: descriptionAr, en: descriptionEn },
+      content: { ar: contentAr, en: contentEn },
       author,
       categories: categoriesArray,
       section: sectionArray,
-      tags: tagArray,  // This now includes tags as objects with name and icon
+      tags: tagArray,
       seo: seoArray,
       similarArticles: similarArticlesArray,
       image: blogImage,
+      slug: slugify(titleEn || titleAr, { lower: true, strict: true }),
+      publishedDate: new Date(),
     });
 
-    // Save Blog to Database
     const savedBlog = await newBlog.save();
-
-    // Optional: Clear Cache if needed (if using caching)
     await deleteCache(BLOGS_ALL_KEY);
 
-    // Return Success Response
-    return res
-      .status(201)
-      .json(formatSuccessResponse(savedBlog, "Blog created successfully"));
-
+    return res.status(201).json(
+      formatSuccessResponse(savedBlog, "Blog created successfully")
+    );
   } catch (error) {
-    console.error('Error creating blog:', error);
+    console.error("Error creating blog:", error);
 
     if (error.code === 11000) {
       const duplicatedField = Object.keys(error.keyValue)[0];
@@ -137,12 +140,11 @@ exports.createBlog = async (req, res) => {
       });
     }
 
-    return res
-      .status(500)
-      .json(formatErrorResponse("Failed to create blog", error.message));
+    return res.status(500).json(
+      formatErrorResponse("Failed to create blog", error.message)
+    );
   }
 };
-
 
 
 
