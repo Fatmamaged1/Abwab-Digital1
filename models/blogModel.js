@@ -9,9 +9,10 @@ const localizedString = {
 
 // SEO Schema
 const seoSchema = new mongoose.Schema({
-  metaTitle: localizedString,
-  metaDescription: localizedString,
-  keywords: localizedString,
+  language: { type: String, enum: ['en', 'ar'], required: true },
+  metaTitle: { type: String, required: true },
+  metaDescription: { type: String, required: true },
+  keywords: { type: String, required: true },
   canonicalTag: { type: String },
   structuredData: { type: mongoose.Schema.Types.Mixed },
 });
