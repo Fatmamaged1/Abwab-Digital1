@@ -15,9 +15,12 @@ exports.createPortfolioItem = async (req, res) => {
       console.log("Received Files:", req.files);
   
       const {
-        name,
-        description,
-        projectName,
+        nameAr,
+        nameEn,
+        descriptionAr,
+        descriptionEn,
+        projectNameAr,
+        projectNameEn,
         category,
         client,
         platform,
@@ -32,7 +35,7 @@ exports.createPortfolioItem = async (req, res) => {
       console.log("Received Body:", req.body);
       console.log("Received Files:", req.files);
   
-      if (!name || !description) {
+      if (!nameAr || !nameEn || !descriptionAr || !descriptionEn ) {
         return res.status(400).json(formatErrorResponse("Name and description are required"));
       }
   
@@ -57,10 +60,10 @@ exports.createPortfolioItem = async (req, res) => {
       // Ensure each SEO entry has required fields.
       parsedSeo = parsedSeo.map(entry => ({
         language: entry.language ? entry.language.trim() : "en",
-        metaTitle: entry.metaTitle ? entry.metaTitle.trim() : (name || "Default Meta Title"),
+        metaTitle: entry.metaTitle ? entry.metaTitle.trim() : (nameAr || "Default Meta Title"),
         metaDescription: entry.metaDescription
           ? entry.metaDescription.trim()
-          : (description ? description.substring(0, 160) : "Default SEO description"),
+          : (descriptionAr ? descriptionAr.substring(0, 160) : "Default SEO description"),
         keywords: entry.keywords ? entry.keywords.trim() : "default,service,seo",
         canonicalTag: entry.canonicalTag ? entry.canonicalTag.trim() : "",
         structuredData: entry.structuredData || {}
@@ -86,12 +89,12 @@ exports.createPortfolioItem = async (req, res) => {
       // Process content fields
       const content = {
         en: {
-          title: req.body.content?.en?.title || name || "Untitled",
-          description: req.body.content?.en?.description || description || "No description available"
+          title: req.body.content?.en?.title || nameEn || "Untitled",
+          description: req.body.content?.en?.description || descriptionEn || "No description available"
         },
         ar: {
-          title: req.body.content?.ar?.title || req.body.nameAr || name || "بدون عنوان",
-          description: req.body.content?.ar?.description || req.body.descriptionAr || description || "لا يوجد وصف"
+          title: req.body.content?.ar?.title || req.body.nameAr || nameAr || "بدون عنوان",
+          description: req.body.content?.ar?.description || req.body.descriptionAr || descriptionAr || "لا يوجد وصف"
         }
       };
   
@@ -152,9 +155,12 @@ exports.createPortfolioItem = async (req, res) => {
   
       // Create new Portfolio item with SEO data from parsedSeo
       const newPortfolioItem = new Portfolio({
-        name,
-        description,
-        projectName,
+        nameAr,
+        nameEn,
+        descriptionAr,
+        descriptionEn,
+        projectNameAr,
+        projectNameEn,
         category,
         client,
         platform,
@@ -189,12 +195,12 @@ exports.createPortfolioItem = async (req, res) => {
 // Update a portfolio item with SEO updates
 exports.updatePortfolioItem = async (req, res) => {
     try {
-        const { name, description, projectName, category, client, platform, region, technologies, content, hero, regionResponse } = req.body;
+        const { nameAr, nameEn, descriptionAr, descriptionEn, projectNameAr, projectNameEn, category, client, platform, region, technologies, content, hero, regionResponse } = req.body;
 
         // Update SEO data
         const seo = {
-            metaTitle: req.body.metaTitle || name,
-            metaDescription: req.body.metaDescription || description,
+            metaTitle: req.body.metaTitle || nameAr || "Default meta title for the portfolio item.",
+            metaDescription: req.body.metaDescription || descriptionAr  || "Default meta description for the portfolio item.",
             canonical: req.body.canonical || "",
         };
 
@@ -204,9 +210,12 @@ exports.updatePortfolioItem = async (req, res) => {
         const updatedItem = await Portfolio.findByIdAndUpdate(
             req.params.id,
             {
-                name,
-                description,
-                projectName,
+                nameAr,
+                nameEn,
+                descriptionAr,
+                descriptionEn,
+                projectNameAr,
+                projectNameEn,
                 category,
                 client,
                 platform,
@@ -216,12 +225,12 @@ exports.updatePortfolioItem = async (req, res) => {
                 regionResponse,
                 content: {
                     en: {
-                        title: name,
-                        description,
+                        title: nameEn,
+                        description: descriptionEn,
                     },
                     ar: {
-                        title: req.body.nameAr || name,
-                        description: req.body.descriptionAr || description,
+                        title: nameAr,
+                        description: descriptionAr,
                     },
                 },
                 seo,
