@@ -309,61 +309,71 @@ exports.getPortfolioItemById = async (req, res) => {
   try {
     const language = req.query.language || "en";
     const item = await Portfolio.findById(req.params.id).populate("hero category");
+
     if (!item) {
       return res.status(404).json(formatErrorResponse("Portfolio item not found"));
     }
 
+    const toLang = (field) => {
+      if (typeof field === 'object' && field !== null && field[language]) return field[language];
+      return field; // fallback
+    };
+
     const itemObj = item.toObject();
 
-    // نحافظ على الحقول كما هي (متعددة اللغات)
-    // مثال: name = { en: "name", ar: "اسم" }
+    // Extract main fields
+    itemObj.name = toLang(itemObj.name);
+    itemObj.description = toLang(itemObj.description);
+    itemObj.projectName = toLang(itemObj.projectName);
 
-    // تحقق من hero و responsive
+    // Hero fields
     if (itemObj.hero) {
-      itemObj.hero.title = itemObj.hero.title || { en: "", ar: "" };
-      itemObj.hero.description = itemObj.hero.description || { en: "", ar: "" };
+      itemObj.hero.title = toLang(itemObj.hero.title);
+      itemObj.hero.description = toLang(itemObj.hero.description);
     }
 
+    // Responsive fields
     if (itemObj.responsive) {
-      itemObj.responsive.title = itemObj.responsive.title || { en: "", ar: "" };
-      itemObj.responsive.description = itemObj.responsive.description || { en: "", ar: "" };
+      itemObj.responsive.title = toLang(itemObj.responsive.title);
+      itemObj.responsive.description = toLang(itemObj.responsive.description);
     }
 
-    // تحقق من category.name إذا كانت موجودة
-    if (itemObj.category && typeof itemObj.category.name === "object") {
-      itemObj.category.name = itemObj.category.name;
+    // Category name
+    if (itemObj.category) {
+      itemObj.category.name = toLang(itemObj.category.name);
     }
 
     // SEO
-    if (Array.isArray(itemObj.seo) && itemObj.seo.length > 0) {
-      const seoData = itemObj.seo.find(seo => seo.language === language) || itemObj.seo[0];
-      itemObj.seo = seoData;
-    } else {
-      itemObj.seo = {};
+    if (Array.isArray(itemObj.seo)) {
+      const seo = itemObj.seo.find((s) => s.language === language) || itemObj.seo[0];
+      itemObj.seo = seo || {};
     }
 
-    // مشاريع ذات صلة بنفس التصنيف
+    // Get related projects
     const relatedProjects = await Portfolio.find({
       category: item.category,
       _id: { $ne: item._id }
     }).select("name description images category")
+      .populate("category")
       .sort({ createdAt: -1 })
       .limit(4);
 
-    // نحافظ على الاسم والوصف متعدد اللغات في المشاريع ذات الصلة
     const processedRelated = relatedProjects.map(project => {
       const obj = project.toObject();
-      obj.name = obj.name || { en: "", ar: "" };
-      obj.description = obj.description || { en: "", ar: "" };
-      return obj;
+      return {
+        ...obj,
+        name: toLang(obj.name),
+        description: toLang(obj.description),
+        category: obj.category ? {
+          ...obj.category,
+          name: toLang(obj.category.name)
+        } : undefined
+      };
     });
 
     return res.status(200).json(
       formatSuccessResponse(
-        {
-          ...itemObj,
-          relatedProjects: processedRelated
-        },
+        { ...itemObj, relatedProjects: processedRelated },
         "Portfolio item retrieved successfully"
       )
     );
