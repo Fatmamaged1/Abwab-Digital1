@@ -250,12 +250,14 @@ exports.getAllPortfolioItems = async (req, res) => {
   try {
     const language = req.query.language === "ar" ? "ar" : "en"; // default is "en"
 
-    const items = await Portfolio.find().select("projectName hero responsive relatedProjects images category seo");
+    const items = await Portfolio.find()
+      .select("projectName hero responsive relatedProjects images category seo")
+      .populate("relatedProjects", "projectName slug"); // ✅ populate relatedProjects
 
     const processedItems = items.map(item => {
       const obj = item.toObject();
 
-      // استخرج الترجمة فقط لكل الحقول متعددة اللغات
+      // ترجمة الحقول
       obj.projectName = obj.projectName?.[language] || "";
       obj.hero = {
         ...obj.hero,
@@ -277,9 +279,9 @@ exports.getAllPortfolioItems = async (req, res) => {
       // relatedProjects
       if (Array.isArray(obj.relatedProjects)) {
         obj.relatedProjects = obj.relatedProjects.map(p => ({
-          projectName: p?.projectName?.[language] || "",
-          slug: p?.slug || "",
           id: p?._id || null,
+          slug: p?.slug || "",
+          projectName: p?.projectName?.[language] || "",
         }));
       }
 
@@ -301,6 +303,7 @@ exports.getAllPortfolioItems = async (req, res) => {
     });
   }
 };
+
 
   
   
