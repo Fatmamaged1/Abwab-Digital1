@@ -248,65 +248,60 @@ exports.updatePortfolioItem = async (req, res) => {
 
 exports.getAllPortfolioItems = async (req, res) => {
   try {
-    const language = req.query.language === "ar" ? "ar" : "en"; // default is "en"
-
+    const language = req.query.language === "ar" ? "ar" : "en";
     const items = await Portfolio.find()
-      .select("projectName hero responsive relatedProjects images category seo")
-      .populate("relatedProjects", "projectName slug"); // ✅ populate relatedProjects
+      .populate("relatedProjects", "projectName slug")
+      .populate("category");
 
-    const processedItems = items.map(item => {
+    const formattedItems = items.map((item) => {
       const obj = item.toObject();
 
-      // ترجمة الحقول
-      obj.projectName = obj.projectName?.[language] || "";
-      obj.hero = {
-        ...obj.hero,
-        description: obj.hero?.description?.[language] || "",
-        title: obj.hero?.title?.[language] || "",
+      return {
+        ...obj,
+        name: obj.name?.[language] || "",
+        description: obj.description?.[language] || "",
+        projectName: obj.projectName?.[language] || "",
+        hero: {
+          ...obj.hero,
+          title: obj.hero?.title?.[language] || "",
+          description: obj.hero?.description?.[language] || "",
+        },
+        responsive: {
+          ...obj.responsive,
+          title: obj.responsive?.title?.[language] || "",
+          description: obj.responsive?.description?.[language] || "",
+        },
+        category: obj.category
+          ? {
+              ...obj.category,
+              name: obj.category?.name?.[language] || "",
+            }
+          : null,
+        seo: Array.isArray(obj.seo)
+          ? obj.seo.find((s) => s.language === language) || {}
+          : {},
+        relatedProjects: Array.isArray(obj.relatedProjects)
+          ? obj.relatedProjects.map((p) => ({
+              id: p?._id || null,
+              slug: p?.slug || "",
+              projectName: p?.projectName?.[language] || "",
+            }))
+          : [],
       };
-      obj.responsive = {
-        ...obj.responsive,
-        description: obj.responsive?.description?.[language] || "",
-        title: obj.responsive?.title?.[language] || "",
-      };
-
-      // SEO
-      if (Array.isArray(obj.seo)) {
-        const seoLang = obj.seo.find((s) => s.language === language);
-        obj.seo = seoLang || {};
-      }
-
-      // relatedProjects
-      if (Array.isArray(obj.relatedProjects)) {
-        obj.relatedProjects = obj.relatedProjects.map(p => ({
-          id: p?._id || null,
-          slug: p?.slug || "",
-          projectName: p?.projectName?.[language] || "",
-        }));
-      }
-
-      return obj;
     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Portfolio items retrieved successfully",
-      data: processedItems,
-    });
-
+    return res
+      .status(200)
+      .json(formatSuccessResponse(formattedItems, "Portfolio items retrieved"));
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to retrieve portfolio items",
-      data: error.message,
-    });
+    return res
+      .status(500)
+      .json(formatErrorResponse("Failed to retrieve portfolio items", error.message));
   }
 };
 
 
-  
-  
+
 
 exports.getPortfolioItemById = async (req, res) => {
   try {
