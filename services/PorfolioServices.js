@@ -57,6 +57,7 @@ exports.createPortfolioItem = async (req, res) => {
       seo
     } = req.body;
 
+
     const parsedSeo = parseJSON(seo, []);
 
     const hero = {
@@ -118,6 +119,7 @@ exports.createPortfolioItem = async (req, res) => {
         icon: `${BASE_URL}${file.filename}`
       }));
     }
+console.log(req.body);
 
     const newItem = new Portfolio({
       name: {
