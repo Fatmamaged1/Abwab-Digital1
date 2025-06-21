@@ -321,39 +321,40 @@ exports.getPortfolioItemById = async (req, res) => {
 
     const itemObj = item.toObject();
 
-    // Extract main fields
+    // Translate main fields
     itemObj.name = toLang(itemObj.name);
     itemObj.description = toLang(itemObj.description);
     itemObj.projectName = toLang(itemObj.projectName);
 
-    // Hero fields
+    // Translate hero
     if (itemObj.hero) {
       itemObj.hero.title = toLang(itemObj.hero.title);
       itemObj.hero.description = toLang(itemObj.hero.description);
     }
 
-    // Responsive fields
+    // Translate responsive
     if (itemObj.responsive) {
       itemObj.responsive.title = toLang(itemObj.responsive.title);
       itemObj.responsive.description = toLang(itemObj.responsive.description);
     }
 
-    // Category name
+    // Translate category name
     if (itemObj.category) {
       itemObj.category.name = toLang(itemObj.category.name);
     }
 
-    // SEO
+    // Handle SEO
     if (Array.isArray(itemObj.seo)) {
       const seo = itemObj.seo.find((s) => s.language === language) || itemObj.seo[0];
       itemObj.seo = seo || {};
     }
 
-    // Get related projects
+    // 🔁 Get related projects based on category ID
     const relatedProjects = await Portfolio.find({
-      category: item.category,
+      category: itemObj.category?._id,
       _id: { $ne: item._id }
-    }).select("name description images category")
+    })
+      .select("name description images category")
       .populate("category")
       .sort({ createdAt: -1 })
       .limit(4);
@@ -384,6 +385,7 @@ exports.getPortfolioItemById = async (req, res) => {
     );
   }
 };
+
 
 
   
