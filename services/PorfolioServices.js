@@ -3,7 +3,7 @@ const Portfolio = require("../models/PortfolioModel");
 const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
 const { setCache, getCache, deleteCache } = require("../utils/cache");
 const slugify = require("slugify");
-const ApiError = require("../utils/ApiError");
+
 const PORTFOLIO_ALL_KEY = "allPortfolioItems";
 const PORTFOLIO_SINGLE_KEY = (id) => `portfolioItem:${id}`;
 const BASE_URL = process.env.FILE_STORAGE_URL || "https://Backend.abwabdigital.com/uploads/portfolio/";
@@ -306,65 +306,66 @@ exports.getAllPortfolioItems = async (req, res) => {
   
 
 
-
-exports.getPortfolioItemById = async (req, res, next) => {
+exports.getPortfolioItemById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const language = req.query.lang || "en";
-
-    const item = await Portfolio.findById(id).populate("relatedProjects");
+    const language = req.query.language || "en";
+    const item = await Portfolio.findById(req.params.id).populate("hero category");
     if (!item) {
-      return next(new ApiError("Portfolio item not found", 404));
+      return res.status(404).json(formatErrorResponse("Portfolio item not found"));
     }
 
     const itemObj = item.toObject();
 
-    // دالة استخراج النص حسب اللغة
-    function extractLocalizedField(field, lang) {
-      if (!field) return "";
-      if (typeof field === "object" && field[lang]) return field[lang];
-      return typeof field === "string" ? field : "";
-    }
-
-    // استخراج الحقول متعددة اللغات
-    itemObj.projectName = extractLocalizedField(itemObj.projectName, language);
+    // استخراج الترجمة المناسبة للاسم والوصف
     itemObj.name = extractLocalizedField(itemObj.name, language);
     itemObj.description = extractLocalizedField(itemObj.description, language);
 
-    // hero
-    if (itemObj.hero) {
-      itemObj.hero.title = extractLocalizedField(itemObj.hero.title, language);
+    // استخراج ترجمة hero.description
+    if (itemObj.hero && itemObj.hero.description) {
       itemObj.hero.description = extractLocalizedField(itemObj.hero.description, language);
     }
 
-    // responsive
-    if (itemObj.responsive) {
-      itemObj.responsive.title = extractLocalizedField(itemObj.responsive.title, language);
-      itemObj.responsive.description = extractLocalizedField(itemObj.responsive.description, language);
+    // استخراج ترجمة category.name إذا كانت متعددة اللغات
+    if (itemObj.category && itemObj.category.name) {
+      itemObj.category.name = extractLocalizedField(itemObj.category.name, language);
     }
 
-    // relatedProjects
-    if (itemObj.relatedProjects && Array.isArray(itemObj.relatedProjects)) {
-      itemObj.relatedProjects = itemObj.relatedProjects.map((proj) => {
-        return {
-          _id: proj._id,
-          image: proj.image,
-          name: extractLocalizedField(proj.name, language),
-          description: extractLocalizedField(proj.description, language),
-        };
-      });
+    // SEO
+    if (Array.isArray(itemObj.seo) && itemObj.seo.length > 0) {
+      const seoData = itemObj.seo.find(seo => seo.language === language) || itemObj.seo[0];
+      itemObj.seo = seoData;
+    } else {
+      itemObj.seo = {};
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Portfolio item fetched successfully",
-      data: itemObj,
+    // مشاريع ذات صلة
+    const relatedProjects = await Portfolio.find({
+      category: item.category,
+      _id: { $ne: item._id }
+    }).select("name description images category")
+      .sort({ createdAt: -1 })
+      .limit(4);
+
+    const processedRelated = relatedProjects.map(project => {
+      const obj = project.toObject();
+      obj.name = extractLocalizedField(obj.name, language);
+      obj.description = extractLocalizedField(obj.description, language);
+      return obj;
     });
+
+    return res.status(200).json(
+      formatSuccessResponse(
+        { ...itemObj, relatedProjects: processedRelated },
+        "Portfolio item retrieved successfully"
+      )
+    );
   } catch (error) {
-    next(new ApiError("Failed to fetch portfolio item", 500, error));
+    console.error(error);
+    return res.status(500).json(
+      formatErrorResponse("Failed to retrieve portfolio item", error.message)
+    );
   }
 };
-
 
   
 
