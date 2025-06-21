@@ -246,59 +246,59 @@ exports.updatePortfolioItem = async (req, res) => {
 
 
 
-
 exports.getAllPortfolioItems = async (req, res) => {
   try {
-    const language = req.query.language || "en";
-    const items = await Portfolio.find().select("name description images category seo");
+    const language = req.query.language === "ar" ? "ar" : "en"; // default is "en"
+
+    const items = await Portfolio.find().select("projectName hero responsive relatedProjects images category seo");
 
     const processedItems = items.map(item => {
       const obj = item.toObject();
 
-      // استخراج الترجمة المناسبة للاسم والوصف
-      obj.name = extractLocalizedField(obj.name, language);
-      obj.description = extractLocalizedField(obj.description, language);
+      // استخرج الترجمة فقط لكل الحقول متعددة اللغات
+      obj.projectName = obj.projectName?.[language] || "";
+      obj.hero = {
+        ...obj.hero,
+        description: obj.hero?.description?.[language] || "",
+        title: obj.hero?.title?.[language] || "",
+      };
+      obj.responsive = {
+        ...obj.responsive,
+        description: obj.responsive?.description?.[language] || "",
+        title: obj.responsive?.title?.[language] || "",
+      };
 
-      // معالجة بيانات الـ SEO
-      if (Array.isArray(obj.seo) && obj.seo.length > 0) {
-        const seoData = obj.seo.find(seo => seo.language === language) || obj.seo[0];
-        obj.seo = seoData;
-      } else {
-        obj.seo = {
-          language,
-          metaTitle: "Default Meta Title",
-          metaDescription: "Default meta description.",
-          keywords: "default,portfolio",
-          canonicalTag: "",
-          structuredData: {}
-        };
+      // SEO
+      if (Array.isArray(obj.seo)) {
+        const seoLang = obj.seo.find((s) => s.language === language);
+        obj.seo = seoLang || {};
+      }
+
+      // relatedProjects
+      if (Array.isArray(obj.relatedProjects)) {
+        obj.relatedProjects = obj.relatedProjects.map(p => ({
+          projectName: p?.projectName?.[language] || "",
+          slug: p?.slug || "",
+          id: p?._id || null,
+        }));
       }
 
       return obj;
     });
 
-    const globalSeo = {
-      language,
-      metaTitle: language === "en" ? "Our Portfolio" : "محفظتنا",
-      metaDescription: language === "en"
-        ? "Discover our diverse portfolio projects."
-        : "اكتشف مشاريعنا المتنوعة.",
-      keywords: language === "en" ? "portfolio, projects, design" : "محفظة, مشاريع, تصميم",
-      canonicalTag: "",
-      structuredData: {}
-    };
+    return res.status(200).json({
+      success: true,
+      message: "Portfolio items retrieved successfully",
+      data: processedItems,
+    });
 
-    return res.status(200).json(
-      formatSuccessResponse(
-        { globalSeo, portfolioItems: processedItems },
-        "Portfolio items retrieved successfully"
-      )
-    );
   } catch (error) {
     console.error(error);
-    return res.status(500).json(
-      formatErrorResponse("Failed to retrieve portfolio items", error.message)
-    );
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve portfolio items",
+      data: error.message,
+    });
   }
 };
 
