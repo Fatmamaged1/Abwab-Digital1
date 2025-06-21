@@ -28,7 +28,12 @@ const parseLocalizedField = (value, fallback = { ar: "", en: "" }) => {
     return fallback;
   }
 };
-
+const extractLocalizedField = (body, prefix) => {
+  return {
+    en: body[`${prefix}.en`] || '',
+    ar: body[`${prefix}.ar`] || ''
+  };
+};
 // Create a portfolio item
 exports.createPortfolioItem = async (req, res) => {
   try {
