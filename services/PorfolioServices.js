@@ -252,44 +252,49 @@ exports.getAllPortfolioItems = async (req, res) => {
 
     const items = await Portfolio.find()
       .populate("relatedProjects", "projectName slug")
-      .populate("category"); // بدون select → يأخذ كل شيء
+      .populate("category");
 
     const formattedItems = items.map((item) => {
       const obj = item.toObject();
 
+      // Helper function to safely extract localized field
+      const getLocalized = (field) =>
+        typeof field === "object" && field !== null ? field[language] || "" : "";
+
       return {
         ...obj,
         id: obj._id,
-        name: obj.name?.[language] || "",
-        description: obj.description?.[language] || "",
-        projectName: obj.projectName?.[language] || "",
+        name: getLocalized(obj.name),
+        description: getLocalized(obj.description),
+        projectName: getLocalized(obj.projectName),
         hero: {
           ...obj.hero,
-          title: obj.hero?.title?.[language] || "",
-          description: obj.hero?.description?.[language] || "",
+          title: getLocalized(obj.hero?.title),
+          description: getLocalized(obj.hero?.description),
         },
         responsive: {
           ...obj.responsive,
-          title: obj.responsive?.title?.[language] || "",
-          description: obj.responsive?.description?.[language] || "",
+          title: getLocalized(obj.responsive?.title),
+          description: getLocalized(obj.responsive?.description),
         },
         category: obj.category
           ? {
               ...obj.category,
-              name: obj.category?.name?.[language] || "",
+              name: getLocalized(obj.category?.name),
             }
           : null,
         seo: Array.isArray(obj.seo)
           ? obj.seo.find((s) => s.language === language) || {}
+          : typeof obj.seo === "object" && obj.seo.language === language
+          ? obj.seo
           : {},
         relatedProjects: Array.isArray(obj.relatedProjects)
           ? obj.relatedProjects.map((p) => ({
               id: p?._id || null,
               slug: p?.slug || "",
-              projectName: p?.projectName?.[language] || "",
+              projectName: getLocalized(p?.projectName),
             }))
           : [],
-        // Ensure fields like images, screenshots, url, designScreens are passed
         images: obj.images || [],
         screenshots: obj.screenshots || [],
         url: obj.url || "",
@@ -306,6 +311,7 @@ exports.getAllPortfolioItems = async (req, res) => {
       .json(formatErrorResponse("Failed to retrieve portfolio items", error.message));
   }
 };
+
 
 
 
