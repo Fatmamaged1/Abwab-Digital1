@@ -277,12 +277,7 @@ exports.getAllPortfolioItems = async (req, res) => {
           title: getLocalized(obj.responsive?.title),
           description: getLocalized(obj.responsive?.description),
         },
-        category: obj.category
-          ? {
-              ...obj.category,
-              name: getLocalized(obj.category?.name),
-            }
-          : null,
+        category: obj.category && obj.category.name ? String(toLang(obj.category.name)) : undefined,
         seo: Array.isArray(obj.seo)
           ? obj.seo.find((s) => s.language === language) || {}
           : typeof obj.seo === "object" && obj.seo.language === language
