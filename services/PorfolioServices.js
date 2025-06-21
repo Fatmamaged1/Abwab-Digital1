@@ -364,10 +364,8 @@ exports.getPortfolioItemById = async (req, res) => {
         ...obj,
         name: toLang(obj.name),
         description: toLang(obj.description),
-        category: obj.category ? {
-          ...obj.category,
-          name: toLang(obj.category.name)
-        } : undefined
+        category: obj.category && obj.category.name ? String(toLang(obj.category.name)) : undefined,
+
       };
     });
 
