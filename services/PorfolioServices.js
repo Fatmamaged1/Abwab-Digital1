@@ -305,7 +305,6 @@ exports.getAllPortfolioItems = async (req, res) => {
   
   
 
-
 exports.getPortfolioItemById = async (req, res) => {
   try {
     const language = req.query.language || "en";
@@ -316,18 +315,23 @@ exports.getPortfolioItemById = async (req, res) => {
 
     const itemObj = item.toObject();
 
-    // استخراج الترجمة المناسبة للاسم والوصف
-    itemObj.name = extractLocalizedField(itemObj.name, language);
-    itemObj.description = extractLocalizedField(itemObj.description, language);
+    // نحافظ على الحقول كما هي (متعددة اللغات)
+    // مثال: name = { en: "name", ar: "اسم" }
 
-    // استخراج ترجمة hero.description
-    if (itemObj.hero && itemObj.hero.description) {
-      itemObj.hero.description = extractLocalizedField(itemObj.hero.description, language);
+    // تحقق من hero و responsive
+    if (itemObj.hero) {
+      itemObj.hero.title = itemObj.hero.title || { en: "", ar: "" };
+      itemObj.hero.description = itemObj.hero.description || { en: "", ar: "" };
     }
 
-    // استخراج ترجمة category.name إذا كانت متعددة اللغات
-    if (itemObj.category && itemObj.category.name) {
-      itemObj.category.name = extractLocalizedField(itemObj.category.name, language);
+    if (itemObj.responsive) {
+      itemObj.responsive.title = itemObj.responsive.title || { en: "", ar: "" };
+      itemObj.responsive.description = itemObj.responsive.description || { en: "", ar: "" };
+    }
+
+    // تحقق من category.name إذا كانت موجودة
+    if (itemObj.category && typeof itemObj.category.name === "object") {
+      itemObj.category.name = itemObj.category.name;
     }
 
     // SEO
@@ -338,7 +342,7 @@ exports.getPortfolioItemById = async (req, res) => {
       itemObj.seo = {};
     }
 
-    // مشاريع ذات صلة
+    // مشاريع ذات صلة بنفس التصنيف
     const relatedProjects = await Portfolio.find({
       category: item.category,
       _id: { $ne: item._id }
@@ -346,16 +350,20 @@ exports.getPortfolioItemById = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(4);
 
+    // نحافظ على الاسم والوصف متعدد اللغات في المشاريع ذات الصلة
     const processedRelated = relatedProjects.map(project => {
       const obj = project.toObject();
-      obj.name = extractLocalizedField(obj.name, language);
-      obj.description = extractLocalizedField(obj.description, language);
+      obj.name = obj.name || { en: "", ar: "" };
+      obj.description = obj.description || { en: "", ar: "" };
       return obj;
     });
 
     return res.status(200).json(
       formatSuccessResponse(
-        { ...itemObj, relatedProjects: processedRelated },
+        {
+          ...itemObj,
+          relatedProjects: processedRelated
+        },
         "Portfolio item retrieved successfully"
       )
     );
@@ -366,6 +374,7 @@ exports.getPortfolioItemById = async (req, res) => {
     );
   }
 };
+
 
   
 
