@@ -55,20 +55,26 @@ exports.createPortfolioItem = async (req, res) => {
     const parsedSeo = parseJSON(seo, []);
 
     const hero = {
-      title: parseLocalizedField(req.body.hero?.title || req.body["hero.title"]),
-      description: parseLocalizedField(req.body.hero?.description || req.body["hero.description"]),
-      region: req.body.hero?.region || req.body["hero.region"] || "",
-      downloads: Number(req.body.hero?.downloads || req.body["hero.downloads"] || 0),
-      platforms: parseJSON(req.body.hero?.platforms || req.body["hero.platforms"], []),
-      tech: []
+      title: extractLocalizedField(req.body, "hero.title"),
+      description: extractLocalizedField(req.body, "hero.description"),
+      region: req.body["hero.region"] || "",
+      downloads: Number(req.body["hero.downloads"] || 0),
+      platforms: parseJSON(req.body["hero.platforms"], []),
+      tech: req.files?.["hero.tech[0].icon"]
+        ? req.files["hero.tech[0].icon"].map(file => ({
+            icon: `${BASE_URL}${file.filename}`
+          }))
+        : []
     };
-
+    
     const responsive = {
-      title: parseLocalizedField(req.body["responsive.title"]),
-      description: parseLocalizedField(req.body["responsive.description"]),
-      image: req.body["responsive.image"] || (req.files?.["responsive.image"]?.[0]?.filename ? `${BASE_URL}${req.files["responsive.image"][0].filename}` : "")
+      title: extractLocalizedField(req.body, "responsive.title"),
+      description: extractLocalizedField(req.body, "responsive.description"),
+      image: req.body["responsive.image"] || (req.files?.["responsive.image"]?.[0]?.filename
+        ? `${BASE_URL}${req.files["responsive.image"][0].filename}`
+        : "")
     };
-
+    
     const content = {
       en: {
         title: nameEn || "Untitled",
