@@ -3,7 +3,7 @@ const Portfolio = require("../models/PortfolioModel");
 const { formatSuccessResponse, formatErrorResponse } = require("../utils/responseFormatter");
 const { setCache, getCache, deleteCache } = require("../utils/cache");
 const slugify = require("slugify");
-const ApiError = require("../utils/apiError");
+const ApiError = require("../utils/ApiError");
 const PORTFOLIO_ALL_KEY = "allPortfolioItems";
 const PORTFOLIO_SINGLE_KEY = (id) => `portfolioItem:${id}`;
 const BASE_URL = process.env.FILE_STORAGE_URL || "https://Backend.abwabdigital.com/uploads/portfolio/";
