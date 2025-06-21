@@ -351,7 +351,7 @@ exports.getPortfolioItemById = async (req, res) => {
 
     // Get related projects
     const relatedProjects = await Portfolio.find({
-      category: obj.category && obj.category.name ? String(toLang(obj.category.name)) : undefined,
+      category: item.category,
       _id: { $ne: item._id }
     }).select("name description images category")
     .populate("category") 
