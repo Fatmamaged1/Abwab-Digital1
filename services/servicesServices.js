@@ -1,24 +1,24 @@
 const upload = require("../middleware/upload"); // Import multer middleware
 const Service = require("../models/servicesModel"); // Import model
 const Portfolio = require("../models/PortfolioModel");
-const Testimonial = require("../models/testimonialModel");
+const Testimonial = require("../models/testimonialModel");// تأكد من أن المسار صحيح
 exports.createService = async (req, res) => {
   try {
     const {
-      description,         // should be JSON string with { en: "", ar: "" }
-      category,            // should be JSON string with { en: "", ar: "" }
-      importance,          // array of items [{ title: { en, ar }, description: { en, ar } }]
-      techUsedInService,   // array of items [{ title: { en, ar } }]
-      distingoshesUs,      // array of items [{ title: { en, ar }, description: { en, ar } }]
-      designPhase,         // object with { title: { en, ar }, description: { en, ar } }
-      seo                  // array of items [{ title: { en, ar }, description: { en, ar }, keywords }]
+      description,         // { en: "", ar: "" }
+      category,            // string
+      importance,          // [{ desc: { en, ar } }]
+      techUsedInService,   // [{ title: { en, ar }, desc: { en, ar } }]
+      distingoshesUs,      // [{ title: { en, ar }, description: { en, ar } }]
+      designPhase,         // { title: { en, ar }, desc: { en, ar }, satisfiedClientValues: { title: { en, ar } }, values: [{ title, desc }] }
+      seo                  // array of { language, metaTitle, metaDescription, keywords }
     } = req.body;
-console.log(req.body);
+
+    console.log("Body:", req.body);
     console.log("Uploaded Files:", req.files);
 
-    // Parse multilingual fields
+    // Parse fields
     const parsedDescription = JSON.parse(description || '{}');
-    const parsedCategory = JSON.parse(category || '{}');
     const parsedImportance = JSON.parse(importance || '[]');
     const parsedTechUsed = JSON.parse(techUsedInService || '[]');
     const parsedDistingoshes = JSON.parse(distingoshesUs || '[]');
@@ -41,7 +41,7 @@ console.log(req.body);
     // Base URL for images
     const baseUrl = "https://Backend.abwabdigital.com/uploads/";
 
-    // Service main image
+    // Main service image
     const imageUrl = req.files.image?.[0]?.filename
       ? baseUrl + req.files.image[0].filename
       : null;
@@ -72,19 +72,22 @@ console.log(req.body);
       parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
     }
 
-    // Create new service
+    // Create the new service
     const newService = new Service({
-      description: parsedDescription,  // { en: "", ar: "" }
-      category: parsedCategory,        // { en: "", ar: "" }
+      description: parsedDescription,         // { en, ar }
+      category,                               // string
       image: {
         url: imageUrl,
-        altText: "Service Image"
+        altText: {
+          en: "Service Image",
+          ar: "صورة الخدمة"
+        }
       },
-      importance: parsedImportance,             // array of items
-      techUsedInService: parsedTechUsed,        // array of items
-      distingoshesUs: parsedDistingoshes,       // array of items
-      designPhase: parsedDesignPhase,           // object
-      seo: parsedSeo                            // array of objects
+      importance: parsedImportance,            // array of { desc: { en, ar } }
+      techUsedInService: parsedTechUsed,       // array with icon
+      distingoshesUs: parsedDistingoshes,      // array with icon
+      designPhase: parsedDesignPhase,          // full object
+      seo: parsedSeo                           // array of SEO objects
     });
 
     await newService.save();
@@ -94,6 +97,7 @@ console.log(req.body);
       message: "Service created successfully",
       data: newService,
     });
+
   } catch (error) {
     console.error("Error creating service:", error);
     res.status(500).json({
