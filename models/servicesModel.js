@@ -10,33 +10,32 @@ const seoSchema = new mongoose.Schema({
 });
 
 const ServiceSchema = new mongoose.Schema({
- // title: { type: String, required: true },
-  description: { type: String, required: true },
-  category: {
-    type: String,
-    enum: [
-      "Mobile Application",
-      "Website",
-      "Graphic Design",
-      "Online Store",
-      "Corporate System",
-      "Motion Graphic",
-      "Web Hosting",
-      "AI Services",
-      "SEO",
-      "Social Marketing"
-    ],
-    required: true,
+  description: {
+    en: { type: String, required: true },
+    ar: { type: String, required: true },
   },
- image: {
+  category: {
+    en: {
+      type: String,
+      enum: ["Mobile Application", "Website", "Graphic Design", "Online Store", "Corporate System", "Motion Graphic", "Web Hosting", "AI Services", "SEO", "Social Marketing"],
+      required: true,
+    },
+    ar: {
+      type: String,
+      enum: ["تطبيق جوال", "موقع إلكتروني", "تصميم جرافيكي", "متجر إلكتروني", "نظام شركات", "موشن جرافيك", "استضافة مواقع", "خدمات الذكاء الاصطناعي", "تحسين محركات البحث", "تسويق رقمي"],
+      required: true,
+    },
+  },
+  image: {
     url: { type: String, required: false },
     altText: { type: String, default: "Service Image" },
   },
- 
-
   importance: [
     {
-      desc: { type: String, required: true }, // Changed `point` to `desc`
+      desc: {
+        en: { type: String, required: true },
+        ar: { type: String, required: true },
+      },
     },
   ],
   recentProjects: [
@@ -45,45 +44,58 @@ const ServiceSchema = new mongoose.Schema({
   testimonials: [
     { type: mongoose.Schema.Types.ObjectId, ref: 'Testimonial' },
   ],
-  // Added 'esUs' field
   distingoshesUs: [
     {
-      icon: { type: String, required: false }, // Icon URL
-      description: { type: String, required: true }, // Description
+      icon: { type: String },
+      description: {
+        en: { type: String, required: true },
+        ar: { type: String, required: true },
+      },
     },
   ],
-  
-  // Added 'designPhase' field
   designPhase: {
-    title: { type: String, required: true },
-    desc: { type: String, required: true },
-    image: { type: String }, // Image URL
-    satisfiedClientValues: 
-      {
-        title: { type: String, required: true },
-        
+    title: {
+      en: { type: String, required: true },
+      ar: { type: String, required: true },
+    },
+    desc: {
+      en: { type: String, required: true },
+      ar: { type: String, required: true },
+    },
+    image: { type: String },
+    satisfiedClientValues: {
+      title: {
+        en: { type: String, required: true },
+        ar: { type: String, required: true },
       },
-
-    
+    },
     values: [
       {
-        title: { type: String, required: true },
-        desc: { type: String, required: true },
+        title: {
+          en: { type: String, required: true },
+          ar: { type: String, required: true },
+        },
+        desc: {
+          en: { type: String, required: true },
+          ar: { type: String, required: true },
+        },
       },
     ],
   },
-
-  // Added 'techUsedInService' field
   techUsedInService: [
     {
-      icon: { type: String, required: false }, // Icon URL
-      title: { type: String, required: true }, // Title of tech
-      desc: { type: String, required: true }, // Description of tech
+      icon: { type: String },
+      title: {
+        en: { type: String, required: true },
+        ar: { type: String, required: true },
+      },
+      desc: {
+        en: { type: String, required: true },
+        ar: { type: String, required: true },
+      },
     },
   ],
-
   seo: [seoSchema],
-
   createdAt: {
     type: Date,
     default: Date.now,

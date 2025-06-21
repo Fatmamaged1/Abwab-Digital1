@@ -5,80 +5,86 @@ const Testimonial = require("../models/testimonialModel");
 exports.createService = async (req, res) => {
   try {
     const {
-      description,
-      category,
-      importance,
-      techUsedInService,
-      distingoshesUs,
-      designPhase,
-      seo
+      description,         // should be JSON string with { en: "", ar: "" }
+      category,            // should be JSON string with { en: "", ar: "" }
+      importance,          // array of items [{ title: { en, ar }, description: { en, ar } }]
+      techUsedInService,   // array of items [{ title: { en, ar } }]
+      distingoshesUs,      // array of items [{ title: { en, ar }, description: { en, ar } }]
+      designPhase,         // object with { title: { en, ar }, description: { en, ar } }
+      seo                  // array of items [{ title: { en, ar }, description: { en, ar }, keywords }]
     } = req.body;
 
-    console.log("Uploaded Files:", req.files); // Debugging uploaded files
+    console.log("Uploaded Files:", req.files);
 
-    // Parse JSON fields
-    const parsedImportance = JSON.parse(importance || "[]");
-    const parsedTechUsedInService = JSON.parse(techUsedInService || "[]");
-    const parsedDistingoshesUs = JSON.parse(distingoshesUs || "[]");
-    const parsedDesignPhase = JSON.parse(designPhase || "{}");
-
-    // Process SEO data:
+    // Parse multilingual fields
+    const parsedDescription = JSON.parse(description || '{}');
+    const parsedCategory = JSON.parse(category || '{}');
+    const parsedImportance = JSON.parse(importance || '[]');
+    const parsedTechUsed = JSON.parse(techUsedInService || '[]');
+    const parsedDistingoshes = JSON.parse(distingoshesUs || '[]');
+    const parsedDesignPhase = JSON.parse(designPhase || '{}');
     let parsedSeo = [];
+
     if (seo) {
       try {
         parsedSeo = JSON.parse(seo);
-        // If it's a single object, wrap it into an array.
-        if (!Array.isArray(parsedSeo)) {
-          parsedSeo = [parsedSeo];
-        }
-      } catch (error) {
-        return res.status(400).json(formatErrorResponse("Invalid SEO data format", error.message));
+        if (!Array.isArray(parsedSeo)) parsedSeo = [parsedSeo];
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid SEO JSON format",
+          error: err.message,
+        });
       }
     }
 
-    // Base URL for serving images
+    // Base URL for images
     const baseUrl = "https://Backend.abwabdigital.com/uploads/";
 
-    // Assign the main service image URL
+    // Service main image
     const imageUrl = req.files.image?.[0]?.filename
       ? baseUrl + req.files.image[0].filename
       : null;
+
     if (!imageUrl) {
       return res.status(400).json({
         success: false,
-        message: "Image is required.",
+        message: "Main service image is required.",
       });
     }
 
-    // Assign icons for techUsedInService
-    parsedTechUsedInService.forEach((item, index) => {
-      item.icon = req.files.techUsedInServiceIcons?.[index]
-        ? baseUrl + req.files.techUsedInServiceIcons[index].filename
+    // Assign icons to techUsedInService
+    parsedTechUsed.forEach((item, i) => {
+      item.icon = req.files.techUsedInServiceIcons?.[i]
+        ? baseUrl + req.files.techUsedInServiceIcons[i].filename
         : "";
     });
 
-    // Assign icons for distingoshesUs
-    parsedDistingoshesUs.forEach((item, index) => {
-      item.icon = req.files.distingoshesUsIcons?.[index]
-        ? baseUrl + req.files.distingoshesUsIcons[index].filename
+    // Assign icons to distingoshesUs
+    parsedDistingoshes.forEach((item, i) => {
+      item.icon = req.files.distingoshesUsIcons?.[i]
+        ? baseUrl + req.files.distingoshesUsIcons[i].filename
         : "";
     });
 
-    // Assign designPhase.image from uploaded file
+    // Assign image to designPhase
     if (req.files.designPhaseImage?.[0]) {
       parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
     }
 
-    // Create Service Object with SEO data
+    // Create new service
     const newService = new Service({
-      description,
-      category,
-      image: { url: imageUrl, altText: "Service Image" },
-      importance: parsedImportance,
-      techUsedInService: parsedTechUsedInService,
-      distingoshesUs: parsedDistingoshesUs,
-      designPhase: parsedDesignPhase,
-      seo: parsedSeo, // SEO field is set here as an array of SEO objects
+      description: parsedDescription,  // { en: "", ar: "" }
+      category: parsedCategory,        // { en: "", ar: "" }
+      image: {
+        url: imageUrl,
+        altText: "Service Image"
+      },
+      importance: parsedImportance,             // array of items
+      techUsedInService: parsedTechUsed,        // array of items
+      distingoshesUs: parsedDistingoshes,       // array of items
+      designPhase: parsedDesignPhase,           // object
+      seo: parsedSeo                            // array of objects
     });
 
     await newService.save();
@@ -89,14 +95,15 @@ exports.createService = async (req, res) => {
       data: newService,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating service:", error);
     res.status(500).json({
       success: false,
-      message: "Error creating service",
+      message: "Internal server error",
       error: error.message,
     });
   }
 };
+
 
 
 
