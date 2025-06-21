@@ -249,15 +249,17 @@ exports.updatePortfolioItem = async (req, res) => {
 exports.getAllPortfolioItems = async (req, res) => {
   try {
     const language = req.query.language === "ar" ? "ar" : "en";
+
     const items = await Portfolio.find()
       .populate("relatedProjects", "projectName slug")
-      .populate("category");
+      .populate("category"); // بدون select → يأخذ كل شيء
 
     const formattedItems = items.map((item) => {
       const obj = item.toObject();
 
       return {
         ...obj,
+        id: obj._id,
         name: obj.name?.[language] || "",
         description: obj.description?.[language] || "",
         projectName: obj.projectName?.[language] || "",
@@ -287,6 +289,11 @@ exports.getAllPortfolioItems = async (req, res) => {
               projectName: p?.projectName?.[language] || "",
             }))
           : [],
+        // Ensure fields like images, screenshots, url, designScreens are passed
+        images: obj.images || [],
+        screenshots: obj.screenshots || [],
+        url: obj.url || "",
+        designScreens: obj.designScreens || { web: [], app: [] },
       };
     });
 
@@ -299,6 +306,7 @@ exports.getAllPortfolioItems = async (req, res) => {
       .json(formatErrorResponse("Failed to retrieve portfolio items", error.message));
   }
 };
+
 
 
 
