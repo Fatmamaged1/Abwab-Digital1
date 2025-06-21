@@ -13,7 +13,7 @@ exports.createService = async (req, res) => {
       designPhase,         // object with { title: { en, ar }, description: { en, ar } }
       seo                  // array of items [{ title: { en, ar }, description: { en, ar }, keywords }]
     } = req.body;
-
+console.log(req.body);
     console.log("Uploaded Files:", req.files);
 
     // Parse multilingual fields
