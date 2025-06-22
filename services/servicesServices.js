@@ -113,43 +113,42 @@ exports.createService = async (req, res) => {
 
 exports.getAllServices = async (req, res) => {
   try {
-    // Extract requested language (default to "en")
     const language = req.query.language || "en";
 
-    // Fetch all services (all fields, including the SEO array)
     const services = await Service.find().select("description category seo");
 
-    // Process each service to select the appropriate SEO data for that service
     const processedServices = services.map(service => {
       const serviceObj = service.toObject();
 
-      let seoData = {};
-      if (Array.isArray(serviceObj.seo) && serviceObj.seo.length > 0) {
-        // Look for the SEO entry matching the requested language,
-        // or use the first entry if none match.
-        seoData = serviceObj.seo.find(entry => entry.language === language) || serviceObj.seo[0];
-      } else {
-        // Default SEO object for individual service if no SEO data exists.
-        seoData = {
-          language,
-          metaTitle: "Default Meta Title",
-          metaDescription: "Default meta description for the service.",
-          keywords: "default,service,seo",
-          canonicalTag: "",
-          structuredData: {}
-        };
-      }
-      serviceObj.seo = seoData;
+      // ترجمة الوصف حسب اللغة
+      serviceObj.description = serviceObj.description?.[language] || "";
+
+      // SEO باللغة المطلوبة
+      const matchedSeo = Array.isArray(serviceObj.seo)
+        ? serviceObj.seo.find(s => s.language === language) || serviceObj.seo[0]
+        : null;
+
+      serviceObj.seo = matchedSeo || {
+        language,
+        metaTitle: "Default Meta Title",
+        metaDescription: "Default meta description.",
+        keywords: "default,service,seo",
+        canonicalTag: "",
+        structuredData: {}
+      };
+
       return serviceObj;
     });
 
-    // Global SEO for the "All Services" page header.
-    // You can modify these values or load them from a configuration.
     const globalSeo = {
       language,
       metaTitle: language === "en" ? "Our Services" : "خدماتنا",
-      metaDescription: language === "en" ? "Discover our wide range of services." : "اكتشف مجموعة خدماتنا المتنوعة.",
-      keywords: language === "en" ? "services, company, solutions" : "خدمات, شركة, حلول",
+      metaDescription: language === "en"
+        ? "Discover our wide range of services."
+        : "اكتشف مجموعة خدماتنا المتنوعة.",
+      keywords: language === "en"
+        ? "services, company, solutions"
+        : "خدمات, شركة, حلول",
       canonicalTag: "",
       structuredData: {}
     };
@@ -163,11 +162,7 @@ exports.getAllServices = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Error fetching services", 
-      error: error.message 
-    });
+    return res.status(500).json({ success: false, message: "Error fetching services", error: error.message });
   }
 };
 
@@ -178,29 +173,81 @@ exports.getAllServices = async (req, res) => {
 exports.getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
-    const language = req.query.language || "en"; // Language requested, defaulting to English
+    const language = req.query.language || "en";
 
     const service = await Service.findById(id);
     if (!service) {
       return res.status(404).json({ success: false, message: "Service not found" });
     }
 
-    // Convert Mongoose document to plain object
     let serviceObj = service.toObject();
 
-    // Process SEO data: find the entry matching the requested language, or fallback to the first one
-    let seoData = {};
-    if (serviceObj.seo && Array.isArray(serviceObj.seo) && serviceObj.seo.length > 0) {
-      seoData = serviceObj.seo.find(item => item.language === language) || serviceObj.seo[0];
-    }
-    serviceObj.seo = seoData; // Replace the seo array with the selected SEO object
+    // 🟢 استخراج الحقول حسب اللغة
+    serviceObj.description = serviceObj.description?.[language] || "";
 
-    // Fetch last 4 testimonials from the entire database (not just the service)
+    // importance
+    if (Array.isArray(serviceObj.importance)) {
+      serviceObj.importance = serviceObj.importance.map(item => ({
+        desc: item.desc?.[language] || ""
+      }));
+    }
+
+    // techUsedInService
+    if (Array.isArray(serviceObj.techUsedInService)) {
+      serviceObj.techUsedInService = serviceObj.techUsedInService.map(item => ({
+        title: item.title?.[language] || "",
+        desc: item.desc?.[language] || "",
+        icon: item.icon || ""
+      }));
+    }
+
+    // distingoshesUs
+    if (Array.isArray(serviceObj.distingoshesUs)) {
+      serviceObj.distingoshesUs = serviceObj.distingoshesUs.map(item => ({
+        title: item.title?.[language] || "",
+        description: item.description?.[language] || "",
+        icon: item.icon || ""
+      }));
+    }
+
+    // designPhase
+    if (serviceObj.designPhase) {
+      serviceObj.designPhase = {
+        title: serviceObj.designPhase.title?.[language] || "",
+        desc: serviceObj.designPhase.desc?.[language] || "",
+        image: serviceObj.designPhase.image || "",
+        satisfiedClientValues: {
+          title: serviceObj.designPhase.satisfiedClientValues?.title?.[language] || ""
+        },
+        values: Array.isArray(serviceObj.designPhase.values)
+          ? serviceObj.designPhase.values.map(v => ({
+              title: v.title?.[language] || "",
+              desc: v.desc?.[language] || ""
+            }))
+          : []
+      };
+    }
+
+    // seo
+    const matchedSeo = Array.isArray(serviceObj.seo)
+      ? serviceObj.seo.find(s => s.language === language) || serviceObj.seo[0]
+      : null;
+
+    serviceObj.seo = matchedSeo || {
+      language,
+      metaTitle: "Default Meta Title",
+      metaDescription: "Default meta description.",
+      keywords: "default,service,seo",
+      canonicalTag: "",
+      structuredData: {}
+    };
+
+    // testimonials
     const testimonials = await Testimonial.find({})
-      .sort({ createdAt: -1 }) // Sort by latest
+      .sort({ createdAt: -1 })
       .limit(4);
 
-    // Fetch last 4 related portfolio projects from the same category (excluding the current service's projects)
+    // related portfolios
     const relatedPortfolios = await Portfolio.find({
       category: service.category,
       _id: { $nin: service.recentProjects.map((p) => p._id) },
