@@ -238,8 +238,9 @@ exports.deleteService = async (req, res) => {
 };
 const parseJSONField = (field, defaultValue) => {
   try {
-    return field ? JSON.parse(field) : defaultValue;
-  } catch (error) {
+    const parsed = JSON.parse(field);
+    return parsed ?? defaultValue;
+  } catch {
     return defaultValue;
   }
 };
@@ -262,62 +263,66 @@ exports.updateService = async (req, res) => {
       return res.status(404).json({ success: false, message: "Service not found" });
     }
 
-    // استخدم دالة مساعدّة لقراءة وتحويل JSON الحقول
+    const baseUrl = "https://Backend.abwabdigital.com/uploads/";
+
+    // ✅ Parse JSON fields
+    const parsedDescription = parseJSONField(description, existingService.description);
     const parsedImportance = parseJSONField(importance, existingService.importance);
-    const parsedTechUsedInService = parseJSONField(techUsedInService, existingService.techUsedInService);
-    const parsedDistingoshesUs = parseJSONField(distingoshesUs, existingService.distingoshesUs);
+    const parsedTechUsed = parseJSONField(techUsedInService, existingService.techUsedInService);
+    const parsedDistingoshes = parseJSONField(distingoshesUs, existingService.distingoshesUs);
     const parsedDesignPhase = parseJSONField(designPhase, existingService.designPhase);
 
-    // التحقق من التنسيق الصحيح لـ SEO
     let parsedSeo = existingService.seo;
     if (seo) {
       try {
         parsedSeo = JSON.parse(seo);
-        if (!Array.isArray(parsedSeo)) {
-          parsedSeo = [parsedSeo];
-        }
+        if (!Array.isArray(parsedSeo)) parsedSeo = [parsedSeo];
       } catch (error) {
-        return res.status(400).json({ success: false, message: "Invalid SEO data format", error: error.message });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid SEO JSON format",
+          error: error.message
+        });
       }
     }
 
-    const baseUrl = "https://Backend.abwabdigital.com/uploads/";
-
-    // تحديث صورة الخدمة إذا تم رفع صورة جديدة
+    // ✅ Image: main service image
     const imageUrl = req.files.image?.[0]?.filename
       ? baseUrl + req.files.image[0].filename
-      : existingService.image.url;
+      : existingService.image?.url;
 
-    // تحديث الأيقونات الخاصة بـ techUsedInService
-    if (techUsedInService && req.files.techUsedInServiceIcons) {
-      parsedTechUsedInService.forEach((item, index) => {
-        item.icon = req.files.techUsedInServiceIcons?.[index]
-          ? baseUrl + req.files.techUsedInServiceIcons[index].filename
-          : item.icon || "";
-      });
-    }
+    // ✅ Assign icons to techUsedInService
+    parsedTechUsed.forEach((item, i) => {
+      item.icon = req.files.techUsedInServiceIcons?.[i]
+        ? baseUrl + req.files.techUsedInServiceIcons[i].filename
+        : item.icon || "";
+    });
 
-    // تحديث الأيقونات الخاصة بـ distingoshesUs
-    if (distingoshesUs && req.files.distingoshesUsIcons) {
-      parsedDistingoshesUs.forEach((item, index) => {
-        item.icon = req.files.distingoshesUsIcons?.[index]
-          ? baseUrl + req.files.distingoshesUsIcons[index].filename
-          : item.icon || "";
-      });
-    }
+    // ✅ Assign icons to distingoshesUs
+    parsedDistingoshes.forEach((item, i) => {
+      item.icon = req.files.distingoshesUsIcons?.[i]
+        ? baseUrl + req.files.distingoshesUsIcons[i].filename
+        : item.icon || "";
+    });
 
-    // تحديث صورة designPhase إن وُجدت
+    // ✅ Design phase image
     if (req.files.designPhaseImage?.[0]) {
       parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
     }
 
-    // تحديث الحقول
-    existingService.description = description || existingService.description;
+    // ✅ Update existing service
+    existingService.description = parsedDescription;
     existingService.category = category || existingService.category;
-    existingService.image = { url: imageUrl, altText: "Service Image" };
+    existingService.image = {
+      url: imageUrl,
+      altText: {
+        en: "Service Image",
+        ar: "صورة الخدمة"
+      }
+    };
     existingService.importance = parsedImportance;
-    existingService.techUsedInService = parsedTechUsedInService;
-    existingService.distingoshesUs = parsedDistingoshesUs;
+    existingService.techUsedInService = parsedTechUsed;
+    existingService.distingoshesUs = parsedDistingoshes;
     existingService.designPhase = parsedDesignPhase;
     existingService.seo = parsedSeo;
 
@@ -338,4 +343,3 @@ exports.updateService = async (req, res) => {
     });
   }
 };
-
