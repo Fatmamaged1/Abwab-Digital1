@@ -9,9 +9,10 @@ const storage = multer.diskStorage({
         cb(null, "uploads/portfolio"); // Save files to 'uploads/portfolio'
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + '-' + file.originalname);
-    }
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const originalName = file.originalname.replace(/\s+/g, "-"); // Replace spaces with dashes
+        cb(null, `${uniqueSuffix}-${originalName}`);
+      }
 });
 
 const upload = multer({ storage: storage });

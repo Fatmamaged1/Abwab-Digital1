@@ -6,7 +6,9 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // Specify upload directory
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const originalName = file.originalname.replace(/\s+/g, "-"); // Replace spaces with dashes
+    cb(null, `${uniqueSuffix}-${originalName}`);
   },
 });
 
