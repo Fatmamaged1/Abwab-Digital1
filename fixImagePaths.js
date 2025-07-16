@@ -1,11 +1,17 @@
-const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
-const Service = require("./models/servicesModel"); // عدّل حسب المسار عندك
+const mongoose = require("mongoose");
+const Service = require("./models/servicesModel"); // عدل حسب مسارك
+
+// الربط بقاعدة البيانات
+mongoose.connect("mongodb+srv://fatmamelessawy:BBJVLziHn6B6p1MI@cluster0.kk9acoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const baseDir = path.join(__dirname, "uploads", "services");
 
 async function fixServiceImages() {
-  await mongoose.connect("mongodb+srv://fatmamelessawy:BBJVLziHn6B6p1MI@cluster0.kk9acoz.mongodb.net/?retryWrites=true&w=majority");
-
   const services = await Service.find();
 
   for (const service of services) {
@@ -17,29 +23,30 @@ async function fixServiceImages() {
     if (!fileName.includes(" ")) continue;
 
     const newFileName = fileName.replace(/\s+/g, "-");
-    const oldPath = path.join(__dirname, "uploads", fileName); // مجلد uploads الرئيسي
-    const newPath = path.join(__dirname, "uploads", newFileName);
+    const oldPath = path.join(baseDir, fileName);
+    const newPath = path.join(baseDir, newFileName);
 
     try {
+      // إعادة التسمية في السيرفر
       if (fs.existsSync(oldPath)) {
         fs.renameSync(oldPath, newPath);
         console.log(`✅ File renamed: ${fileName} → ${newFileName}`);
       } else {
-        console.warn(`⚠️ File not found: ${fileName}`);
+        console.warn(`⚠️ File not found on disk: ${fileName}`);
       }
 
-      // تحديث MongoDB فقط لو فيه فرق
+      // تحديث الرابط في MongoDB
       const newUrl = imageUrl.replace(fileName, newFileName);
       service.image.url = newUrl;
       await service.save();
-      console.log(`✅ MongoDB updated for service ID ${service._id}`);
-    } catch (err) {
-      console.error(`❌ Error processing ${fileName}:`, err.message);
+      console.log(`✅ Mongo updated for service ID ${service._id}`);
+    } catch (error) {
+      console.error(`❌ Error processing ${fileName}:`, error.message);
     }
   }
 
-  await mongoose.disconnect();
-  console.log("🎉 All done");
+  console.log("🎉 Done fixing service images.");
+  mongoose.disconnect();
 }
 
 fixServiceImages();
