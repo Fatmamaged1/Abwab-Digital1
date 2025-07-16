@@ -1,46 +1,45 @@
 const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
-const Blog = require("./models/blogModel");
+const Service = require("./models/servicesModel"); // عدّل حسب المسار عندك
 
-async function fixImageFiles() {
+async function fixServiceImages() {
   await mongoose.connect("mongodb+srv://fatmamelessawy:BBJVLziHn6B6p1MI@cluster0.kk9acoz.mongodb.net/?retryWrites=true&w=majority");
 
-  const blogs = await Blog.find();
+  const services = await Service.find();
 
-  for (const blog of blogs) {
-    if (!blog.image || typeof blog.image !== "string") continue;
+  for (const service of services) {
+    if (!service.image || !service.image.url) continue;
 
-    const imageUrl = blog.image;
-    const filename = path.basename(imageUrl);
+    const imageUrl = service.image.url;
+    const fileName = path.basename(imageUrl);
 
-    if (!filename.includes(" ")) continue; // Skip if no space
+    if (!fileName.includes(" ")) continue;
 
-    const cleanedFilename = filename.replace(/\s+/g, "-");
-    const uploadDir = path.join(__dirname, "uploads/blogs");
-
-    const oldPath = path.join(uploadDir, filename);
-    const newPath = path.join(uploadDir, cleanedFilename);
+    const newFileName = fileName.replace(/\s+/g, "-");
+    const oldPath = path.join(__dirname, "uploads", fileName); // مجلد uploads الرئيسي
+    const newPath = path.join(__dirname, "uploads", newFileName);
 
     try {
-      // Rename the file in the filesystem
       if (fs.existsSync(oldPath)) {
         fs.renameSync(oldPath, newPath);
-        console.log(`✅ Renamed file: ${filename} → ${cleanedFilename}`);
-
-        // Update the image path in DB
-        blog.image = imageUrl.replace(filename, cleanedFilename);
-        await blog.save();
-        console.log(`✅ Updated MongoDB for blog ID ${blog._id}`);
+        console.log(`✅ File renamed: ${fileName} → ${newFileName}`);
       } else {
-        console.warn(`⚠️ File not found: ${oldPath}`);
+        console.warn(`⚠️ File not found: ${fileName}`);
       }
+
+      // تحديث MongoDB فقط لو فيه فرق
+      const newUrl = imageUrl.replace(fileName, newFileName);
+      service.image.url = newUrl;
+      await service.save();
+      console.log(`✅ MongoDB updated for service ID ${service._id}`);
     } catch (err) {
-      console.error(`❌ Failed to rename ${filename}:`, err.message);
+      console.error(`❌ Error processing ${fileName}:`, err.message);
     }
   }
 
   await mongoose.disconnect();
+  console.log("🎉 All done");
 }
 
-fixImageFiles();
+fixServiceImages();
