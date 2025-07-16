@@ -1,69 +1,46 @@
 const mongoose = require("mongoose");
+const fs = require("fs");
+const path = require("path");
 const Blog = require("./models/blogModel");
-const Portfolio = require("./models/PortfolioModel");
-const Service = require("./models/servicesModel");
-const Testimonial = require("./models/testimonialModel");
-const Home = require("./models/homeModel");
-const Contact = require("./models/contactModel");
 
-async function sanitizeField(field) {
-  return typeof field === "string" ? field.replace(/\s+/g, "-") : field;
-}
+async function fixImageFiles() {
+  await mongoose.connect("mongodb+srv://fatmamelessawy:BBJVLziHn6B6p1MI@cluster0.kk9acoz.mongodb.net/?retryWrites=true&w=majority");
 
-async function sanitizeArray(arr) {
-  return Array.isArray(arr) ? arr.map(item => typeof item === "string" ? item.replace(/\s+/g, "-") : item) : arr;
-}
+  const blogs = await Blog.find();
 
-async function fixImagePaths() {
-  await mongoose.connect("mongodb+srv://fatmamelessawy:BBJVLziHn6B6p1MI@cluster0.kk9acoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
+  for (const blog of blogs) {
+    if (!blog.image || typeof blog.image !== "string") continue;
 
-  let updatedCount = 0;
+    const imageUrl = blog.image;
+    const filename = path.basename(imageUrl);
 
-  const models = [
-    { name: "Blog", model: Blog },
-    { name: "Portfolio", model: Portfolio },
-    { name: "Service", model: Service },
-    { name: "Testimonial", model: Testimonial },
-    { name: "Home", model: Home },
-    { name: "Contact", model: Contact }
-  ];
+    if (!filename.includes(" ")) continue; // Skip if no space
 
-  for (const { name, model } of models) {
-    const records = await model.find();
+    const cleanedFilename = filename.replace(/\s+/g, "-");
+    const uploadDir = path.join(__dirname, "uploads/blogs");
 
-    for (const record of records) {
-      let updated = false;
+    const oldPath = path.join(uploadDir, filename);
+    const newPath = path.join(uploadDir, cleanedFilename);
 
-      // ✅ Clean image string
-      if (record.image) {
-        const sanitized = await sanitizeField(record.image);
-        if (sanitized !== record.image) {
-          record.image = sanitized;
-          updated = true;
-        }
+    try {
+      // Rename the file in the filesystem
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+        console.log(`✅ Renamed file: ${filename} → ${cleanedFilename}`);
+
+        // Update the image path in DB
+        blog.image = imageUrl.replace(filename, cleanedFilename);
+        await blog.save();
+        console.log(`✅ Updated MongoDB for blog ID ${blog._id}`);
+      } else {
+        console.warn(`⚠️ File not found: ${oldPath}`);
       }
-
-      // ✅ Clean sectionImage array
-      if (record.sectionImage) {
-        const sanitizedArray = await sanitizeArray(record.sectionImage);
-        if (JSON.stringify(sanitizedArray) !== JSON.stringify(record.sectionImage)) {
-          record.sectionImage = sanitizedArray;
-          updated = true;
-        }
-      }
-
-      if (updated) {
-        await record.save();
-        updatedCount++;
-        console.log(`✔ Updated ${name} - ID: ${record._id}`);
-      }
+    } catch (err) {
+      console.error(`❌ Failed to rename ${filename}:`, err.message);
     }
   }
 
-  console.log(`\n✅ Done: Fixed ${updatedCount} document(s) across all collections.`);
   await mongoose.disconnect();
 }
 
-fixImagePaths().catch((err) => {
-  console.error("❌ Error:", err);
-});
+fixImageFiles();
