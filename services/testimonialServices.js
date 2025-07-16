@@ -47,7 +47,7 @@ exports.getTestimonials= factory.getAll(TestimonialModel,"Testimonial");
       const updatedTestimonials = testimonials.map(testimonial => ({
           ...testimonial._doc,
           icon: testimonial.icon 
-              ? `https://Backend.abwabdigital.com/uploads/testimonials/${testimonial.icon}`
+              ? `https://backend.abwabdigital.com/uploads/testimonials/${testimonial.icon}`
               : null,
       }));
 
@@ -69,7 +69,7 @@ exports.getTestimonials= factory.getAll(TestimonialModel,"Testimonial");
       
       // Construct full image URL
       const icon = req.file
-          ? `https://Backend.abwabdigital.com/uploads/testimonials/${req.file.filename}`
+          ? `https://backend.abwabdigital.com/uploads/testimonials/${req.file.filename}`
           : null; // Use `null` if no image was uploaded
 
       const newTestimonial = new TestimonialModel({
@@ -126,7 +126,7 @@ exports.updateTestimonial = asyncHandler(async (req, res) => {
   if (content !== undefined) updateFields.content = content;
   if (rating !== undefined) updateFields.rating = rating;
   if (req.file) {
-    updateFields.icon = `https://Backend.abwabdigital.com/uploads/testimonials/${req.file.filename}`;
+    updateFields.icon = `https://backend.abwabdigital.com/uploads/testimonials/${req.file.filename}`;
   }
 
   const updatedTestimonial = await TestimonialModel.findByIdAndUpdate(id, updateFields, {

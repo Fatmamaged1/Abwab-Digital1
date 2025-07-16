@@ -39,7 +39,7 @@ exports.createService = async (req, res) => {
     }
 
     // Base URL for images
-    const baseUrl = "https://Backend.abwabdigital.com/uploads/";
+    const baseUrl = "https://backend.abwabdigital.com/uploads/";
 
     // Main service image
     const imageUrl = req.files.image?.[0]?.filename
@@ -310,7 +310,7 @@ exports.updateService = async (req, res) => {
       return res.status(404).json({ success: false, message: "Service not found" });
     }
 
-    const baseUrl = "https://Backend.abwabdigital.com/uploads/";
+    const baseUrl = "https://backend.abwabdigital.com/uploads/";
 
     // ✅ Parse JSON fields
     const parsedDescription = parseJSONField(description, existingService.description);

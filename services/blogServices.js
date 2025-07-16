@@ -31,7 +31,7 @@ exports.createBlog = async (req, res) => {
     const parsedAltText = altText ? JSON.parse(altText) : { ar: "صورة التدوينة", en: "Blog Image" };
     const blogImage = mainImageFile
       ? {
-          url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
+          url: `https://backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
           altText: parsedAltText,
         }
       : {
@@ -64,7 +64,7 @@ exports.createBlog = async (req, res) => {
         description,
         image: {
           url: imageFile
-            ? `https://Backend.abwabdigital.com/uploads/blogs/${imageFile.filename}`
+            ? `https://backend.abwabdigital.com/uploads/blogs/${imageFile.filename}`
             : "",
           altText: altParsed,
         },
@@ -86,7 +86,7 @@ exports.createBlog = async (req, res) => {
             en: tagnameEn[index] || "",
           },
           icon: iconFile
-            ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
+            ? `https://backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
             : "",
         });
       });
@@ -186,7 +186,7 @@ exports.updateBlog = async (req, res) => {
     const mainImageFile = files.image?.[0];
     const blogImage = mainImageFile
       ? {
-          url: `https://Backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
+          url: `https://backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
           altText: parseJSON(altText, { ar: "", en: "" })
         }
       : undefined;
@@ -212,7 +212,7 @@ exports.updateBlog = async (req, res) => {
         description,
         image: {
           url: imageFile
-            ? `https://Backend.abwabdigital.com/uploads/blogs/${imageFile.filename}`
+            ? `https://backend.abwabdigital.com/uploads/blogs/${imageFile.filename}`
             : "",
           altText: alt,
         },
@@ -234,7 +234,7 @@ exports.updateBlog = async (req, res) => {
             en: tagnameEn[index] || "",
           },
           icon: iconFile
-            ? `https://Backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
+            ? `https://backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
             : "",
         });
       });
@@ -391,7 +391,7 @@ exports.getBlogById = async (req, res) => {
       similarArticles: similarArticles.map(article => ({
         id: article._id,
         title: article.title?.[language] || "",
-        url: `https://Backend.abwabdigital.com/blog/${article._id}`,
+        url: `https://backend.abwabdigital.com/blog/${article._id}`,
         image: article.image || { url: "", altText: "No Image" }
       })),
     };

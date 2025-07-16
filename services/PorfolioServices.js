@@ -6,7 +6,7 @@ const slugify = require("slugify");
 
 const PORTFOLIO_ALL_KEY = "allPortfolioItems";
 const PORTFOLIO_SINGLE_KEY = (id) => `portfolioItem:${id}`;
-const BASE_URL = process.env.FILE_STORAGE_URL || "https://Backend.abwabdigital.com/uploads/portfolio/";
+const BASE_URL = process.env.FILE_STORAGE_URL || "https://backend.abwabdigital.com/uploads/portfolio/";
 
 // Helper to parse JSON fields safely
 const parseJSON = (data, defaultValue) => {
