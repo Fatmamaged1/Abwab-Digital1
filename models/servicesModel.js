@@ -16,7 +16,7 @@ const multiLangText = {
 };
 
 const ServiceSchema = new mongoose.Schema({
-  slug: { type: String, required: false, unique: true }, // ✅ slug added
+  slug: { en: String, required: false, unique: true }, // ✅ slug added
 
   name: multiLangText,
   description: multiLangText,
@@ -94,6 +94,5 @@ const ServiceSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
 module.exports = mongoose.model("Service", ServiceSchema);
 

@@ -29,7 +29,7 @@ exports.createService = async (req, res) => {
     let parsedSeo = [];
     const slug = {
       en: slugify(parsedName?.en || "", { lower: true, strict: true }),
-     
+     //: slugify(parsedName?.ar || "", { lower: true, strict: true }),
     };
     
     if (seo) {
