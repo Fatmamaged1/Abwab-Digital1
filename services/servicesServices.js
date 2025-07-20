@@ -11,8 +11,8 @@ exports.createService = async (req, res) => {
       importance,          // [{ desc: { en, ar } }]
       techUsedInService,   // [{ title: { en, ar }, desc: { en, ar } }]
       distingoshesUs,      // [{ title: { en, ar }, description: { en, ar } }]
-      designPhase,         // { title: { en, ar }, desc: { en, ar }, satisfiedClientValues: { title: { en, ar } }, values: [{ title, desc }] }
-      seo                  // array of { language, metaTitle, metaDescription, keywords }
+      designPhase,         // { title, desc, satisfiedClientValues, values }
+      seo                  // array of { language, metaTitle, ... }
     } = req.body;
 
     console.log("Body:", req.body);
@@ -40,67 +40,72 @@ exports.createService = async (req, res) => {
       }
     }
 
-    // Base URL for images
     const baseUrl = "https://backend.abwabdigital.com/uploads/";
 
-    // Main service image
+    // ✅ Main image is optional now
     const imageUrl = req.files.image?.[0]?.filename
       ? baseUrl + req.files.image[0].filename
       : null;
 
-    if (!imageUrl) {
-      return res.status(400).json({
-        success: false,
-        message: "Main service image is required.",
-      });
-    }
-
-    // Assign icons to techUsedInService
+    // ✅ Add icons to techUsedInService
     parsedTechUsed.forEach((item, i) => {
       item.icon = req.files.techUsedInServiceIcons?.[i]
         ? baseUrl + req.files.techUsedInServiceIcons[i].filename
         : "";
     });
 
-    // Assign icons to distingoshesUs
+    // ✅ Add icons to distingoshesUs
     parsedDistingoshes.forEach((item, i) => {
       item.icon = req.files.distingoshesUsIcons?.[i]
         ? baseUrl + req.files.distingoshesUsIcons[i].filename
         : "";
     });
 
-    // Assign image to designPhase
+    // ✅ Design phase image
     if (req.files.designPhaseImage?.[0]) {
       parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
     }
 
-    // Create the new service
+    // ✅ Create service
     const newService = new Service({
-      description: parsedDescription, 
-      name:parsedName,
-      category,                               // string
-      image: {
-        url: imageUrl,
-        altText: {
-          en: "Service Image",
-          ar: "صورة الخدمة"
-        }
-      },
-      importance: parsedImportance,            // array of { desc: { en, ar } }
-      techUsedInService: parsedTechUsed,       // array with icon
-      distingoshesUs: parsedDistingoshes,      // array with icon
-      designPhase: parsedDesignPhase,          // full object
-      seo: parsedSeo                           // array of SEO objects
+      name: parsedName,
+      description: parsedDescription,
+      category,
+      image: imageUrl
+        ? {
+            url: imageUrl,
+            altText: {
+              en: "Service Image",
+              ar: "صورة الخدمة",
+            },
+          }
+        : undefined,
+      importance: parsedImportance,
+      techUsedInService: parsedTechUsed,
+      distingoshesUs: parsedDistingoshes,
+      designPhase: parsedDesignPhase,
+      seo: parsedSeo,
     });
 
     await newService.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Service created successfully",
-      data: newService,
+      data: {
+        id: newService._id,
+        name: newService.name,
+        description: newService.description,
+        category: newService.category,
+        image: newService.image,
+        importance: newService.importance,
+        techUsedInService: newService.techUsedInService,
+        distingoshesUs: newService.distingoshesUs,
+        designPhase: newService.designPhase,
+        seo: newService.seo,
+        createdAt: newService.createdAt,
+      },
     });
-
   } catch (error) {
     console.error("Error creating service:", error);
     res.status(500).json({
@@ -110,6 +115,7 @@ exports.createService = async (req, res) => {
     });
   }
 };
+
 
 // Get Services by ID with full section details and image handling
 

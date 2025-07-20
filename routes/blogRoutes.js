@@ -52,7 +52,7 @@ router.post(
   );
 router.get("/", blogController.getAllBlogs);
 router.get("/:id", blogController.getBlogById);
-router.get("/:id", blogController.getAllBlogDataById);
+router.get("/all/:id", blogController.getAllBlogDataById);
 //router.put("/:id", upload.single("image"), { name: "tagIcons", maxCount: 10 },blogController.updateBlog);
 router.delete("/:id", blogController.deleteBlog);
 
