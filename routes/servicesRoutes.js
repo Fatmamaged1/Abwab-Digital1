@@ -21,7 +21,7 @@ router.get("/", serviceController.getAllServices);
 
 // Get service by ID
 router.get("/:id", serviceController.getServiceById);
-router.get("/:id", serviceController.getAllServicesDataById);
+router.get("/All/:id", serviceController.getAllServicesDataById);
 
 // Delete a service
 router.delete("/:id", serviceController.deleteService);
