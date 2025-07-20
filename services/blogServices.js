@@ -152,7 +152,7 @@ exports.createBlog = async (req, res) => {
 
 
 
-// Update a blog with multilingual support
+// Update a blog with multilingual support (all fields optional)
 exports.updateBlog = async (req, res) => {
   try {
     const {
@@ -170,7 +170,8 @@ exports.updateBlog = async (req, res) => {
     } = req.body;
 
     const files = req.files || {};
-    const categoriesArray = categories ? categories.split(",") : [];
+
+    // ✅ Parse helpers
     const parseJSON = (data, defaultValue) => {
       try {
         return data ? JSON.parse(data) : defaultValue;
@@ -180,14 +181,17 @@ exports.updateBlog = async (req, res) => {
       }
     };
 
+    const categoriesArray = categories ? categories.split(",") : [];
     const seoArray = parseJSON(seo, []);
     const similarArticlesArray = parseJSON(similarArticles, []);
+    const parsedAltText = parseJSON(altText, { ar: "", en: "" });
 
+    // ✅ Handle main image
     const mainImageFile = files.image?.[0];
     const blogImage = mainImageFile
       ? {
           url: `https://backend.abwabdigital.com/uploads/blogs/${mainImageFile.filename}`,
-          altText: parseJSON(altText, { ar: "", en: "" })
+          altText: parsedAltText,
         }
       : undefined;
 
@@ -199,7 +203,10 @@ exports.updateBlog = async (req, res) => {
 
     for (const [key, value] of sectionTitles) {
       const index = key.match(/\[(\d+)\]/)[1];
-      const title = { ar: value, en: req.body[`section[${index}]titleEn`] || "" };
+      const title = {
+        ar: value,
+        en: req.body[`section[${index}]titleEn`] || "",
+      };
       const description = {
         ar: req.body[`section[${index}]descriptionAr`] || "",
         en: req.body[`section[${index}]descriptionEn`] || "",
@@ -221,17 +228,20 @@ exports.updateBlog = async (req, res) => {
 
     // ✅ Handle Tags
     const tagArray = [];
-    if (req.body.tagnameAr && req.body.tagnameEn) {
-      const tagnameAr = Array.isArray(req.body.tagnameAr) ? req.body.tagnameAr : [req.body.tagnameAr];
-      const tagnameEn = Array.isArray(req.body.tagnameEn) ? req.body.tagnameEn : [req.body.tagnameEn];
+    const tagnameAr = req.body.tagnameAr;
+    const tagnameEn = req.body.tagnameEn;
 
-      tagnameAr.forEach((nameAr, index) => {
+    if (tagnameAr && tagnameEn) {
+      const tagArArray = Array.isArray(tagnameAr) ? tagnameAr : [tagnameAr];
+      const tagEnArray = Array.isArray(tagnameEn) ? tagnameEn : [tagnameEn];
+
+      tagArArray.forEach((nameAr, index) => {
         const iconFile = files[`tagIcon[${index}]`]?.[0];
 
         tagArray.push({
           name: {
             ar: nameAr,
-            en: tagnameEn[index] || "",
+            en: tagEnArray[index] || "",
           },
           icon: iconFile
             ? `https://backend.abwabdigital.com/uploads/tags/${iconFile.filename}`
@@ -240,35 +250,68 @@ exports.updateBlog = async (req, res) => {
       });
     }
 
-    // ✅ Update Blog
-    const updatedBlog = await Blog.findByIdAndUpdate(
-      req.params.id,
-      {
-        ...(titleAr && titleEn && { title: { ar: titleAr, en: titleEn } }),
-        ...(descriptionAr && descriptionEn && { description: { ar: descriptionAr, en: descriptionEn } }),
-        ...(contentAr && contentEn && { content: { ar: contentAr, en: contentEn } }),
-        ...(categoriesArray && { categories: categoriesArray }),
-        ...(author && { author }),
-        ...(tagArray.length && { tags: tagArray }),
-        ...(seoArray.length && { seo: seoArray }),
-        ...(sectionArray.length && { section: sectionArray }),
-        ...(similarArticlesArray.length && { similarArticles: similarArticlesArray }),
-        ...(blogImage && { image: blogImage }),
-      },
-      { new: true }
-    );
+    // ✅ Prepare update payload
+    const updatePayload = {
+      ...(titleAr || titleEn
+        ? {
+            title: {
+              ar: titleAr || undefined,
+              en: titleEn || undefined,
+            },
+          }
+        : {}),
+      ...(descriptionAr || descriptionEn
+        ? {
+            description: {
+              ar: descriptionAr || undefined,
+              en: descriptionEn || undefined,
+            },
+          }
+        : {}),
+      ...(contentAr || contentEn
+        ? {
+            content: {
+              ar: contentAr || undefined,
+              en: contentEn || undefined,
+            },
+          }
+        : {}),
+      ...(categoriesArray.length ? { categories: categoriesArray } : {}),
+      ...(author && { author }),
+      ...(tagArray.length ? { tags: tagArray } : {}),
+      ...(seoArray.length ? { seo: seoArray } : {}),
+      ...(sectionArray.length ? { section: sectionArray } : {}),
+      ...(similarArticlesArray.length ? { similarArticles: similarArticlesArray } : {}),
+      ...(blogImage && { image: blogImage }),
+    };
+
+    // ✅ Update the blog document
+    const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, updatePayload, {
+      new: true,
+    });
 
     if (!updatedBlog) {
-      return res.status(404).json(formatErrorResponse("Blog not found"));
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
     }
 
-   // await setCache(BLOG_SINGLE_KEY(req.params.id), JSON.stringify(updatedBlog));
+    // await setCache(BLOG_SINGLE_KEY(req.params.id), JSON.stringify(updatedBlog));
     await deleteCache(BLOGS_ALL_KEY);
 
-    return res.status(200).json(formatSuccessResponse(updatedBlog, "Blog updated successfully"));
+    return res.status(200).json({
+      success: true,
+      message: "Blog updated successfully",
+      data: updatedBlog,
+    });
   } catch (error) {
     console.error("Error updating blog:", error);
-    return res.status(500).json(formatErrorResponse("Failed to update blog", error.message));
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update blog",
+      error: error.message,
+    });
   }
 };
 
@@ -400,6 +443,153 @@ exports.getBlogById = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
+  }
+};
+
+// Get blog by ID with full section details and image handling
+exports.getAllBlogDataById = async (req, res) => {
+  try {
+    const language = req.query.language === "ar" ? "ar" : "en";
+    const similarLimit = parseInt(req.query.limit) || 5;
+
+    const blog = await Blog.findById(req.params.id).lean();
+
+    if (!blog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
+
+    const sectionArray = Array.isArray(blog.section)
+      ? blog.section.map(sec => ({
+          title: sec.title?.[language] || "",
+          description: sec.description?.[language] || "",
+          image: {
+            url: sec.image?.url || "",
+            altText: sec.image?.altText?.[language] || "No Image"
+          }
+        }))
+      : [];
+
+    const seoData = Array.isArray(blog.seo)
+      ? blog.seo.find(seo => seo.language === language) || {}
+      : {};
+
+    const similarArticles = await Blog.find({
+      _id: { $ne: blog._id },
+      categories: { $in: blog.categories },
+    })
+      .limit(similarLimit)
+      .select("title image")
+      .lean();
+
+    const formattedBlog = {
+      _id: blog._id,
+      id: blog._id,
+      title: blog.title?.[language] || "",
+      description: blog.description?.[language] || "",
+      content: blog.content?.[language] || "",
+      section: sectionArray,
+      categories: blog.categories || [],
+      author: blog.author || "Unknown",
+      image: {
+        url: blog.image?.url || "",
+        altText: blog.image?.altText?.[language] || "No Image"
+      },
+      publishedDate: blog.publishedAt || blog.createdAt,
+      createdAt: blog.createdAt,
+      updatedAt: blog.updatedAt,
+      seo: seoData,
+      similarArticles: similarArticles.map(article => ({
+        id: article._id,
+        title: article.title?.[language] || "",
+        url: `https://backend.abwabdigital.com/blog/${article._id}`,
+        image: article.image || { url: "", altText: "No Image" }
+      })),
+    };
+
+    return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
+  }
+};
+
+// Get all blog data by ID in both Arabic and English
+exports.getAllBlogDataById = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id).lean();
+
+    if (!blog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
+
+    // Format response with both Arabic and English versions
+    const formattedResponse = {
+      ar: {
+        _id: blog._id,
+        title: blog.title.ar,
+        description: blog.description.ar,
+        slug: blog.slug,
+        content: blog.content.ar,
+        author: blog.author,
+        categories: blog.categories,
+        publishedDate: blog.publishedDate,
+        image: {
+          url: blog.image.url,
+          altText: blog.image.altText.ar || ''
+        },
+        section: blog.section.map(section => ({
+          title: section.title.ar,
+          description: section.description.ar,
+          image: {
+            url: section.image?.url || '',
+            altText: section.image?.altText?.ar || ''
+          }
+        })),
+        tags: blog.tags.map(tag => ({
+          name: tag.name.ar,
+          icon: tag.icon || ''
+        })),
+        seo: blog.seo?.find(item => item.language === 'ar') || {},
+        similarArticles: blog.similarArticles || []
+      },
+      en: {
+        _id: blog._id,
+        title: blog.title.en,
+        description: blog.description.en,
+        slug: blog.slug,
+        content: blog.content.en,
+        author: blog.author,
+        categories: blog.categories,
+        publishedDate: blog.publishedDate,
+        image: {
+          url: blog.image.url,
+          altText: blog.image.altText.en || ''
+        },
+        section: blog.section.map(section => ({
+          title: section.title.en,
+          description: section.description.en,
+          image: {
+            url: section.image?.url || '',
+            altText: section.image?.altText?.en || ''
+          }
+        })),
+        tags: blog.tags.map(tag => ({
+          name: tag.name.en,
+          icon: tag.icon || ''
+        })),
+        seo: blog.seo?.find(item => item.language === 'en') || {},
+        similarArticles: blog.similarArticles || []
+      }
+    };
+
+    return res.status(200).json(
+      formatSuccessResponse(formattedResponse, "Blog data retrieved successfully in both languages")
+    );
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(
+      formatErrorResponse("Failed to retrieve blog data", error.message)
+    );
   }
 };
 

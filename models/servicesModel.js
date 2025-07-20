@@ -1,20 +1,24 @@
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 
 const seoSchema = new mongoose.Schema({
-  language: { type: String, enum: ['en', 'ar'], required: true },
-  metaTitle: { type: String, required: true },
-  metaDescription: { type: String, required: true },
-  keywords: { type: String, required: true },
-  canonicalTag: { type: String },
-  structuredData: { type: mongoose.Schema.Types.Mixed },
-});
+  language: { type: String, enum: ['en', 'ar'], required: false },
+  metaTitle: { type: String, required: false },
+  metaDescription: { type: String, required: false },
+  keywords: { type: String, required: false },
+  canonicalTag: { type: String, required: false },
+  structuredData: { type: mongoose.Schema.Types.Mixed, required: false },
+}, { _id: false });
 
 const multiLangText = {
-  en: { type: String, required: true },
-  ar: { type: String, required: true },
+  en: { type: String, required: false },
+  ar: { type: String, required: false },
 };
 
 const ServiceSchema = new mongoose.Schema({
+  slug: { type: String, required: false, unique: true }, // ✅ slug added
+
+  name: multiLangText,
   description: multiLangText,
 
   category: {
@@ -31,11 +35,11 @@ const ServiceSchema = new mongoose.Schema({
       "SEO",
       "Social Marketing"
     ],
-    required: true,
+    required: false,
   },
 
   image: {
-    url: { type: String },
+    url: { type: String, required: false },
     altText: multiLangText,
   },
 
@@ -46,16 +50,16 @@ const ServiceSchema = new mongoose.Schema({
   ],
 
   recentProjects: [
-    { type: mongoose.Schema.Types.ObjectId, ref: 'Portfolio' },
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Portfolio', required: false },
   ],
 
   testimonials: [
-    { type: mongoose.Schema.Types.ObjectId, ref: 'Testimonial' },
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Testimonial', required: false },
   ],
 
   distingoshesUs: [
     {
-      icon: { type: String },
+      icon: { type: String, required: false },
       description: multiLangText,
     },
   ],
@@ -63,7 +67,7 @@ const ServiceSchema = new mongoose.Schema({
   designPhase: {
     title: multiLangText,
     desc: multiLangText,
-    image: { type: String },
+    image: { type: String, required: false },
     satisfiedClientValues: {
       title: multiLangText,
     },
@@ -77,7 +81,7 @@ const ServiceSchema = new mongoose.Schema({
 
   techUsedInService: [
     {
-      icon: { type: String },
+      icon: { type: String, required: false },
       title: multiLangText,
       desc: multiLangText,
     },
@@ -90,5 +94,3 @@ const ServiceSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
-module.exports = mongoose.model("Service", ServiceSchema);

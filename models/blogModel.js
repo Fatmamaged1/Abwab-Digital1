@@ -3,16 +3,16 @@ const slugify = require("slugify");
 
 // Reusable localized string field
 const localizedString = {
-  ar: { type: String, required: true },
-  en: { type: String, required: true },
+  ar: { type: String, required: false },
+  en: { type: String, required: false },
 };
 
 // SEO Schema
 const seoSchema = new mongoose.Schema({
-  language: { type: String, enum: ['en', 'ar'], required: true },
-  metaTitle: { type: String, required: true },
-  metaDescription: { type: String, required: true },
-  keywords: { type: String, required: true },
+  language: { type: String, enum: ['en', 'ar'], required: false },
+  metaTitle: { type: String, required: false },
+  metaDescription: { type: String, required: false },
+  keywords: { type: String, required: false },
   canonicalTag: { type: String },
   structuredData: { type: mongoose.Schema.Types.Mixed },
 });
@@ -49,11 +49,11 @@ const blogSchema = new mongoose.Schema({
       ],
     },
   ],
-  author: { type: String, required: true },
+  author: { type: String, required: false },
   tags: [tagSchema],
   publishedDate: { type: Date, default: Date.now },
   image: {
-    url: { type: String, required: true },
+    url: { type: String, required: false },
     altText: localizedString,
   },
   seo: [seoSchema],

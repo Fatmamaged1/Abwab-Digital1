@@ -5,6 +5,7 @@ const Testimonial = require("../models/testimonialModel");// تأكد من أن 
 exports.createService = async (req, res) => {
   try {
     const {
+      name,
       description,         // { en: "", ar: "" }
       category,            // string
       importance,          // [{ desc: { en, ar } }]
@@ -19,6 +20,7 @@ exports.createService = async (req, res) => {
 
     // Parse fields
     const parsedDescription = JSON.parse(description || '{}');
+    const parsedName = JSON.parse(name || '{}');
     const parsedImportance = JSON.parse(importance || '[]');
     const parsedTechUsed = JSON.parse(techUsedInService || '[]');
     const parsedDistingoshes = JSON.parse(distingoshesUs || '[]');
@@ -74,7 +76,8 @@ exports.createService = async (req, res) => {
 
     // Create the new service
     const newService = new Service({
-      description: parsedDescription,         // { en, ar }
+      description: parsedDescription, 
+      name:parsedName,
       category,                               // string
       image: {
         url: imageUrl,
@@ -108,14 +111,133 @@ exports.createService = async (req, res) => {
   }
 };
 
+// Get Services by ID with full section details and image handling
 
+// Get service by ID in both Arabic and English with all details
+exports.getAllServicesDataById = async (req, res) => {
+  try {
+    const service = await Service.findById(req.params.id)
+      .populate('recentProjects', 'title description images category')
+      .lean();
 
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service not found',
+      });
+    }
+
+    // Format response with both Arabic and English versions
+    const formattedResponse = {
+      ar: {
+        _id: service._id,
+        name: service.name?.ar || '',
+        description: service.description?.ar || '',
+        category: service.category || '',
+        slug: service.slug || '',
+        image: {
+          url: service.image?.url || '',
+          altText: service.image?.altText?.ar || '',
+        },
+        importance: service.importance?.map(item => ({
+          desc: item.desc?.ar || '',
+        })) || [],
+        techUsedInService: service.techUsedInService?.map(item => ({
+          title: item.title?.ar || '',
+          desc: item.desc?.ar || '',
+          icon: item.icon || '',
+        })) || [],
+        distingoshesUs: service.distingoshesUs?.map(item => ({
+          title: item.title?.ar || '',
+          description: item.description?.ar || '',
+          icon: item.icon || '',
+        })) || [],
+        designPhase: service.designPhase ? {
+          title: service.designPhase.title?.ar || '',
+          desc: service.designPhase.desc?.ar || '',
+          image: service.designPhase.image || '',
+          satisfiedClientValues: {
+            title: service.designPhase.satisfiedClientValues?.title?.ar || '',
+          },
+          values: service.designPhase.values?.map(v => ({
+            title: v.title?.ar || '',
+            desc: v.desc?.ar || '',
+          })) || [],
+        } : null,
+        recentProjects: service.recentProjects?.map(project => ({
+          _id: project._id,
+          title: project.title?.ar || '',
+          description: project.description?.ar || '',
+          images: project.images || [],
+          category: project.category,
+        })) || [],
+        seo: service.seo?.find(s => s.language === 'ar') || {},
+      },
+      en: {
+        _id: service._id,
+        name: service.name?.en || '',
+        description: service.description?.en || '',
+        category: service.category || '',
+        slug: service.slug || '',
+        image: {
+          url: service.image?.url || '',
+          altText: service.image?.altText?.en || '',
+        },
+        importance: service.importance?.map(item => ({
+          desc: item.desc?.en || '',
+        })) || [],
+        techUsedInService: service.techUsedInService?.map(item => ({
+          title: item.title?.en || '',
+          desc: item.desc?.en || '',
+          icon: item.icon || '',
+        })) || [],
+        distingoshesUs: service.distingoshesUs?.map(item => ({
+          title: item.title?.en || '',
+          description: item.description?.en || '',
+          icon: item.icon || '',
+        })) || [],
+        designPhase: service.designPhase ? {
+          title: service.designPhase.title?.en || '',
+          desc: service.designPhase.desc?.en || '',
+          image: service.designPhase.image || '',
+          satisfiedClientValues: {
+            title: service.designPhase.satisfiedClientValues?.title?.en || '',
+          },
+          values: service.designPhase.values?.map(v => ({
+            title: v.title?.en || '',
+            desc: v.desc?.en || '',
+          })) || [],
+        } : null,
+        recentProjects: service.recentProjects?.map(project => ({
+          _id: project._id,
+          title: project.title?.en || '',
+          description: project.description?.en || '',
+          images: project.images || [],
+          category: project.category,
+        })) || [],
+        seo: service.seo?.find(s => s.language === 'en') || {},
+      },
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: formattedResponse,
+    });
+  } catch (error) {
+    console.error('Error in getAllServicesDataById:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve service data',
+      error: error.message,
+    });
+  }
+};
 
 exports.getAllServices = async (req, res) => {
   try {
     const language = req.query.language || "en";
 
-    const services = await Service.find().select("description category seo");
+    const services = await Service.find().select("description name category seo");
 
     const processedServices = services.map(service => {
       const serviceObj = service.toObject();
@@ -295,6 +417,7 @@ const parseJSONField = (field, defaultValue) => {
 exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
+
     const {
       description,
       category,
@@ -312,18 +435,52 @@ exports.updateService = async (req, res) => {
 
     const baseUrl = "https://backend.abwabdigital.com/uploads/";
 
-    // ✅ Parse JSON fields
-    const parsedDescription = parseJSONField(description, existingService.description);
-    const parsedImportance = parseJSONField(importance, existingService.importance);
-    const parsedTechUsed = parseJSONField(techUsedInService, existingService.techUsedInService);
-    const parsedDistingoshes = parseJSONField(distingoshesUs, existingService.distingoshesUs);
-    const parsedDesignPhase = parseJSONField(designPhase, existingService.designPhase);
+    // ✅ فقط عدّل إذا تم إرسال الحقل
+    if (description) {
+      existingService.description = parseJSONField(description, existingService.description);
+    }
 
-    let parsedSeo = existingService.seo;
+    if (category) {
+      existingService.category = category;
+    }
+
+    if (importance) {
+      existingService.importance = parseJSONField(importance, existingService.importance);
+    }
+
+    if (techUsedInService) {
+      const parsedTechUsed = parseJSONField(techUsedInService, existingService.techUsedInService);
+      parsedTechUsed.forEach((item, i) => {
+        item.icon = req.files.techUsedInServiceIcons?.[i]
+          ? baseUrl + req.files.techUsedInServiceIcons[i].filename
+          : item.icon || "";
+      });
+      existingService.techUsedInService = parsedTechUsed;
+    }
+
+    if (distingoshesUs) {
+      const parsedDistingoshes = parseJSONField(distingoshesUs, existingService.distingoshesUs);
+      parsedDistingoshes.forEach((item, i) => {
+        item.icon = req.files.distingoshesUsIcons?.[i]
+          ? baseUrl + req.files.distingoshesUsIcons[i].filename
+          : item.icon || "";
+      });
+      existingService.distingoshesUs = parsedDistingoshes;
+    }
+
+    if (designPhase) {
+      const parsedDesignPhase = parseJSONField(designPhase, existingService.designPhase);
+      if (req.files.designPhaseImage?.[0]) {
+        parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
+      }
+      existingService.designPhase = parsedDesignPhase;
+    }
+
     if (seo) {
       try {
-        parsedSeo = JSON.parse(seo);
+        let parsedSeo = JSON.parse(seo);
         if (!Array.isArray(parsedSeo)) parsedSeo = [parsedSeo];
+        existingService.seo = parsedSeo;
       } catch (error) {
         return res.status(400).json({
           success: false,
@@ -333,45 +490,16 @@ exports.updateService = async (req, res) => {
       }
     }
 
-    // ✅ Image: main service image
-    const imageUrl = req.files.image?.[0]?.filename
-      ? baseUrl + req.files.image[0].filename
-      : existingService.image?.url;
-
-    // ✅ Assign icons to techUsedInService
-    parsedTechUsed.forEach((item, i) => {
-      item.icon = req.files.techUsedInServiceIcons?.[i]
-        ? baseUrl + req.files.techUsedInServiceIcons[i].filename
-        : item.icon || "";
-    });
-
-    // ✅ Assign icons to distingoshesUs
-    parsedDistingoshes.forEach((item, i) => {
-      item.icon = req.files.distingoshesUsIcons?.[i]
-        ? baseUrl + req.files.distingoshesUsIcons[i].filename
-        : item.icon || "";
-    });
-
-    // ✅ Design phase image
-    if (req.files.designPhaseImage?.[0]) {
-      parsedDesignPhase.image = baseUrl + req.files.designPhaseImage[0].filename;
+    // ✅ تحديث صورة الخدمة الرئيسية فقط إذا تم رفعها
+    if (req.files.image?.[0]?.filename) {
+      existingService.image = {
+        url: baseUrl + req.files.image[0].filename,
+        altText: {
+          en: "Service Image",
+          ar: "صورة الخدمة"
+        }
+      };
     }
-
-    // ✅ Update existing service
-    existingService.description = parsedDescription;
-    existingService.category = category || existingService.category;
-    existingService.image = {
-      url: imageUrl,
-      altText: {
-        en: "Service Image",
-        ar: "صورة الخدمة"
-      }
-    };
-    existingService.importance = parsedImportance;
-    existingService.techUsedInService = parsedTechUsed;
-    existingService.distingoshesUs = parsedDistingoshes;
-    existingService.designPhase = parsedDesignPhase;
-    existingService.seo = parsedSeo;
 
     await existingService.save();
 
