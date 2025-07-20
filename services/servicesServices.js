@@ -93,18 +93,19 @@ exports.createService = async (req, res) => {
       success: true,
       message: "Service created successfully",
       data: {
-        id: newService._id,
-        name: newService.name,
-        description: newService.description,
-        category: newService.category,
-        image: newService.image,
-        importance: newService.importance,
-        techUsedInService: newService.techUsedInService,
-        distingoshesUs: newService.distingoshesUs,
-        designPhase: newService.designPhase,
-        seo: newService.seo,
-        createdAt: newService.createdAt,
-      },
+          id: newService._id,
+          name: newService.name, // ✅ Add this line
+          description: newService.description,
+          category: newService.category,
+          image: newService.image,
+          importance: newService.importance,
+          techUsedInService: newService.techUsedInService,
+          distingoshesUs: newService.distingoshesUs,
+          designPhase: newService.designPhase,
+          seo: newService.seo,
+          createdAt: newService.createdAt,
+        },
+   
     });
   } catch (error) {
     console.error("Error creating service:", error);
