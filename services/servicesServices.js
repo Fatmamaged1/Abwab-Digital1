@@ -1,6 +1,7 @@
 const upload = require("../middleware/upload"); // Import multer middleware
 const Service = require("../models/servicesModel"); // Import model
 const Portfolio = require("../models/PortfolioModel");
+const slugify = require("slugify");
 const Testimonial = require("../models/testimonialModel");// تأكد من أن المسار صحيح
 exports.createService = async (req, res) => {
   try {
