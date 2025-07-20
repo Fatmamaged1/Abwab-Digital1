@@ -512,6 +512,77 @@ exports.getAllBlogDataById = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
+// Get blog by multilingual slug
+exports.getBlogBySlug = async (req, res) => {
+  try {
+    const language = req.query.language === "ar" ? "ar" : "en";
+    const similarLimit = parseInt(req.query.limit) || 5;
+    const slug = req.params.slug;
+
+    if (!slug) {
+      return res.status(400).json(formatErrorResponse("Slug is required"));
+    }
+
+    const blog = await Blog.findOne({ [`slug.${language}`]: slug }).lean();
+
+    if (!blog) {
+      return res.status(404).json(formatErrorResponse("Blog not found"));
+    }
+
+    const sectionArray = Array.isArray(blog.section)
+      ? blog.section.map(sec => ({
+          title: sec.title?.[language] || "",
+          description: sec.description?.[language] || "",
+          image: {
+            url: sec.image?.url || "",
+            altText: sec.image?.altText?.[language] || "No Image"
+          }
+        }))
+      : [];
+
+    const seoData = Array.isArray(blog.seo)
+      ? blog.seo.find(seo => seo.language === language) || {}
+      : {};
+
+    const similarArticles = await Blog.find({
+      _id: { $ne: blog._id },
+      categories: { $in: blog.categories },
+    })
+      .limit(similarLimit)
+      .select("title image slug")
+      .lean();
+
+    const formattedBlog = {
+      _id: blog._id,
+      id: blog._id,
+      title: blog.title?.[language] || "",
+      description: blog.description?.[language] || "",
+      content: blog.content?.[language] || "",
+      section: sectionArray,
+      categories: blog.categories || [],
+      author: blog.author || "Unknown",
+      image: {
+        url: blog.image?.url || "",
+        altText: blog.image?.altText?.[language] || "No Image"
+      },
+      publishedDate: blog.publishedAt || blog.createdAt,
+      createdAt: blog.createdAt,
+      updatedAt: blog.updatedAt,
+      seo: seoData,
+      similarArticles: similarArticles.map(article => ({
+        id: article._id,
+        title: article.title?.[language] || "",
+        url: `https://backend.abwabdigital.com/blog/${article.slug?.[language] || article._id}`,
+        image: article.image || { url: "", altText: "No Image" }
+      })),
+    };
+
+    return res.status(200).json(formatSuccessResponse(formattedBlog, "Blog retrieved successfully"));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
+  }
+};
 
 // Get all blog data by ID in both Arabic and English
 exports.getAllBlogDataById = async (req, res) => {
