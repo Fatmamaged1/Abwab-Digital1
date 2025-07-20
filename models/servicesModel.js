@@ -18,7 +18,7 @@ const multiLangText = {
 const ServiceSchema = new mongoose.Schema({
   slug: {
     en: { type: String, required: true, unique: true },
-    ar: { type: String, required: true, unique: true }
+    ar: { type: String, required: false, unique: true }
   }
 ,  
 
