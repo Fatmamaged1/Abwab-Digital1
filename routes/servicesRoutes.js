@@ -18,6 +18,7 @@ router.post(
 
 // Get all services
 router.get("/", serviceController.getAllServices);
+router.get('/slug/:slug', serviceController.getServiceBySlug);
 
 // Get service by ID
 router.get("/:id", serviceController.getServiceById);

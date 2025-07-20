@@ -29,7 +29,7 @@ exports.createService = async (req, res) => {
     let parsedSeo = [];
     const slug = {
       en: slugify(parsedName?.en || "", { lower: true, strict: true }),
-      ar: slugify(parsedName?.ar || "", { lower: true, strict: true, locale: "ar" })
+     
     };
     
     if (seo) {
@@ -123,7 +123,42 @@ exports.createService = async (req, res) => {
 };
 
 
-// Get Services by ID with full section details and image handling
+
+
+
+exports.getServiceBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const lang = req.query.lang || 'en'; // en (default) or ar
+
+    if (!['en', 'ar'].includes(lang)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid language. Supported: 'en', 'ar'",
+      });
+    }
+
+    const service = await Service.findOne({ [`slug.${lang}`]: slug });
+
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: service,
+    });
+  } catch (error) {
+    console.error('getServiceBySlug error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
 
 // Get service by ID in both Arabic and English with all details
 exports.getAllServicesDataById = async (req, res) => {
