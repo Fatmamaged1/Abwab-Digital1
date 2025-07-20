@@ -26,7 +26,11 @@ exports.createService = async (req, res) => {
     const parsedDistingoshes = JSON.parse(distingoshesUs || '[]');
     const parsedDesignPhase = JSON.parse(designPhase || '{}');
     let parsedSeo = [];
-
+    const slug = {
+      en: slugify(parsedName?.en || "", { lower: true, strict: true }),
+      ar: slugify(parsedName?.ar || "", { lower: true, strict: true, locale: "ar" })
+    };
+    
     if (seo) {
       try {
         parsedSeo = JSON.parse(seo);
@@ -85,7 +89,7 @@ exports.createService = async (req, res) => {
       distingoshesUs: parsedDistingoshes,
       designPhase: parsedDesignPhase,
       seo: parsedSeo,
-    });
+      slug    });
 
     await newService.save();
 
@@ -96,6 +100,7 @@ exports.createService = async (req, res) => {
           id: newService._id,
           name: newService.name, // ✅ Add this line
           description: newService.description,
+          slug: newService.slug,
           category: newService.category,
           image: newService.image,
           importance: newService.importance,
@@ -105,7 +110,6 @@ exports.createService = async (req, res) => {
           seo: newService.seo,
           createdAt: newService.createdAt,
         },
-   
     });
   } catch (error) {
     console.error("Error creating service:", error);
@@ -342,9 +346,11 @@ exports.getServiceById = async (req, res) => {
     // designPhase
     if (serviceObj.designPhase) {
       serviceObj.designPhase = {
+        name: serviceObj.designPhase.name || "",
         title: serviceObj.designPhase.title?.[language] || "",
         desc: serviceObj.designPhase.desc?.[language] || "",
         image: serviceObj.designPhase.image || "",
+        slug: serviceObj.designPhase.slug || "",
         satisfiedClientValues: {
           title: serviceObj.designPhase.satisfiedClientValues?.title?.[language] || ""
         },
