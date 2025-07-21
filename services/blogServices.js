@@ -120,7 +120,10 @@ exports.createBlog = async (req, res) => {
       seo: seoArray,
       similarArticles: similarArticlesArray,
       image: blogImage,
-      slug: slugify(titleEn || titleAr, { lower: true, strict: true }),
+      slug: {
+        en: slugify(titleEn || "", { lower: true, strict: true }),
+        ar: slugify(titleAr || "", { lower: true, strict: true }),
+      },
       publishedDate: new Date(),
     });
 
