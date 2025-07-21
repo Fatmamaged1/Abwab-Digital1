@@ -129,16 +129,16 @@ exports.createService = async (req, res) => {
 exports.getServiceBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    const lang = req.query.lang || 'en'; // en (default) or ar
+    const language = req.query.language || 'en';
 
-    if (!['en', 'ar'].includes(lang)) {
+    if (!['en', 'ar'].includes(language)) {
       return res.status(400).json({
         success: false,
         message: "Invalid language. Supported: 'en', 'ar'",
       });
     }
 
-    const service = await Service.findOne({ [`slug.${lang}`]: slug });
+    const service = await Service.findOne({ [`slug.${language}`]: slug });
 
     if (!service) {
       return res.status(404).json({
@@ -147,18 +147,98 @@ exports.getServiceBySlug = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    let serviceObj = service.toObject();
+
+    // 🔤 Localized fields
+    serviceObj.description = serviceObj.description?.[language] || "";
+
+    if (Array.isArray(serviceObj.importance)) {
+      serviceObj.importance = serviceObj.importance.map(item => ({
+        desc: item.desc?.[language] || ""
+      }));
+    }
+
+    if (Array.isArray(serviceObj.techUsedInService)) {
+      serviceObj.techUsedInService = serviceObj.techUsedInService.map(item => ({
+        title: item.title?.[language] || "",
+        desc: item.desc?.[language] || "",
+        icon: item.icon || ""
+      }));
+    }
+
+    if (Array.isArray(serviceObj.distingoshesUs)) {
+      serviceObj.distingoshesUs = serviceObj.distingoshesUs.map(item => ({
+        title: item.title?.[language] || "",
+        description: item.description?.[language] || "",
+        icon: item.icon || ""
+      }));
+    }
+
+    if (serviceObj.designPhase) {
+      serviceObj.designPhase = {
+        name: serviceObj.designPhase.name || "",
+        title: serviceObj.designPhase.title?.[language] || "",
+        desc: serviceObj.designPhase.desc?.[language] || "",
+        image: serviceObj.designPhase.image || "",
+        slug: serviceObj.designPhase.slug || "",
+        satisfiedClientValues: {
+          title: serviceObj.designPhase.satisfiedClientValues?.title?.[language] || ""
+        },
+        values: Array.isArray(serviceObj.designPhase.values)
+          ? serviceObj.designPhase.values.map(v => ({
+              title: v.title?.[language] || "",
+              desc: v.desc?.[language] || ""
+            }))
+          : []
+      };
+    }
+
+    // 🧠 SEO
+    const matchedSeo = Array.isArray(serviceObj.seo)
+      ? serviceObj.seo.find(s => s.language === language) || serviceObj.seo[0]
+      : null;
+
+    serviceObj.seo = matchedSeo || {
+      language,
+      metaTitle: "Default Meta Title",
+      metaDescription: "Default meta description.",
+      keywords: "default,service,seo",
+      canonicalTag: "",
+      structuredData: {}
+    };
+
+    // ✅ Testimonials
+    const testimonials = await Testimonial.find({})
+      .sort({ createdAt: -1 })
+      .limit(4);
+
+    // ✅ Related Portfolios
+    const relatedPortfolios = await Portfolio.find({
+      category: service.category,
+      _id: { $nin: service.recentProjects.map((p) => p._id) },
+    })
+      .select("name description images category")
+      .sort({ createdAt: -1 })
+      .limit(4);
+
+    return res.status(200).json({
       success: true,
-      data: service,
+      data: {
+        ...serviceObj,
+        testimonials,
+        relatedPortfolios,
+      },
     });
   } catch (error) {
     console.error('getServiceBySlug error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error',
+      error: error.message,
     });
   }
 };
+
 
 // Get service by ID in both Arabic and English with all details
 exports.getAllServicesDataById = async (req, res) => {
@@ -279,18 +359,23 @@ exports.getAllServicesDataById = async (req, res) => {
     });
   }
 };
-
 exports.getAllServices = async (req, res) => {
   try {
     const language = req.query.language || "en";
 
-    const services = await Service.find().select("description name category seo");
+    const services = await Service.find().select("description name slug category seo");
 
     const processedServices = services.map(service => {
       const serviceObj = service.toObject();
 
       // ترجمة الوصف حسب اللغة
       serviceObj.description = serviceObj.description?.[language] || "";
+
+      // ترجمة الاسم حسب اللغة
+      serviceObj.name = serviceObj.name?.[language] || "";
+
+      // ترجمة السلوغ حسب اللغة
+      serviceObj.slug = serviceObj.slug?.[language] || "";
 
       // SEO باللغة المطلوبة
       const matchedSeo = Array.isArray(serviceObj.seo)
@@ -334,6 +419,7 @@ exports.getAllServices = async (req, res) => {
     return res.status(500).json({ success: false, message: "Error fetching services", error: error.message });
   }
 };
+
 
 
 
