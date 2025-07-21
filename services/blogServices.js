@@ -531,14 +531,18 @@ exports.getBlogBySlug = async (req, res) => {
     const similarLimit = parseInt(req.query.limit) || 5;
     const slug = req.params.slug;
 
-    // 🔍 Find blog by localized slug
-    const blog = await Blog.findOne({ [`slug.${language}`]: slug }).lean();
+    // ✅ ابحث بأي لغة موجودة للـ slug
+    const blog = await Blog.findOne({
+      $or: [
+        { "slug.en": slug },
+        { "slug.ar": slug }
+      ]
+    }).lean();
 
     if (!blog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    // 🧩 Format section content
     const sectionArray = Array.isArray(blog.section)
       ? blog.section.map(sec => ({
           title: sec.title?.[language] || "",
@@ -550,12 +554,10 @@ exports.getBlogBySlug = async (req, res) => {
         }))
       : [];
 
-    // 🔍 SEO based on language
     const seoData = Array.isArray(blog.seo)
       ? blog.seo.find(seo => seo.language === language) || {}
       : {};
 
-    // 🔗 Similar articles
     const similarArticles = await Blog.find({
       _id: { $ne: blog._id },
       categories: { $in: blog.categories },
@@ -564,7 +566,6 @@ exports.getBlogBySlug = async (req, res) => {
       .select("title image slug")
       .lean();
 
-    // ✅ Format full blog response
     const formattedBlog = {
       _id: blog._id,
       id: blog._id,
