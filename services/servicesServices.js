@@ -138,7 +138,13 @@ exports.getServiceBySlug = async (req, res) => {
       });
     }
 
-    const service = await Service.findOne({ [`slug.${language}`]: slug });
+    // ✅ البحث عن الخدمة باستخدام slug من أي لغة
+    const service = await Service.findOne({
+      $or: [
+        { 'slug.en': slug },
+        { 'slug.ar': slug }
+      ]
+    });
 
     if (!service) {
       return res.status(404).json({
@@ -149,7 +155,8 @@ exports.getServiceBySlug = async (req, res) => {
 
     let serviceObj = service.toObject();
 
-    // 🔤 Localized fields
+    // 🔤 تخصيص الحقول حسب اللغة المطلوبة
+    serviceObj.title = serviceObj.title?.[language] || "";
     serviceObj.description = serviceObj.description?.[language] || "";
 
     if (Array.isArray(serviceObj.importance)) {
