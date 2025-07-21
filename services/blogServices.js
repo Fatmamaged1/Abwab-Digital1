@@ -528,22 +528,21 @@ exports.getAllBlogDataById = async (req, res) => {
 exports.getBlogBySlug = async (req, res) => {
   try {
     const language = req.query.language === "ar" ? "ar" : "en";
-    const slug = req.params.slug;
     const similarLimit = parseInt(req.query.limit) || 5;
+    const slug = req.params.slug;
 
-    // ✅ أولاً نحاول البحث على الطريقة الجديدة: slug.en أو slug.ar
-    let blog = await Blog.findOne({ [`slug.${language}`]: slug }).lean();
-
-    // ❗ إذا لم نجدها، نحاول الطريقة القديمة: slug كـ String
-    if (!blog) {
-      blog = await Blog.findOne({ slug: slug }).lean();
-    }
+    // ✅ ابحث بأي لغة موجودة للـ slug
+    const blog = await Blog.findOne({
+      $or: [
+        { "slug.en": slug },
+        { "slug.ar": slug }
+      ]
+    }).lean();
 
     if (!blog) {
       return res.status(404).json(formatErrorResponse("Blog not found"));
     }
 
-    // 🧩 Format section content
     const sectionArray = Array.isArray(blog.section)
       ? blog.section.map(sec => ({
           title: sec.title?.[language] || "",
@@ -555,12 +554,10 @@ exports.getBlogBySlug = async (req, res) => {
         }))
       : [];
 
-    // 🔍 SEO based on language
     const seoData = Array.isArray(blog.seo)
       ? blog.seo.find(seo => seo.language === language) || {}
       : {};
 
-    // 🔗 Similar articles
     const similarArticles = await Blog.find({
       _id: { $ne: blog._id },
       categories: { $in: blog.categories },
@@ -569,14 +566,13 @@ exports.getBlogBySlug = async (req, res) => {
       .select("title image slug")
       .lean();
 
-    // ✅ Format full blog response
     const formattedBlog = {
       _id: blog._id,
       id: blog._id,
       title: blog.title?.[language] || "",
       description: blog.description?.[language] || "",
       content: blog.content?.[language] || "",
-      slug: blog.slug?.[language] || blog.slug || "",
+      slug: blog.slug?.[language] || "",
       section: sectionArray,
       categories: blog.categories || [],
       author: blog.author || "Unknown",
@@ -591,7 +587,7 @@ exports.getBlogBySlug = async (req, res) => {
       similarArticles: similarArticles.map(article => ({
         id: article._id,
         title: article.title?.[language] || "",
-        url: `https://backend.abwabdigital.com/blog/${article.slug?.[language] || article.slug || article._id}`,
+        url: `https://backend.abwabdigital.com/blog/${article.slug?.[language] || article._id}`,
         image: article.image || { url: "", altText: "No Image" }
       })),
     };
@@ -602,7 +598,6 @@ exports.getBlogBySlug = async (req, res) => {
     return res.status(500).json(formatErrorResponse("Failed to retrieve blog", error.message));
   }
 };
-
 
 
 // Get all blog data by ID in both Arabic and English
