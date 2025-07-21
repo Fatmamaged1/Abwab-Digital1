@@ -27,7 +27,10 @@ const tagSchema = new mongoose.Schema({
 const blogSchema = new mongoose.Schema({
   title: localizedString,
   description: localizedString,
-  slug: { type: String, unique: true, lowercase: true },
+  slug: {
+    en: { type: String, unique: true, lowercase: true },
+    ar: { type: String, unique: true, lowercase: true },
+  },
   section: [
     {
       title: localizedString,
@@ -77,7 +80,8 @@ const blogSchema = new mongoose.Schema({
 
 blogSchema.pre("save", function (next) {
   if (this.isModified("title")) {
-    this.slug = slugify(this.title.en, { lower: true, strict: true });
+    this.slug.en = slugify(this.title.en, { lower: true, strict: true });
+    this.slug.ar = slugify(this.title.ar, { lower: true, strict: true });
   }
   next();
 });

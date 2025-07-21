@@ -316,13 +316,12 @@ exports.updateBlog = async (req, res) => {
 };
 
 
-// Get all blogs with full section details and images
 exports.getAllBlogs = async (req, res) => {
   try {
     const language = req.query.language === "ar" ? "ar" : "en";
 
-    const blogs = await Blog.find({}, "image section title description content author createdAt categories seo")
-      .populate("similarArticles", "title image");
+    const blogs = await Blog.find({}, "image section title description content author createdAt categories seo slug")
+      .populate("similarArticles", "title image slug");
 
     const formattedBlogs = blogs.map((blog) => {
       const blogObj = blog.toObject();
@@ -330,8 +329,17 @@ exports.getAllBlogs = async (req, res) => {
       blogObj.title = blogObj.title?.[language] || "";
       blogObj.description = blogObj.description?.[language] || "";
       blogObj.content = blogObj.content?.[language] || "";
-      blogObj.slug = blogObj.slug?.[language] || "";
 
+      // ✅ دعم slug ككائن متعدد اللغات أو كسلسلة
+      if (typeof blogObj.slug === "object" && blogObj.slug !== null) {
+        blogObj.slug = blogObj.slug?.[language] || "";
+      } else if (typeof blogObj.slug === "string") {
+        blogObj.slug = blogObj.slug;
+      } else {
+        blogObj.slug = "";
+      }
+
+      // ✅ معالجة أقسام المقال
       blogObj.section = Array.isArray(blogObj.section)
         ? blogObj.section.map(sec => ({
             title: sec.title?.[language] || "",
@@ -343,18 +351,21 @@ exports.getAllBlogs = async (req, res) => {
           }))
         : [];
 
+      // ✅ صورة المقال
       blogObj.image = {
         url: blogObj.image?.url || "",
         altText: blogObj.image?.altText?.[language] || "No Image"
       };
 
+      // ✅ SEO متعدد اللغات
       blogObj.seo = Array.isArray(blogObj.seo)
         ? blogObj.seo.find(seo => seo.language === language) || {}
         : {};
 
+      // ✅ المقالات المشابهة
       blogObj.similarArticles = blogObj.similarArticles?.map(article => ({
         title: article.title?.[language] || "",
-        url: article.url || "#",
+        slug: typeof article.slug === "object" ? article.slug?.[language] || "" : article.slug || "",
         image: article.image || { url: "", altText: "No Image" }
       })) || [];
 
