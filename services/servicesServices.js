@@ -584,9 +584,15 @@ exports.updateService = async (req, res) => {
       existingService.name = parsedName;
 
       // ✅ تحديث الـ slug عند تعديل الاسم الإنجليزي
-      if (parsedName?.en) {
-        existingService.slug = slugify(parsedName.en, { lower: true, strict: true });
+      if (name) {
+        existingService.name = parseJSONField(name, existingService.name);
+      
+        // ✅ تحديث slug تلقائيًا من name.en
+        if (existingService.name?.en) {
+          existingService.slug = slugify(existingService.name.en, { lower: true, strict: true });
+        }
       }
+      
     }
 
     if (category) {
