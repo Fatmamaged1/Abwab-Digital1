@@ -551,6 +551,8 @@ const parseJSONField = (field, defaultValue) => {
   }
 };
 
+
+
 exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
@@ -558,7 +560,6 @@ exports.updateService = async (req, res) => {
     const {
       description,
       name,
-
       category,
       importance,
       techUsedInService,
@@ -574,14 +575,20 @@ exports.updateService = async (req, res) => {
 
     const baseUrl = "https://backend.abwabdigital.com/uploads/";
 
-    // ✅ فقط عدّل إذا تم إرسال الحقل
     if (description) {
       existingService.description = parseJSONField(description, existingService.description);
     }
 
     if (name) {
-      existingService.name = parseJSONField(name, existingService.name);;
+      const parsedName = parseJSONField(name, existingService.name);
+      existingService.name = parsedName;
+
+      // ✅ تحديث الـ slug عند تعديل الاسم الإنجليزي
+      if (parsedName?.en) {
+        existingService.slug = slugify(parsedName.en, { lower: true, strict: true });
+      }
     }
+
     if (category) {
       existingService.category = category;
     }
@@ -632,7 +639,6 @@ exports.updateService = async (req, res) => {
       }
     }
 
-    // ✅ تحديث صورة الخدمة الرئيسية فقط إذا تم رفعها
     if (req.files.image?.[0]?.filename) {
       existingService.image = {
         url: baseUrl + req.files.image[0].filename,
