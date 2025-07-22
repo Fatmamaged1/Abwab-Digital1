@@ -585,13 +585,25 @@ exports.updateService = async (req, res) => {
     }
 
     if (name) {
-      // لو name كائن، نستخدمه مباشرة
-      if (typeof name === 'object') {
-        existingService.name = name;
-      } else {
-        existingService.name = parseJSONField(name, existingService.name);
+      try {
+        const parsedName = typeof name === "string" ? JSON.parse(name) : name;
+        if (parsedName.en && parsedName.ar) {
+          existingService.name = parsedName;
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Both English and Arabic names are required"
+          });
+        }
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid JSON format for name",
+          error: error.message
+        });
       }
     }
+    
     
     if (category) {
       existingService.category = category;
