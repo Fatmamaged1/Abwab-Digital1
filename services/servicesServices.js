@@ -588,9 +588,17 @@ exports.updateService = async (req, res) => {
         existingService.name = parseJSONField(name, existingService.name);
       
         // ✅ تحديث slug تلقائيًا من name.en
-        if (existingService.name?.en) {
-          existingService.slug = slugify(existingService.name.en, { lower: true, strict: true });
+        if (name) {
+          const parsedName = parseJSONField(name, existingService.name);
+          existingService.name = parsedName;
+        
+          // ✅ تحديث slug تلقائيًا من name
+          existingService.slug = {
+            en: slugify(parsedName?.en || "", { lower: true, strict: true }),
+            ar: slugify(parsedName?.ar || "", { lower: true, strict: true }),
+          };
         }
+        
       }
       
     }
