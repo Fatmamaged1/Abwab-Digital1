@@ -121,11 +121,6 @@ exports.createService = async (req, res) => {
     });
   }
 };
-
-
-
-
-
 exports.getServiceBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -585,7 +580,7 @@ exports.updateService = async (req, res) => {
     }
 
     if (name) {
-      existingService.name = name;
+      existingService.name = parseJSONField(name, existingService.name);;
     }
     if (category) {
       existingService.category = category;
