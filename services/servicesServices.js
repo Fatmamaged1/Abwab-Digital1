@@ -562,6 +562,8 @@ exports.updateService = async (req, res) => {
 
     const {
       description,
+      name,
+
       category,
       importance,
       techUsedInService,
@@ -582,6 +584,9 @@ exports.updateService = async (req, res) => {
       existingService.description = parseJSONField(description, existingService.description);
     }
 
+    if (name) {
+      existingService.name = parseJSONField(name, existingService.name);
+    }
     if (category) {
       existingService.category = category;
     }
