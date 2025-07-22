@@ -585,8 +585,14 @@ exports.updateService = async (req, res) => {
     }
 
     if (name) {
-      existingService.name = parseJSONField(name, existingService.name);
+      // لو name كائن، نستخدمه مباشرة
+      if (typeof name === 'object') {
+        existingService.name = name;
+      } else {
+        existingService.name = parseJSONField(name, existingService.name);
+      }
     }
+    
     if (category) {
       existingService.category = category;
     }
