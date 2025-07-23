@@ -30,12 +30,6 @@ const homeRoutes = require("./routes/homeRoutes");
 const portfolioRoutes = require("./routes/PortfolioRoutes");
 const mailingListRoutes = require("./routes/mailingListRoutes");
 
-const corsConfig = {
-  origin: "*",
-  credentials: true,
-  methods: ["GET", "POST", "DELETE", "PUT"],
-};
-
 const app = express();
 
 async function startServer() {
@@ -47,7 +41,10 @@ async function startServer() {
     await connectDB();
     console.log("✅ Connected to MongoDB");
 
-    app.use(cors(corsConfig));
+    // Enable CORS for all origins
+    app.use(cors());
+
+    // Security & Middleware
     app.use(helmet());
     app.use(express.json());
     app.use(morgan("dev"));
@@ -79,6 +76,7 @@ async function startServer() {
       next(new ApiError(`Can't find ${req.originalUrl} on this server`, 404));
     });
 
+    // Global Error Handler
     app.use(globalError);
 
     // Load SSL Certificate
