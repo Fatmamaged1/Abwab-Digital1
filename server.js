@@ -3,7 +3,7 @@ const express = require("express");
 const morgan = require("morgan");
 const path = require("path");
 const cors = require("cors");
-const helmet = require("helmet");
+//const helmet = require("helmet");
 const fs = require("fs");
 const https = require("https");
 const http = require("http");
@@ -42,10 +42,14 @@ async function startServer() {
     console.log("✅ Connected to MongoDB");
 
     // Enable CORS for all origins
-    app.use(cors());
+    app.use(cors({
+      origin: '*', // أي دومين
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }));
 
     // Security & Middleware
-    app.use(helmet());
+  //  app.use(helmet());
     app.use(express.json());
     app.use(morgan("dev"));
     app.set("views", path.join(__dirname, "views"));
