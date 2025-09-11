@@ -8,39 +8,52 @@ const ServiceModel = require('./models/servicesModel');
  * Weekly Blog Newsletter - كل يوم إثنين الساعة 9 صباحًا
  */
 
-cron.schedule('* * * * *', async () => {
-    try {
-      console.log('📧 Testing weekly blog newsletter...');
-  
-      const contacts = await ContactModel.find().select('email').lean();
-      const emails = contacts.map(c => c.email);
-  
-      const blogs = await BlogModel.find()
-        .select('title description section image createdAt')
-        .lean();
-  
-      console.log(`Found ${emails.length} contacts and ${blogs.length} blogs`);
-  
-      if (emails.length > 0 && blogs.length > 0) {
-        // فقط للاختبار: يمكنك إرسال إل ى إيميلك الخاص
-        const testEmails = ['fatma.m.elessawy@gmail.com'];
-         await sendNewBlogsEachWeekToAllContacts(testEmails, blogs.map(b => ({
-            title: b.title,
-            description: b.description,
-            section: b.section,
-            image: b.image,
-            publishDate: b.createdAt.toLocaleDateString()
-          })));
-          
-        console.log('Newsletter sent successfully!');
-      } else {
-        console.log('No emails or blogs to send this week.');
-      }
-    } catch (err) {
-      console.error('Error in weekly blog cron:', err);
+cron.schedule('* * * * *', async () => { 
+  try {
+    console.log('📧 Testing weekly blog newsletter...');
+
+    const contacts = await ContactModel.find().select('email').lean();
+    const emails = contacts.map(c => c.email);
+
+    const blogs = await BlogModel.find()
+      .select('title description section image createdAt')
+      .lean();
+
+    console.log(`Found ${emails.length} contacts and ${blogs.length} blogs`);
+
+    if (emails.length > 0 && blogs.length > 0) {
+      // فقط للاختبار: إرسال لبريد واحد
+      const testEmails = ['fatma.m.elessawy@gmail.com'];
+
+      await sendNewBlogsEachWeekToAllContacts(
+        testEmails, 
+        blogs.map(b => ({
+          // 👇 حدد اللغة اللي تبيها
+          title: b.title?.ar || b.title?.en || '',
+          description: b.description?.ar || b.description?.en || '',
+          section: b.section?.map(s => ({
+            title: s.title?.ar || s.title?.en || '',
+            description: s.description?.ar || s.description?.en || '',
+            image: s.image?.url || ''
+          })) || [],
+          image: b.image?.url || '',
+          publishDate: new Date(b.createdAt).toLocaleDateString('ar-SA', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })
+        }))
+      );
+
+      console.log('✅ Newsletter sent successfully!');
+    } else {
+      console.log('ℹ️ No emails or blogs to send this week.');
     }
-  });
-  
+  } catch (err) {
+    console.error('❌ Error in weekly blog cron:', err);
+  }
+});
+
 /**
  * Monthly Services Newsletter - يوم 1 من كل شهر الساعة 10 صباحًا
  */
