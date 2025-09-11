@@ -107,7 +107,13 @@ const careerSchema = new mongoose.Schema(
     },
 
     // Job description and requirements
-    description: String,
+    description: { type: mongoose.Schema.Types.Mixed },
+    language: {
+      type: String,
+      enum: ["ar", "en"],
+      default: "en"
+    },
+    
     requirements: String,
     responsibilities: String,
     benefits: String,
