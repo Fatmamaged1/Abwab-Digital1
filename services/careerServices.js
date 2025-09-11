@@ -21,16 +21,17 @@ exports.createCareer = async (req, res, next) => {
   }
 };
 
-
 exports.getAllCareers = async (req, res, next) => {
   try {
     const { search, status, page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
+    // فلترة
     const filter = {};
     if (search) filter.$text = { $search: search };
     if (status) filter.status = status;
 
+    // الحقول المطلوبة
     const fieldsToSelect = [
       "title",
       "department",
@@ -44,27 +45,37 @@ exports.getAllCareers = async (req, res, next) => {
       "language",
       "isActive",
       "slug",
-      "contentType"
+      "contentType",
+      "cv", // ✅ مهم عشان نجيب ملف الـ Resume
     ].join(" ");
 
+    // جلب البيانات
     const [careers, total] = await Promise.all([
       Career.find(filter)
-
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit))
-        .select(fieldsToSelect), // حدد الحقول
+        .select(fieldsToSelect),
       Career.countDocuments(filter),
     ]);
-const enhancedCareers = careers.map(career => {
+
+    // تعديل البيانات + إضافة رابط واسم الملف
+    const enhancedCareers = careers.map((career) => {
       const data = career.toObject();
 
-      // رابط كامل
-      data.url = `${req.protocol}://${req.get("host")}/uploads/careers/${path.basename(data.url)}`;
+      if (career.cv) {
+        const filePath = `uploads/careers/${career.cv}`;
+        data.fileName = path.basename(filePath); // اسم الملف فقط
+        data.filePath = filePath; // الرابط الكامل
+      } else {
+        data.fileName = null;
+        data.filePath = null;
+      }
 
       return data;
     });
 
+    // الاستجابة
     return res.json({
       success: true,
       total,
@@ -73,9 +84,11 @@ const enhancedCareers = careers.map(career => {
       data: enhancedCareers,
     });
   } catch (error) {
+    console.error("❌ getAllCareers error:", error);
     next(error);
   }
 };
+
 
 
 // عرض وظيفة واحدة حسب ID أو Slug
