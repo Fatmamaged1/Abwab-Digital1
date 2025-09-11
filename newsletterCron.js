@@ -15,7 +15,7 @@ cron.schedule('* * * * *', async () => {
       const contacts = await ContactModel.find().select('email').lean();
       const emails = contacts.map(c => c.email);
   
-      const blogs = await BlogModel.find({ isActive: true })
+      const blogs = await BlogModel.find()
         .select('title excerpt slug featuredImage createdAt')
         .lean();
   
@@ -23,8 +23,8 @@ cron.schedule('* * * * *', async () => {
   
       if (emails.length > 0 && blogs.length > 0) {
         // فقط للاختبار: يمكنك إرسال إل ى إيميلك الخاص
-       //  const testEmails = ['fatma.m.elessawy@gmail.com'];
-         await sendNewBlogsEachWeekToAllContacts(emails, blogs.map(b => ({
+        const testEmails = ['fatma.m.elessawy@gmail.com'];
+         await sendNewBlogsEachWeekToAllContacts(testEmails, blogs.map(b => ({
             title: b.title,
             excerpt: b.excerpt,
             link: `http://46.202.134.87:4000/api/v1/blogs/${b.slug}`,
