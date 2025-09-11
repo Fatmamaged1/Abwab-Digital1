@@ -18,16 +18,17 @@ async function sendConfirmationEmail(recipientEmail, message) {
   const mailOptions = {
     from: process.env.GMAIL_USER,
     to: recipientEmail,
-    subject: 'RASAD - Thank you for contacting us',
+    subject: "ٌRASAD - تسلم يدينك تواصلت معنا 🌹",
     html: `
       <!DOCTYPE html>
-      <html>
+      <html lang="ar" dir="rtl">
       <head>
+        <meta charset="UTF-8" />
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 0; color: #1d1d1f; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 0; color: #1d1d1f; direction: rtl; }
           .container { width: 100%; max-width: 600px; margin: 40px auto; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); padding: 24px; box-sizing: border-box; }
           .header { text-align: center; padding-bottom: 24px; border-bottom: 1px solid #e3e3e3; }
-          .header h1 { font-size: 28px; font-weight: 600; color: #333; margin: 0; }
+          .header h1 { font-size: 26px; font-weight: 600; color: #333; margin: 0; }
           .content { padding: 24px 0; text-align: center; }
           .content p { font-size: 17px; line-height: 1.6; color: #555; margin: 0 0 16px; }
           .footer { text-align: center; padding-top: 24px; border-top: 1px solid #e3e3e3; color: #888; font-size: 13px; }
@@ -35,58 +36,63 @@ async function sendConfirmationEmail(recipientEmail, message) {
       </head>
       <body>
         <div class="container">
-          <div class="header"><h1>Thank you for contacting us</h1></div>
+          <div class="header"><h1>يعطيك العافية 🌹</h1></div>
           <div class="content">
-            <p>We have received your message and will get back to you as soon as possible.</p>
+            <p>استلمنا رسالتك وبهالعون نردّ عليك بأقرب وقت.</p>
             <p>${message}</p>
           </div>
           <div class="footer">
-            <p>RASAD Solutions</p>
-            <p>Riyadh, Saudi Arabia</p>
+            <p>RASADِد سولوشنز</p>
+            <p>الرياض - المملكة العربية السعودية</p>
           </div>
         </div>
       </body>
       </html>
-    `
+    `,
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.response);
+    console.log("📧 Email sent:", info.response);
     return info;
   } catch (err) {
-    console.error('Error sending email:', err);
+    console.error("❌ Error sending email:", err);
     throw err;
   }
 }
 
+
 /**
- * Send career application confirmation email
+ * إرسال إيميل تأكيد استلام طلب وظيفة
  * @param {string} recipientEmail 
- * @param {Object} applicationData - Object containing application details
+ * @param {Object} applicationData - تفاصيل الطلب
  * @param {string} applicationData.fullName
- * @param {string} applicationData.position
- * @param {string} applicationData.applicationId
+ * @param {string} applicationData.email
+ * @param {string} applicationData.phone
+ * @param {string} applicationData.message
+ * @param {string} applicationData.resumeUrl
+ * @param {Object} applicationData.job
  */
 async function sendCareerApplicationConfirmationEmail(recipientEmail, applicationData) {
-//   const { fullName, position, applicationId } = applicationData;
   const { fullName, email, phone, message, resumeUrl, job } = applicationData;
+
   const mailOptions = {
     from: process.env.GMAIL_USER,
     to: recipientEmail,
-    subject: `RASAD - Career Application Confirmation - ${job.title}`,
+    subject: `RASADِد - استلمنا تقديمك على وظيفة ${job.title} 👌`,
     html: `
       <!DOCTYPE html>
-      <html>
+      <html lang="ar" dir="rtl">
       <head>
+        <meta charset="UTF-8" />
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 0; color: #1d1d1f; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 0; color: #1d1d1f; direction: rtl; }
           .container { width: 100%; max-width: 600px; margin: 40px auto; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); padding: 24px; box-sizing: border-box; }
           .header { text-align: center; padding-bottom: 24px; border-bottom: 1px solid #e3e3e3; }
-          .header h1 { font-size: 28px; font-weight: 600; color: #333; margin: 0; }
+          .header h1 { font-size: 26px; font-weight: 600; color: #333; margin: 0; }
           .content { padding: 24px 0; }
           .content p { font-size: 17px; line-height: 1.6; color: #555; margin: 0 0 16px; }
-          .highlight { background-color: #f0f8ff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #007aff; }
+          .highlight { background-color: #f0f8ff; padding: 16px; border-radius: 8px; margin: 16px 0; border-right: 4px solid #007aff; }
           .application-details { background-color: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; }
           .footer { text-align: center; padding-top: 24px; border-top: 1px solid #e3e3e3; color: #888; font-size: 13px; }
         </style>
@@ -94,50 +100,50 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
       <body>
         <div class="container">
           <div class="header">
-            <h1>Career Application Received</h1>
+            <h1>هلا ${fullName} 👋</h1>
           </div>
           <div class="content">
-            <p>Dear <strong>${fullName}</strong>,</p>
-            <p>Thank you for your interest in joining RASAD Solutions. We have successfully received your application for the <strong>${job.title}</strong> position.</p>
+            <p>يعطيك العافية، استلمنا طلبك على وظيفة <strong>${job.title}</strong>.</p>
             
             <div class="application-details">
-              <h3>Application Details:</h3>
-              <p><strong>Position:</strong> ${job.title}</p>
-              <p><strong>Application ID:</strong> ${job._id}</p>
-              <p><strong>Submitted Date:</strong> ${new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              <h3>تفاصيل الطلب:</h3>
+              <p><strong>الوظيفة:</strong> ${job.title}</p>
+              <p><strong>رقم التقديم:</strong> ${job._id}</p>
+              <p><strong>تاريخ التقديم:</strong> ${new Date().toLocaleDateString("ar-SA", { 
+                year: "numeric", 
+                month: "long", 
+                day: "numeric" 
               })}</p>
             </div>
             
             <div class="highlight">
-              <p><strong>What's Next?</strong></p>
-              <p>Our HR team will review your application and contact you within 5-7 business days if your qualifications match our requirements.</p>
+              <p><strong>وش بعد؟</strong></p>
+              <p>فريق الموارد البشرية بيشوف طلبك، وإذا كان مناسب نتواصل معك خلال ٥-٧ أيام عمل.</p>
             </div>
             
-            <p>We appreciate your interest in RASAD Solutions and look forward to potentially welcoming you to our team.</p>
+            <p>مقدّرين اهتمامك بـ <strong>RASADِد سولوشنز</strong>، ونتمنى نشوفك معنا ضمن الفريق قريب 🌹</p>
           </div>
           <div class="footer">
-            <p>RASAD Solutions - HR Department</p>
-            <p>Riyadh, Saudi Arabia</p>
-            <p>careers@RASAD.sa</p>
+            <p>قسم الموارد البشرية - RASADِد سولوشنز</p>
+            <p>الرياض - المملكة العربية السعودية</p>
+            <p>careers@rasad.sa</p>
           </div>
         </div>
       </body>
       </html>
-    `
+    `,
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('Career application confirmation email sent:', info.response);
+    console.log("📧 Career application confirmation email sent:", info.response);
     return info;
   } catch (err) {
-    console.error('Error sending career application confirmation email:', err);
+    console.error("❌ Error sending career application confirmation email:", err);
     throw err;
   }
 }
+
 
 /**
  * Send weekly blog updates to all contacts
@@ -149,9 +155,10 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
  * @param {string} blogs[].image
  * @param {string} blogs[].publishDate
  */
+
 async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
   if (!blogs || blogs.length === 0) {
-    console.log('No blogs to send');
+    console.log('📭 ما فيه مقالات هالأسبوع');
     return;
   }
 
@@ -162,12 +169,14 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
         <h3 class="blog-title">${blog.title}</h3>
         <p class="blog-excerpt">${blog.description}</p>
         <div class="blog-meta">
-          <span class="publish-date">${blog.createdAt.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}</span>
-          <a href="${blog.link}" class="read-more">Read More →</a>
+          <span class="publish-date">
+            ${new Date(blog.createdAt).toLocaleDateString('ar-SA', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </span>
+          <a href="${blog.link}" class="read-more">اقرأ المزيد →</a>
         </div>
       </div>
     </div>
@@ -175,50 +184,72 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
 
   const mailOptions = {
     from: process.env.GMAIL_USER,
-    bcc: contactEmails, // Use BCC to hide recipient emails from each other
-    subject: `RASAD - Weekly Health & Medical Insights - ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
-    subject: 'RASAD - تسلم على تواصلك معنا',
-html: `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <style>
-      body { font-family: Tahoma, Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; color: #222; }
-      .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 24px; border: 1px solid #eee; }
-      .header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-      .header h1 { margin: 0; font-size: 24px; color: #333; }
-      .content { padding: 20px 0; text-align: center; }
-      .content p { font-size: 16px; margin-bottom: 16px; color: #444; }
-      .footer { text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 13px; color: #888; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header"><h1>حيّاك الله</h1></div>
-      <div class="content">
-        <p>وصلكم كلامك، وحنا بنرجع لك بأقرب وقت إن شاء الله.</p>
-        <p style="background:#f7f7f7; padding:12px; border-radius:6px;">${message}</p>
-      </div>
-      <div class="footer">
-        <p>👋 راسِد للحلول</p>
-        <p>الرياض - السعودية</p>
-      </div>
-    </div>
-  </body>
-  </html>
-`
-
+    bcc: contactEmails, // BCC عشان ما ينكشف كل الإيميلات
+    subject: `RASADِد - جديدنا من مقالات الأسبوع (${new Date().toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' })})`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 0; color: #1d1d1f; line-height: 1.6; direction: rtl; }
+          .container { width: 100%; max-width: 600px; margin: 40px auto; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); overflow: hidden; }
+          .header { background: linear-gradient(135deg, #007aff, #005ce6); color: white; padding: 32px 24px; text-align: center; }
+          .header h1 { font-size: 26px; font-weight: 600; margin: 0 0 8px; }
+          .header p { font-size: 15px; margin: 0; opacity: 0.9; }
+          .content { padding: 32px 24px; }
+          .intro { text-align: center; margin-bottom: 32px; }
+          .intro p { font-size: 16px; color: #555; margin: 0; }
+          .blog-item { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid #e3e3e3; }
+          .blog-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+          .blog-image { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 16px; }
+          .blog-title { font-size: 21px; font-weight: 600; color: #333; margin: 0 0 12px; }
+          .blog-excerpt { font-size: 15px; color: #666; margin: 0 0 16px; }
+          .blog-meta { display: flex; justify-content: space-between; align-items: center; }
+          .publish-date { font-size: 13px; color: #888; }
+          .read-more { color: #007aff; text-decoration: none; font-weight: 500; font-size: 15px; }
+          .read-more:hover { text-decoration: underline; }
+          .footer { background-color: #f8f9fa; padding: 24px; text-align: center; color: #666; font-size: 14px; }
+          .unsubscribe { margin-top: 16px; }
+          .unsubscribe a { color: #888; text-decoration: none; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>جديد مقالات الأسبوع ✨</h1>
+            <p>آخر ما كتبناه في الصحة والطب من فريق RASADِد</p>
+          </div>
+          <div class="content">
+            <div class="intro">
+              <p>هذي آخر المقالات اللي نزلناها، نتمنى تعجبك وتلقى فيها الفايدة 👇</p>
+            </div>
+            ${blogItems}
+          </div>
+          <div class="footer">
+            <p><strong>RASADِد سولوشنز</strong></p>
+            <p>الرياض - المملكة العربية السعودية</p>
+            <p>info@rasad.sa | www.rasad.sa</p>
+            <div class="unsubscribe">
+              <a href="#">إلغاء الاشتراك من التحديثات الأسبوعية</a>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Weekly blog newsletter sent to ${contactEmails.length} contacts:`, info.response);
+    console.log(`📢 تم إرسال النشرة الأسبوعية لـ ${contactEmails.length} شخص:`, info.response);
     return info;
   } catch (err) {
-    console.error('Error sending weekly blog newsletter:', err);
+    console.error('❌ خطأ أثناء إرسال النشرة الأسبوعية:', err);
     throw err;
   }
 }
+
 
 /**
  * Send monthly service updates to all contacts
@@ -233,55 +264,57 @@ html: `
  */
 async function sendNewServicesEachMonthToAllContacts(contactEmails, services) {
   if (!services || services.length === 0) {
-    console.log('No services to send');
+    console.log('📭 No services to send this month');
     return;
   }
 
+  // 🖼️ بناء بلوكات الخدمات
   const serviceItems = services.map(service => `
     <div class="service-item">
       ${service.image ? `<img src="${service.image}" alt="${service.title}" class="service-image">` : ''}
       <div class="service-content">
-        <div class="service-category">${service.category || 'Medical Service'}</div>
+        <div class="service-category">${service.category || 'خدمة طبية'}</div>
         <h3 class="service-title">${service.title}</h3>
         <p class="service-description">${service.description}</p>
         <div class="service-footer">
           ${service.price ? `<span class="service-price">${service.price}</span>` : ''}
-          <a href="${service.link}" class="service-cta">Learn More →</a>
+          <a href="${service.link}" class="service-cta">اطّلع أكثر →</a>
         </div>
       </div>
     </div>
   `).join('');
 
-  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const currentMonth = new Date().toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' });
 
   const mailOptions = {
     from: process.env.GMAIL_USER,
-    bcc: contactEmails,
-    subject: `RASAD - New Medical Services Available - ${currentMonth}`,
+    bcc: contactEmails, // BCC عشان الخصوصية
+    subject: `RASAD - خدماتنا الطبية الجديدة - ${currentMonth}`,
     html: `
       <!DOCTYPE html>
-      <html>
+      <html lang="ar" dir="rtl">
       <head>
+        <meta charset="UTF-8">
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 0; color: #1d1d1f; line-height: 1.6; }
           .container { width: 100%; max-width: 600px; margin: 40px auto; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); overflow: hidden; }
           .header { background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 32px 24px; text-align: center; }
-          .header h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; }
-          .header p { font-size: 16px; margin: 0; opacity: 0.9; }
+          .header h1 { font-size: 26px; font-weight: 600; margin: 0 0 8px; }
+          .header p { font-size: 15px; margin: 0; opacity: 0.9; }
           .content { padding: 32px 24px; }
           .intro { text-align: center; margin-bottom: 32px; }
-          .intro p { font-size: 17px; color: #555; margin: 0; }
+          .intro p { font-size: 16px; color: #555; margin: 0; }
           .service-item { margin-bottom: 32px; padding: 24px; border: 1px solid #e3e3e3; border-radius: 12px; background-color: #fafafa; }
           .service-item:last-child { margin-bottom: 0; }
           .service-image { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 16px; }
-          .service-category { font-size: 12px; font-weight: 600; text-transform: uppercase; color: #28a745; letter-spacing: 0.5px; margin-bottom: 8px; }
-          .service-title { font-size: 22px; font-weight: 600; color: #333; margin: 0 0 12px; }
-          .service-description { font-size: 16px; color: #666; margin: 0 0 20px; }
+          .service-category { font-size: 12px; font-weight: 600; text-transform: uppercase; color: #28a745; margin-bottom: 8px; }
+          .service-title { font-size: 20px; font-weight: 600; color: #333; margin: 0 0 12px; }
+          .service-description { font-size: 15px; color: #666; margin: 0 0 20px; }
           .service-footer { display: flex; justify-content: space-between; align-items: center; }
-          .service-price { font-size: 18px; font-weight: 600; color: #28a745; }
+          .service-price { font-size: 17px; font-weight: 600; color: #28a745; }
           .service-cta { background-color: #28a745; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background-color 0.3s; }
           .service-cta:hover { background-color: #218838; }
-          .footer { background-color: #f8f9fa; padding: 24px; text-align: center; color: #666; font-size: 14px; }
+          .footer { background-color: #f8f9fa; padding: 24px; text-align: center; color: #666; font-size: 13px; }
           .contact-info { margin: 16px 0; }
           .contact-info a { color: #28a745; text-decoration: none; }
           .unsubscribe { margin-top: 16px; }
@@ -291,31 +324,31 @@ async function sendNewServicesEachMonthToAllContacts(contactEmails, services) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>New Medical Services</h1>
-            <p>Expanding our care to better serve your health needs</p>
+            <h1>خدمات طبية جديدة</h1>
+            <p>نطوّر رعايتنا عشان نخدم صحتك بشكل أفضل</p>
           </div>
           <div class="content">
             <div class="intro">
-              <p>We're excited to announce new medical services designed to provide you with comprehensive, world-class healthcare solutions.</p>
+              <p>يسعدنا نعلن لكم عن خدمات طبية جديدة، مصممة بعناية عشان نقدم لك رعاية صحية شاملة على أعلى مستوى.</p>
             </div>
             ${serviceItems}
             <div style="text-align: center; margin-top: 32px; padding: 24px; background-color: #f0f8ff; border-radius: 8px;">
-              <h3 style="color: #333; margin: 0 0 12px;">Ready to Get Started?</h3>
-              <p style="margin: 0 0 16px; color: #666;">Contact us today to learn more about our services or schedule a consultation.</p>
-              <a href="tel:+966123456789" style="display: inline-block; background-color: #007aff; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 0 8px;">Call Now</a>
-              <a href="mailto:info@RASAD.sa" style="display: inline-block; background-color: #28a745; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 0 8px;">Email Us</a>
+              <h3 style="color: #333; margin: 0 0 12px;">مستعد تبدأ؟</h3>
+              <p style="margin: 0 0 16px; color: #666;">تواصل معنا اليوم وتعرّف أكثر عن خدماتنا أو احجز استشارتك.</p>
+              <a href="tel:+966123456789" style="display: inline-block; background-color: #007aff; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 0 8px;">📞 اتصل الآن</a>
+              <a href="mailto:info@RASAD.sa" style="display: inline-block; background-color: #28a745; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 0 8px;">✉️ راسلنا</a>
             </div>
           </div>
           <div class="footer">
             <p><strong>RASAD Solutions</strong></p>
             <div class="contact-info">
-              <p>📍 Riyadh, Saudi Arabia</p>
+              <p>📍 الرياض، المملكة العربية السعودية</p>
               <p>📞 <a href="tel:+966123456789">+966 12 345 6789</a></p>
               <p>📧 <a href="mailto:info@RASAD.sa">info@RASAD.sa</a></p>
               <p>🌐 <a href="https://www.RASAD.sa">www.RASAD.sa</a></p>
             </div>
             <div class="unsubscribe">
-              <a href="#">Unsubscribe from monthly updates</a>
+              <a href="#">إلغاء الاشتراك من التحديثات الشهرية</a>
             </div>
           </div>
         </div>
@@ -326,10 +359,10 @@ async function sendNewServicesEachMonthToAllContacts(contactEmails, services) {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Monthly services newsletter sent to ${contactEmails.length} contacts:`, info.response);
+    console.log(`📩 Monthly services newsletter sent to ${contactEmails.length} contacts:`, info.response);
     return info;
   } catch (err) {
-    console.error('Error sending monthly services newsletter:', err);
+    console.error('❌ Error sending monthly services newsletter:', err);
     throw err;
   }
 }
