@@ -160,9 +160,13 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
       ${blog.image ? `<img src="${blog.image}" alt="${blog.title}" class="blog-image">` : ''}
       <div class="blog-content">
         <h3 class="blog-title">${blog.title}</h3>
-        <p class="blog-excerpt">${blog.excerpt}</p>
+        <p class="blog-excerpt">${blog.description}</p>
         <div class="blog-meta">
-          <span class="publish-date">${blog.publishDate}</span>
+          <span class="publish-date">${blog.createdAt.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}</span>
           <a href="${blog.link}" class="read-more">Read More →</a>
         </div>
       </div>
@@ -173,58 +177,37 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
     from: process.env.GMAIL_USER,
     bcc: contactEmails, // Use BCC to hide recipient emails from each other
     subject: `RASAD - Weekly Health & Medical Insights - ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 0; color: #1d1d1f; line-height: 1.6; }
-          .container { width: 100%; max-width: 600px; margin: 40px auto; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); overflow: hidden; }
-          .header { background: linear-gradient(135deg, #007aff, #005ce6); color: white; padding: 32px 24px; text-align: center; }
-          .header h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; }
-          .header p { font-size: 16px; margin: 0; opacity: 0.9; }
-          .content { padding: 32px 24px; }
-          .intro { text-align: center; margin-bottom: 32px; }
-          .intro p { font-size: 17px; color: #555; margin: 0; }
-          .blog-item { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid #e3e3e3; }
-          .blog-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-          .blog-image { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 16px; }
-          .blog-content { }
-          .blog-title { font-size: 22px; font-weight: 600; color: #333; margin: 0 0 12px; }
-          .blog-excerpt { font-size: 16px; color: #666; margin: 0 0 16px; }
-          .blog-meta { display: flex; justify-content: space-between; align-items: center; }
-          .publish-date { font-size: 14px; color: #888; }
-          .read-more { color: #007aff; text-decoration: none; font-weight: 500; font-size: 16px; }
-          .read-more:hover { text-decoration: underline; }
-          .footer { background-color: #f8f9fa; padding: 24px; text-align: center; color: #666; font-size: 14px; }
-          .unsubscribe { margin-top: 16px; }
-          .unsubscribe a { color: #888; text-decoration: none; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Weekly Health Insights</h1>
-            <p>Your trusted source for medical knowledge and wellness tips</p>
-          </div>
-          <div class="content">
-            <div class="intro">
-              <p>Discover the latest in healthcare, medical research, and wellness advice from RASAD's expert team.</p>
-            </div>
-            ${blogItems}
-          </div>
-          <div class="footer">
-            <p><strong>RASAD Solutions</strong></p>
-            <p>Riyadh, Saudi Arabia</p>
-            <p>info@RASAD.sa | www.RASAD.sa</p>
-            <div class="unsubscribe">
-              <a href="#">Unsubscribe from weekly updates</a>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
+    subject: 'RASAD - تسلم على تواصلك معنا',
+html: `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <style>
+      body { font-family: Tahoma, Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; color: #222; }
+      .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 24px; border: 1px solid #eee; }
+      .header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+      .header h1 { margin: 0; font-size: 24px; color: #333; }
+      .content { padding: 20px 0; text-align: center; }
+      .content p { font-size: 16px; margin-bottom: 16px; color: #444; }
+      .footer { text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 13px; color: #888; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header"><h1>حيّاك الله</h1></div>
+      <div class="content">
+        <p>وصلكم كلامك، وحنا بنرجع لك بأقرب وقت إن شاء الله.</p>
+        <p style="background:#f7f7f7; padding:12px; border-radius:6px;">${message}</p>
+      </div>
+      <div class="footer">
+        <p>👋 راسِد للحلول</p>
+        <p>الرياض - السعودية</p>
+      </div>
+    </div>
+  </body>
+  </html>
+`
+
   };
 
   try {
