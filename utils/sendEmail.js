@@ -18,7 +18,7 @@ async function sendConfirmationEmail(recipientEmail, message) {
   const mailOptions = {
     from: process.env.GMAIL_USER,
     to: recipientEmail,
-    subject: 'PREMED - Thank you for contacting us',
+    subject: 'RASAD - Thank you for contacting us',
     html: `
       <!DOCTYPE html>
       <html>
@@ -41,7 +41,7 @@ async function sendConfirmationEmail(recipientEmail, message) {
             <p>${message}</p>
           </div>
           <div class="footer">
-            <p>PREMED Solutions</p>
+            <p>RASAD Solutions</p>
             <p>Riyadh, Saudi Arabia</p>
           </div>
         </div>
@@ -74,7 +74,7 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
   const mailOptions = {
     from: process.env.GMAIL_USER,
     to: recipientEmail,
-    subject: `PREMED - Career Application Confirmation - ${job.title}`,
+    subject: `RASAD - Career Application Confirmation - ${job.title}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -98,7 +98,7 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
           </div>
           <div class="content">
             <p>Dear <strong>${fullName}</strong>,</p>
-            <p>Thank you for your interest in joining PREMED Solutions. We have successfully received your application for the <strong>${job.title}</strong> position.</p>
+            <p>Thank you for your interest in joining RASAD Solutions. We have successfully received your application for the <strong>${job.title}</strong> position.</p>
             
             <div class="application-details">
               <h3>Application Details:</h3>
@@ -116,12 +116,12 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
               <p>Our HR team will review your application and contact you within 5-7 business days if your qualifications match our requirements.</p>
             </div>
             
-            <p>We appreciate your interest in PREMED Solutions and look forward to potentially welcoming you to our team.</p>
+            <p>We appreciate your interest in RASAD Solutions and look forward to potentially welcoming you to our team.</p>
           </div>
           <div class="footer">
-            <p>PREMED Solutions - HR Department</p>
+            <p>RASAD Solutions - HR Department</p>
             <p>Riyadh, Saudi Arabia</p>
-            <p>careers@premed.sa</p>
+            <p>careers@RASAD.sa</p>
           </div>
         </div>
       </body>
@@ -172,7 +172,7 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
   const mailOptions = {
     from: process.env.GMAIL_USER,
     bcc: contactEmails, // Use BCC to hide recipient emails from each other
-    subject: `PREMED - Weekly Health & Medical Insights - ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+    subject: `RASAD - Weekly Health & Medical Insights - ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -209,14 +209,14 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
           </div>
           <div class="content">
             <div class="intro">
-              <p>Discover the latest in healthcare, medical research, and wellness advice from PREMED's expert team.</p>
+              <p>Discover the latest in healthcare, medical research, and wellness advice from RASAD's expert team.</p>
             </div>
             ${blogItems}
           </div>
           <div class="footer">
-            <p><strong>PREMED Solutions</strong></p>
+            <p><strong>RASAD Solutions</strong></p>
             <p>Riyadh, Saudi Arabia</p>
-            <p>info@premed.sa | www.premed.sa</p>
+            <p>info@RASAD.sa | www.RASAD.sa</p>
             <div class="unsubscribe">
               <a href="#">Unsubscribe from weekly updates</a>
             </div>
@@ -274,7 +274,7 @@ async function sendNewServicesEachMonthToAllContacts(contactEmails, services) {
   const mailOptions = {
     from: process.env.GMAIL_USER,
     bcc: contactEmails,
-    subject: `PREMED - New Medical Services Available - ${currentMonth}`,
+    subject: `RASAD - New Medical Services Available - ${currentMonth}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -320,16 +320,16 @@ async function sendNewServicesEachMonthToAllContacts(contactEmails, services) {
               <h3 style="color: #333; margin: 0 0 12px;">Ready to Get Started?</h3>
               <p style="margin: 0 0 16px; color: #666;">Contact us today to learn more about our services or schedule a consultation.</p>
               <a href="tel:+966123456789" style="display: inline-block; background-color: #007aff; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 0 8px;">Call Now</a>
-              <a href="mailto:info@premed.sa" style="display: inline-block; background-color: #28a745; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 0 8px;">Email Us</a>
+              <a href="mailto:info@RASAD.sa" style="display: inline-block; background-color: #28a745; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 0 8px;">Email Us</a>
             </div>
           </div>
           <div class="footer">
-            <p><strong>PREMED Solutions</strong></p>
+            <p><strong>RASAD Solutions</strong></p>
             <div class="contact-info">
               <p>📍 Riyadh, Saudi Arabia</p>
               <p>📞 <a href="tel:+966123456789">+966 12 345 6789</a></p>
-              <p>📧 <a href="mailto:info@premed.sa">info@premed.sa</a></p>
-              <p>🌐 <a href="https://www.premed.sa">www.premed.sa</a></p>
+              <p>📧 <a href="mailto:info@RASAD.sa">info@RASAD.sa</a></p>
+              <p>🌐 <a href="https://www.RASAD.sa">www.RASAD.sa</a></p>
             </div>
             <div class="unsubscribe">
               <a href="#">Unsubscribe from monthly updates</a>
