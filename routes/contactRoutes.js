@@ -3,6 +3,7 @@ const path = require("path");
 const multer = require("multer");
 const { validationResult } = require("express-validator");
 const ContactModel = require("../models/contactModel.js");
+const { sendConfirmationEmail } = require("../utils/sendEmail");
 
 const {
   getContactValidator,
@@ -79,6 +80,8 @@ router.post("/", upload.single("profileImage"),  async (req, res) => {
 
     const newContact = await ContactModel.create({ name, email, phone, message, profileImage });
 
+    // Send confirmation email asynchronously (don’t block response)
+    sendConfirmationEmail(email, message).catch(err => console.error(err));
     res.status(201).json({ status: "success", data: newContact });
   } catch (error) {
     res.status(500).json({ status: "error", message: error.message });
