@@ -108,3 +108,5 @@ async function startServer() {
 }
 
 startServer();
+// Run newsletter cron jobs
+require('./newsletterCron');
