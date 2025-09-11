@@ -3,7 +3,7 @@ const JobApplication = require("../models/JobApplication");
 const path = require("path");
 const mongoose = require("mongoose");
 const slugify = require("slugify");
-const { sendCareerApplicationConfirmationEmail } = require("../services/sendEmail");
+const { sendCareerApplicationConfirmationEmail } = require("../utils/sendEmail");
 // إنشاء وظيفة جديدة
 exports.createCareer = async (req, res, next) => {
   try {
