@@ -4,9 +4,9 @@ const careerController = require("../services/careerServices");
 const multer = require("multer");
 const path = require("path");
 
-// ============================
+// ==========================
 // 🟢 إعداد Multer لرفع ملفات PDF
-// ============================
+// ==========================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, "../uploads/careers/"));
