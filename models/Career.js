@@ -170,7 +170,6 @@ careerSchema.virtual('isActive').get(function() {
          (!this.applicationDeadline || this.applicationDeadline >= new Date());
 });
 
-// Create the Career model by extending BaseModel
-const Career = BaseModel.discriminator('Career', careerSchema);
+const Career = mongoose.model('Career', careerSchema);
 
 module.exports = Career;
