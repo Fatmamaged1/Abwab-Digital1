@@ -124,7 +124,7 @@ exports.applyToCareer = async (req, res, next) => {
 
     const job = await Career.findById(req.params.id).select("title location");
 
-    const resumeUrl = `${req.protocol}://${req.get("host")}/${path.basename(application.resume)}`;
+    const resumeUrl = `${req.protocol}://${req.get("host")}/careers/${path.basename(application.resume)}`;
     await sendCareerApplicationConfirmationEmail(email, {
       fullName,
       email,
