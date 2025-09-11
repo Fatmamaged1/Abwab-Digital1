@@ -7,8 +7,7 @@ const ServiceModel = require('./models/servicesModel');
 /**
  * Weekly Blog Newsletter - كل يوم إثنين الساعة 9 صباحًا
  */
-
-cron.schedule('* * * * *', async () => { 
+cron.schedule('0 11 * * 2', async () => {
   try {
     console.log('📧 Testing weekly blog newsletter...');
 
@@ -69,23 +68,32 @@ cron.schedule('0 10 1 * *', async () => {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    const services = await ServiceModel.find({ isActive: true, createdAt: { $gte: oneMonthAgo } })
-      .select('title description price slug image category')
+    const services = await ServiceModel.find({
+      isActive: true,
+      createdAt: { $gte: oneMonthAgo }
+    })
+      .select('name description slug image category price createdAt')
       .lean();
 
     if (emails.length > 0 && services.length > 0) {
-      await sendNewServicesEachMonthToAllContacts(emails, services.map(s => ({
-        title: s.title,
-        description: s.description,
-        price: s.price,
-        link: `http://46.202.134.87:4000/api/v1/services/${s.slug}`,
-        image: s.featuredImage,
-        category: s.category
-      })));
+      await sendNewServicesEachMonthToAllContacts(
+        emails,
+        services.map(s => ({
+          title: s.name?.en || s.name?.ar || "خدمة بدون عنوان",
+          description: s.description?.en || s.description?.ar || "بدون وصف",
+          price: s.price || "غير محدد",
+          link: `http://46.202.134.87:4000/api/v1/services/${s.slug.en}`,
+          image: s.image?.url || "",
+          category: s.category,
+          publishDate: s.createdAt.toLocaleDateString("ar-EG")
+        }))
+      );
+      console.log('✅ Newsletter sent successfully!');
     } else {
-      console.log('No emails or services to send this month.');
+      console.log('ℹ️ No emails or services to send this month.');
     }
   } catch (err) {
-    console.error('Error in monthly services cron:', err);
+    console.error('❌ Error in monthly services cron:', err);
   }
 });
+
