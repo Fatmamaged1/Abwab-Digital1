@@ -60,7 +60,7 @@ const enhancedCareers = careers.map(career => {
       const data = career.toObject();
 
       // رابط كامل
-      data.url = `${req.protocol}://${req.get("host")}/uploads/images/${path.basename(data.url)}`;
+      data.url = `${req.protocol}://${req.get("host")}/uploads/careers/${path.basename(data.url)}`;
 
       return data;
     });
