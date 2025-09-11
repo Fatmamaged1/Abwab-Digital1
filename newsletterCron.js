@@ -16,7 +16,7 @@ cron.schedule('* * * * *', async () => {
       const emails = contacts.map(c => c.email);
   
       const blogs = await BlogModel.find()
-        .select('title excerpt slug featuredImage createdAt')
+        .select('title description section image createdAt')
         .lean();
   
       console.log(`Found ${emails.length} contacts and ${blogs.length} blogs`);
@@ -26,9 +26,9 @@ cron.schedule('* * * * *', async () => {
         const testEmails = ['fatma.m.elessawy@gmail.com'];
          await sendNewBlogsEachWeekToAllContacts(testEmails, blogs.map(b => ({
             title: b.title,
-            excerpt: b.excerpt,
-            link: `http://46.202.134.87:4000/api/v1/blogs/${b.slug}`,
-            image: b.featuredImage,
+            description: b.description,
+            section: b.section,
+            image: b.image,
             publishDate: b.createdAt.toLocaleDateString()
           })));
           
@@ -57,7 +57,7 @@ cron.schedule('0 10 1 * *', async () => {
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     const services = await ServiceModel.find({ isActive: true, createdAt: { $gte: oneMonthAgo } })
-      .select('title description price slug featuredImage category')
+      .select('title description price slug image category')
       .lean();
 
     if (emails.length > 0 && services.length > 0) {
