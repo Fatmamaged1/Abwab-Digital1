@@ -42,7 +42,7 @@ async function sendConfirmationEmail(recipientEmail, message) {
             <p>${message}</p>
           </div>
           <div class="footer">
-            <p>RASADِد سولوشنز</p>
+            <p>RASAD سولوشنز</p>
             <p>الرياض - المملكة العربية السعودية</p>
           </div>
         </div>
@@ -79,7 +79,7 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
   const mailOptions = {
     from: process.env.GMAIL_USER,
     to: recipientEmail,
-    subject: `RASADِد - استلمنا تقديمك على وظيفة ${job.title} 👌`,
+    subject: `RASAD - استلمنا تقديمك على وظيفة ${job.title} 👌`,
     html: `
       <!DOCTYPE html>
       <html lang="ar" dir="rtl">
@@ -121,10 +121,10 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
               <p>فريق الموارد البشرية بيشوف طلبك، وإذا كان مناسب نتواصل معك خلال ٥-٧ أيام عمل.</p>
             </div>
             
-            <p>مقدّرين اهتمامك بـ <strong>RASADِد سولوشنز</strong>، ونتمنى نشوفك معنا ضمن الفريق قريب 🌹</p>
+            <p>مقدّرين اهتمامك بـ <strong>RASAD سولوشنز</strong>، ونتمنى نشوفك معنا ضمن الفريق قريب 🌹</p>
           </div>
           <div class="footer">
-            <p>قسم الموارد البشرية - RASADِد سولوشنز</p>
+            <p>قسم الموارد البشرية - RASAD سولوشنز</p>
             <p>الرياض - المملكة العربية السعودية</p>
             <p>careers@rasad.sa</p>
           </div>
@@ -185,7 +185,7 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
   const mailOptions = {
     from: process.env.GMAIL_USER,
     bcc: contactEmails, // BCC عشان ما ينكشف كل الإيميلات
-    subject: `RASADِد - جديدنا من مقالات الأسبوع (${new Date().toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' })})`,
+    subject: `RASAD - جديدنا من مقالات الأسبوع (${new Date().toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' })})`,
     html: `
       <!DOCTYPE html>
       <html lang="ar" dir="rtl">
@@ -218,7 +218,7 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
         <div class="container">
           <div class="header">
             <h1>جديد مقالات الأسبوع ✨</h1>
-            <p>آخر ما كتبناه في الصحة والطب من فريق RASADِد</p>
+            <p> آخر ما كتبناه في التقنية والتسويق فريق RASAD </p>
           </div>
           <div class="content">
             <div class="intro">
@@ -227,7 +227,7 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
             ${blogItems}
           </div>
           <div class="footer">
-            <p><strong>RASADِد سولوشنز</strong></p>
+            <p><strong>RASAD سولوشنز</strong></p>
             <p>الرياض - المملكة العربية السعودية</p>
             <p>info@rasad.sa | www.rasad.sa</p>
             <div class="unsubscribe">
