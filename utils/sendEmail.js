@@ -42,7 +42,7 @@ async function sendConfirmationEmail(recipientEmail, message) {
             <p>${message}</p>
           </div>
           <div class="footer">
-            <p>RASAD سولوشنز</p>
+            <p> RASAD </p>
             <p>الرياض - المملكة العربية السعودية</p>
           </div>
         </div>
@@ -121,10 +121,10 @@ async function sendCareerApplicationConfirmationEmail(recipientEmail, applicatio
               <p>فريق الموارد البشرية بيشوف طلبك، وإذا كان مناسب نتواصل معك خلال ٥-٧ أيام عمل.</p>
             </div>
             
-            <p>مقدّرين اهتمامك بـ <strong>RASAD سولوشنز</strong>، ونتمنى نشوفك معنا ضمن الفريق قريب 🌹</p>
+            <p>مقدّرين اهتمامك بـ <strong>RASAD</strong>، ونتمنى نشوفك معنا ضمن الفريق قريب 🌹</p>
           </div>
           <div class="footer">
-            <p>قسم الموارد البشرية - RASAD سولوشنز</p>
+            <p>قسم الموارد البشرية - RASAD</p>
             <p>الرياض - المملكة العربية السعودية</p>
             <p>careers@rasad.sa</p>
           </div>
@@ -227,7 +227,7 @@ async function sendNewBlogsEachWeekToAllContacts(contactEmails, blogs) {
             ${blogItems}
           </div>
           <div class="footer">
-            <p><strong>RASAD سولوشنز</strong></p>
+            <p><strong>RASAD</strong></p>
             <p>الرياض - المملكة العربية السعودية</p>
             <p>info@rasad.sa | www.rasad.sa</p>
             <div class="unsubscribe">
