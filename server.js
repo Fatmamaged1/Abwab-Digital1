@@ -30,6 +30,9 @@ const homeRoutes = require("./routes/homeRoutes");
 const portfolioRoutes = require("./routes/PortfolioRoutes");
 const mailingListRoutes = require("./routes/mailingListRoutes");
 const careerRoutes = require("./routes/careers");
+const leadRoutes = require('./routes/sales/leads');
+const activityRoutes = require('./routes/sales/activities');
+const documentRoutes = require('./routes/sales/documents');
 
 const app = express();
 
@@ -72,6 +75,9 @@ async function startServer() {
     app.use("/api/v1/mailing-list", mailingListRoutes);
     app.use("/api/v1/home", homeRoutes);
     app.use("/api/v1/portfolio", portfolioRoutes);
+    app.use("/api/v1/lead", leadRoutes);
+    app.use("/api/v1/activity", activityRoutes);
+    app.use("/api/v1/document", documentRoutes);
     app.use("/api/v1/privacy-policy", require("./routes/privacyPolicy"));
     app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
     app.use("/api/v1/career", careerRoutes);
