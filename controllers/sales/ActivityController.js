@@ -3,6 +3,7 @@ const ActivityModel = require('../../models/sales/activityModel');
 
 exports.createActivity = (async (req,res) => {
 const data = req.body;
+console.log(data);
 if (!data.createdBy) return res.status(400).json({ success:false, message:'createdBy required' });
 const act = await ActivityModel.create(data);
 return res.status(201).json({ success:true, data: act });
