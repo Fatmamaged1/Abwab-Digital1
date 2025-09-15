@@ -16,13 +16,18 @@ exports.uploadDocument = async (req, res) => {
         success: false,
         message: "lead, name, type, uploadedBy required",
       });
+
     }
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const fileUrl = `${baseUrl}/uploads/${file.filename}`;
+    
+
 
     const doc = await DocumentModel.create({
       lead,
       name,
       type,
-      url: req.file.path,
+      url: fileUrl, 
       size: req.file.size,
       mimeType: req.file.mimetype,
       uploadedBy,
@@ -30,7 +35,7 @@ exports.uploadDocument = async (req, res) => {
       versions: [
         {
           version: "1.0",
-          url: req.file.path,
+          url: fileUrl,
           uploadedBy,
           size: req.file.size,
         },
