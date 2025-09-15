@@ -1,4 +1,4 @@
-const Lead = require('../../models/sales/LeadModel');
+const Lead = require('../../models/sales/leadModel');
 
 
 
