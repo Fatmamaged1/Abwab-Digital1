@@ -6,48 +6,67 @@ const LeadModel = require("../../models/sales/leadModel"); // ✅ حطيت ال�
 // ===================== Upload Document =====================
 exports.uploadDocument = async (req, res) => {
   try {
+    // 1- التحقق من وجود ملف
     if (!req.file) {
       return res.status(400).json({ success: false, message: "File is required" });
     }
 
+    // 2- استخراج البيانات من body
     const { lead, name, type, uploadedBy } = req.body;
     if (!lead || !name || !type || !uploadedBy) {
       return res.status(400).json({
         success: false,
         message: "lead, name, type, uploadedBy required",
       });
-
     }
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    // 3- تعريف الملف من req.file (مو لازم تكتب file كـ global)
+    const file = req.file;
+
+    // 4- بناء الرابط العام
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
     const fileUrl = `${baseUrl}/uploads/${file.filename}`;
-    
 
-
+    // 5- إنشاء الوثيقة
     const doc = await DocumentModel.create({
       lead,
       name,
       type,
-      url: fileUrl, 
-      size: req.file.size,
-      mimeType: req.file.mimetype,
       uploadedBy,
       currentVersion: "1.0",
+      url: fileUrl, // ✅ URL كامل يوصل من الـ frontend
+      size: file.size,
+      mimeType: file.mimetype,
+      engagement: {
+        viewed: false,
+        viewCount: 0,
+        totalViewTime: 0,
+        uniqueViewers: [],
+      },
       versions: [
         {
           version: "1.0",
           url: fileUrl,
           uploadedBy,
-          size: req.file.size,
+          size: file.size,
+          uploadedAt: new Date(),
         },
       ],
+      status: "draft",
+      permissions: {
+        canView: [],
+        canEdit: [],
+        isPublic: false,
+      },
+      tags: [],
     });
 
     return res.status(201).json({ success: true, data: doc });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error("❌ Upload error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 // ===================== Get Single Document =====================
 exports.getDocument = async (req, res) => {
   try {
