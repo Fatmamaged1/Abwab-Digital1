@@ -1,9 +1,11 @@
 const express3 = require('express');
 const router = express3.Router();
 const activityController = require('../../controllers/sales/ActivityController');
+const upload = require('../../middleware/upload');
 
-
-router.post('/', activityController.createActivity);
+router.post('/', upload.fields([
+  { name: "attachments", maxCount: 5 },
+]), activityController.createActivity);
 router.get('/', activityController.listActivities);
 router.get('/timeline/:leadId', activityController.timelineByLead);
 router.get('/:id', activityController.getActivity);
