@@ -8,8 +8,12 @@ exports.createSales = async (req, res) => {
       }
   
       const sale = await Sales.create({ ...req.body, createdBy: req.user.id });
+      console.log(req.user.id);
+      console.log(req.body);
+      console.log(sale);
       res.status(201).json({ success: true, data: sale });
     } catch (err) {
+      console.log(err);
       res.status(400).json({ success: false, message: err.message });
     }
   };
