@@ -1,35 +1,38 @@
-// controllers/salesController.js
-const Sales = require("../../models/sales/salesModel");
+// controllers/sales/salesController.js
+const Sales = require("../../models/sales/SalesModel");
 
-exports.createSales = async (req, res, next) => {
+exports.createSales = async (req, res) => {
   try {
-    let { lead, reminders, nextSteps } = req.body;
-
-    // Parse reminders if it's a string
-    if (reminders && typeof reminders === "string") {
-      reminders = JSON.parse(reminders);
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
-    // Handle uploaded documents
-    const documents = req.files?.documents?.map(file => ({
-      filename: file.filename,     // اسم الملف
-      path: `https://backend.abwabdigital.com/uploads/${file.filename}`, // الرابط أو المسار
-      uploadedAt: new Date(),
-    })) || [];
-    
-console.log(documents);
+    // تجهيز الـ documents من الملفات المرفوعة
+    let documents = [];
+    if (req.files && req.files.documents) {
+      documents = req.files.documents.map(file => ({
+        name: file.originalname,
+        url: `${process.env.BASE_URL}/uploads/${file.filename}`
+      }));
+    }
+
+    // إنشاء البيع
     const sale = await Sales.create({
-      lead,
-      reminders,
-      nextSteps,
+      ...req.body,
       documents,
-      createdBy: req.user._id,
+      createdBy: req.user.id
     });
 
-    return res.status(201).json({ success: true, data: sale });
+    // تعديل الـ response بحيث يظهر فقط url في documents
+    const responseData = sale.toObject();
+    if (responseData.documents) {
+      responseData.documents = responseData.documents.map(doc => doc.url);
+    }
+
+    res.status(201).json({ success: true, data: responseData });
   } catch (err) {
     console.error(err);
-    return res.status(400).json({ success: false, message: err.message });
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
