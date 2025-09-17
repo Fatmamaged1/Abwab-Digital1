@@ -8,7 +8,7 @@ const activitySchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['call', 'email', 'meeting', 'note', 'task'],
+    enum: ['call', 'email', 'meeting', 'note', 'task', 'document'],
     required: [true, 'Activity type is required']
   },
   subject: {
@@ -24,7 +24,7 @@ const activitySchema = new mongoose.Schema({
   },
   outcome: {
     type: String,
-    enum: ['success', 'failed', 'rescheduled', 'pending', 'not_applicable'],
+    enum: ['success', 'failed', 'rescheduled', 'pending', 'not_applicable', 'document_viewed'],
     default: 'pending'
   },
   duration: {
