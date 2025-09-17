@@ -10,6 +10,7 @@ exports.protect = (req, res, next) => {
     req.user = { id: decoded.id }; // أو أي بيانات أخرى مخزنة في التوكن
     next();
   } catch (err) {
+    console.error(err);
     res.status(401).json({ success: false, message: "Invalid token" });
   }
 };
