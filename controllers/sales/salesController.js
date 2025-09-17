@@ -7,7 +7,7 @@ exports.createSales = async (req, res) => {
       return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
-    let { reminders, secondSteps, emails } = req.body;
+    let { reminders, secondSteps, emails ,geminiSuggestions} = req.body;
 
     // نحاول نفك الترميزات إذا جت كنصوص
     if (typeof reminders === "string") {
