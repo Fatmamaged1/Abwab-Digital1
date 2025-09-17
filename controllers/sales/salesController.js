@@ -1,5 +1,7 @@
-// controllers/sales/salesController.js
-const Sales = require("../../models/sales/SalesModel");
+// controllers/salesController.js
+const Sales = require("../../models/sales/salesModel");
+
+
 
 exports.createSales = async (req, res) => {
   try {
@@ -35,6 +37,7 @@ exports.createSales = async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 };
+
 
   
 
