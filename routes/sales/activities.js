@@ -5,6 +5,7 @@ const activityController = require('../../controllers/sales/ActivityController')
 
 router.post('/', activityController.createActivity);
 router.get('/', activityController.listActivities);
+router.get('/timeline/:leadId', activityController.timelineByLead);
 router.get('/:id', activityController.getActivity);
 router.put('/:id', activityController.updateActivity);
 router.patch('/:id/complete', activityController.completeActivity);

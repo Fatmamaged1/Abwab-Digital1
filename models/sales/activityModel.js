@@ -11,71 +11,66 @@ const activitySchema = new mongoose.Schema({
     enum: ['call', 'email', 'meeting', 'note', 'task', 'document'],
     required: [true, 'Activity type is required']
   },
-  subject: {
-    type: String,
-    required: [true, 'Activity subject is required'],
-    trim: true,
-    maxLength: [200, 'Subject cannot exceed 200 characters']
+  subject: { type: String, trim: true, maxLength: 200 },
+  description: { type: String, maxLength: 2000 },
+
+  // 🟢 Call fields
+  duration: { type: Number, min: 0 }, // minutes
+  notes: String,
+
+  // 🟢 Email fields
+  to: String,
+  cc: [String],
+  bcc: [String],
+  content: String,
+
+  // 🟢 Meeting fields
+  location: String,
+  participants: [String],
+  meetingLink: String,
+
+  // 🟢 Reminder
+  reminder: {
+    type: {
+      type: String,
+      enum: ['task', 'email', 'call']
+    },
+    date: Date,
+    isSent: { type: Boolean, default: false }
   },
-  description: {
-    type: String,
-    required: [true, 'Activity description is required'],
-    maxLength: [2000, 'Description cannot exceed 2000 characters']
-  },
+
   outcome: {
     type: String,
     enum: ['success', 'failed', 'rescheduled', 'pending', 'not_applicable', 'document_viewed'],
     default: 'pending'
   },
-  duration: {
-    type: Number, // Duration in minutes
-    min: [0, 'Duration cannot be negative']
-  },
-  scheduledDate: {
-    type: Date
-  },
-  completedDate: {
-    type: Date
-  },
-  nextFollowUp: {
-    type: Date
-  },
+
+  scheduledDate: Date,
+  completedDate: Date,
+  nextFollowUp: Date,
+
   priority: {
     type: String,
     enum: ['high', 'medium', 'low'],
     default: 'medium'
   },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'Activity must be assigned to a user']
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'Created by is required']
-  },
-  updatedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  isCompleted: {
-    type: Boolean,
-    default: false
-  },
+
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+  isCompleted: { type: Boolean, default: false },
+
   attachments: [{
     name: String,
     url: String,
     type: String,
     size: Number
   }],
+
   // Integration fields
-  externalId: String, // For calendar/email integration
-  meetingLink: String, // Zoom, Teams, etc.
-  
-}, {
-  timestamps: true
-});
+  externalId: String,
+}, { timestamps: true });
 
 // Indexes
 activitySchema.index({ lead: 1 });
