@@ -33,6 +33,13 @@ exports.createSales = async (req, res) => {
         emails = [];
       }
     }
+    if (typeof geminiSuggestions === "string") {
+      try {
+        geminiSuggestions = JSON.parse(geminiSuggestions);
+      } catch {
+        geminiSuggestions = [];
+      }
+    }
 
     // تجهيز الـ documents
     let documents = [];
@@ -49,6 +56,7 @@ exports.createSales = async (req, res) => {
       reminders,
       secondSteps,
       emails,
+      geminiSuggestions,
       documents,
       createdBy: req.user.id,
     });
