@@ -2,21 +2,32 @@
 const Sales = require("../../models/sales/salesModel");
 
 exports.createSales = async (req, res) => {
-    try {
-      if (!req.user || !req.user.id) {
-        return res.status(401).json({ success: false, message: "User not authenticated" });
-      }
-  
-      const sale = await Sales.create({ ...req.body, createdBy: req.user.id });
-      console.log(req.user.id);
-      console.log(req.body);
-      console.log(sale);
-      res.status(201).json({ success: true, data: sale });
-    } catch (err) {
-      console.log(err);
-      res.status(400).json({ success: false, message: err.message });
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
-  };
+
+    // Parse JSON fields manually if sent as text
+    const body = { ...req.body };
+    if (body.documents && typeof body.documents === "string") {
+      body.documents = JSON.parse(body.documents);
+    }
+    if (body.reminders && typeof body.reminders === "string") {
+      body.reminders = JSON.parse(body.reminders);
+    }
+    if (body.emails && typeof body.emails === "string") {
+      body.emails = JSON.parse(body.emails);
+    }
+
+    const sale = await Sales.create({ ...body, createdBy: req.user.id });
+
+    res.status(201).json({ success: true, data: sale });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
   
 
 exports.getSales = async (req, res) => {
