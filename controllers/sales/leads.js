@@ -13,7 +13,7 @@ exports.createLead = async (req,res) => {
   // جلب كل الـ Leads (غير المحذوفة)
   exports.listLeads = async (req, res) => {
     try {
-      const leads = await Lead.find({ isDeleted: false }); // Array
+      const leads = await Lead.finda({}); // Array
       return res.json({ success: true, data: leads });
     } catch (err) {
       return res.status(500).json({ success: false, message: err.message });
