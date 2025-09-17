@@ -1,15 +1,40 @@
 // controllers/salesController.js
 const Sales = require("../../models/sales/salesModel");
 
-
-
 exports.createSales = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
-    // تجهيز الـ documents من الملفات المرفوعة
+    let { reminders, secondSteps, emails } = req.body;
+
+    // نحاول نفك الترميزات إذا جت كنصوص
+    if (typeof reminders === "string") {
+      try {
+        reminders = JSON.parse(reminders);
+      } catch {
+        reminders = [];
+      }
+    }
+
+    if (typeof secondSteps === "string") {
+      try {
+        secondSteps = JSON.parse(secondSteps);
+      } catch {
+        secondSteps = [];
+      }
+    }
+
+    if (typeof emails === "string") {
+      try {
+        emails = JSON.parse(emails);
+      } catch {
+        emails = [];
+      }
+    }
+
+    // تجهيز الـ documents
     let documents = [];
     if (req.files && req.files.documents) {
       documents = req.files.documents.map(file => ({
@@ -18,18 +43,19 @@ exports.createSales = async (req, res) => {
       }));
     }
 
-    // إنشاء البيع
+    // إنشاء السيلز
     const sale = await Sales.create({
       ...req.body,
+      reminders,
+      secondSteps,
+      emails,
       documents,
-      createdBy: req.user.id
+      createdBy: req.user.id,
     });
 
-    // تعديل الـ response بحيث يظهر فقط url في documents
+    // إظهار فقط url في documents
     const responseData = sale.toObject();
-    if (responseData.documents) {
-      responseData.documents = responseData.documents.map(doc => doc.url);
-    }
+    responseData.documents = responseData.documents.map(doc => doc.url);
 
     res.status(201).json({ success: true, data: responseData });
   } catch (err) {
@@ -37,6 +63,7 @@ exports.createSales = async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 };
+
 
 
   
