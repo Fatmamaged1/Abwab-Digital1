@@ -10,5 +10,8 @@ router.post("/", upload.fields([
   { name: "documents", maxCount: 5 },
 ]), salesCtrl.createSales);
 router.get("/", salesCtrl.getSales);
+router.get("/:id", salesCtrl.getSalesById);
+router.put("/:id", salesCtrl.updateSalesById);
+router.delete("/:id", salesCtrl.deleteSalesById);
 
 module.exports = router;
