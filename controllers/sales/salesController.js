@@ -6,6 +6,7 @@ exports.createSales = async (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, message: "User not authenticated" });
     }
+    
 
     // Parse JSON fields manually if sent as text
     const body = { ...req.body };
@@ -18,6 +19,7 @@ exports.createSales = async (req, res) => {
     if (body.emails && typeof body.emails === "string") {
       body.emails = JSON.parse(body.emails);
     }
+    console.log(body);
 
     const sale = await Sales.create({ ...body, createdBy: req.user.id });
 
