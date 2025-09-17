@@ -39,7 +39,7 @@ exports.createSales = async (req, res) => {
     if (req.files && req.files.documents) {
       documents = req.files.documents.map(file => ({
         name: file.originalname,
-        url: `${process.env.BASE_URL}/uploads/${file.filename}`
+        url: `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
       }));
     }
 
