@@ -2,30 +2,35 @@ const ActivityModel = require('../../models/sales/activityModel');
 
 // Create Activity
 exports.createActivity = async (req, res) => {
-  try {
-    const data = req.body;
-
-    // ✅ لو في ملفات attach
-    if (req.files && req.files.attachments) {
-      data.attachments = req.files.attachments.map(file => ({
-        name: file.originalname,
-        url: `/api/v1/uploads/${file.filename}`,
-        type: file.mimetype,
-        size: file.size
-      }));
+    try {
+      const data = req.body;
+  
+      if (!data.createdBy) {
+        return res.status(400).json({ success: false, message: 'createdBy required' });
+      }
+      if (!data.assignedTo) {
+        return res.status(400).json({ success: false, message: 'assignedTo required' });
+      }
+      if (!data.type) {
+        return res.status(400).json({ success: false, message: 'Activity type is required' });
+      }
+      if (!data.lead) {
+        return res.status(400).json({ success: false, message: 'Lead reference is required' });
+      }
+  
+      // ✅ معالجة المرفقات (URLs بدل paths)
+      if (req.files && req.files.attachments) {
+        const baseUrl = `${req.protocol}://${req.get("host")}/`; 
+        data.attachments = req.files.attachments.map(file => baseUrl + file.path.replace(/\\/g, "/"));
+      }
+  
+      const act = await ActivityModel.create(data);
+      return res.status(201).json({ success: true, data: act });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
     }
-
-    if (!data.createdBy) {
-      return res.status(400).json({ success: false, message: 'createdBy required' });
-    }
-
-    const act = await ActivityModel.create(data);
-    return res.status(201).json({ success: true, data: act });
-  } catch (err) {
-    console.error('❌ Error creating activity:', err);
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
+  };
+  
 
 
 // List Activities with filters

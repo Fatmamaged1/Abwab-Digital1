@@ -61,7 +61,7 @@ const activitySchema = new mongoose.Schema({
 
   isCompleted: { type: Boolean, default: false },
 
-  attachments: String,
+  attachments: [String],
 
   // Integration fields
   externalId: String,
