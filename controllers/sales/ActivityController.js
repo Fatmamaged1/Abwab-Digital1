@@ -4,17 +4,29 @@ const ActivityModel = require('../../models/sales/activityModel');
 exports.createActivity = async (req, res) => {
   try {
     const data = req.body;
-    console.log(data);
-    if (!data.createdBy) {
 
+    // ✅ لو في ملفات attach
+    if (req.files && req.files.attachments) {
+      data.attachments = req.files.attachments.map(file => ({
+        name: file.originalname,
+        url: `/api/v1/uploads/${file.filename}`,
+        type: file.mimetype,
+        size: file.size
+      }));
+    }
+
+    if (!data.createdBy) {
       return res.status(400).json({ success: false, message: 'createdBy required' });
     }
+
     const act = await ActivityModel.create(data);
     return res.status(201).json({ success: true, data: act });
   } catch (err) {
+    console.error('❌ Error creating activity:', err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 // List Activities with filters
 exports.listActivities = async (req, res) => {
