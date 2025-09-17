@@ -83,10 +83,32 @@ exports.deleteActivity = async (req, res) => {
   if (!act) return res.status(404).json({ success: false, message: 'Activity not found' });
   return res.json({ success: true, message: 'Activity deleted' });
 };
-
-// Timeline for Lead
+// Timeline for Lead (Grouped by Date)
 exports.timelineByLead = async (req, res) => {
-  const { leadId } = req.params;
-  const activities = await ActivityModel.find({ lead: leadId }).sort('scheduledDate').lean();
-  return res.json({ success: true, data: activities });
-};
+    try {
+      const { leadId } = req.params;
+  
+      const activities = await ActivityModel.aggregate([
+        { 
+          $match: { lead: new mongoose.Types.ObjectId(leadId) } 
+        },
+        { 
+          $sort: { createdAt: -1 } // الأحدث أولاً
+        },
+        {
+          $group: {
+            _id: {
+              day: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+            },
+            activities: { $push: "$$ROOT" }
+          }
+        },
+        { $sort: { "_id.day": -1 } } // الأيام مرتبة تنازلياً
+      ]);
+  
+      return res.json({ success: true, data: activities });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  };
+  
