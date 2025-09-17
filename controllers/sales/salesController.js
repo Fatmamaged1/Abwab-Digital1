@@ -2,13 +2,18 @@
 const Sales = require("../../models/sales/salesModel");
 
 exports.createSales = async (req, res) => {
-  try {
-    const sale = await Sales.create({ ...req.body, createdBy: req.user.id });
-    res.status(201).json({ success: true, data: sale });
-  } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-};
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ success: false, message: "User not authenticated" });
+      }
+  
+      const sale = await Sales.create({ ...req.body, createdBy: req.user.id });
+      res.status(201).json({ success: true, data: sale });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  };
+  
 
 exports.getSales = async (req, res) => {
   try {
