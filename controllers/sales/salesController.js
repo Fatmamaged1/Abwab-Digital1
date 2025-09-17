@@ -17,7 +17,7 @@ exports.createSales = async (req, res, next) => {
       uploadedAt: new Date(),
     })) || [];
     
-
+console.log(documents);
     const sale = await Sales.create({
       lead,
       reminders,
