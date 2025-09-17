@@ -12,9 +12,11 @@ exports.createSales = async (req, res, next) => {
 
     // Handle uploaded documents
     const documents = req.files?.documents?.map(file => ({
-      filename: file.filename,
-      path: file.path,
+      filename: file.filename,     // اسم الملف
+      path: `https://backend.abwabdigital.com/uploads/${file.filename}`, // الرابط أو المسار
+      uploadedAt: new Date(),
     })) || [];
+    
 
     const sale = await Sales.create({
       lead,
