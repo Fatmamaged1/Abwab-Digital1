@@ -6,7 +6,7 @@ exports.protect = (req, res, next) => {
   if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     req.user = { id: decoded.id }; // أو أي بيانات أخرى مخزنة في التوكن
     next();
   } catch (err) {
