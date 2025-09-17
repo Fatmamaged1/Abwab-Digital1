@@ -1,32 +1,33 @@
 // controllers/salesController.js
 const Sales = require("../../models/sales/salesModel");
 
-exports.createSales = async (req, res) => {
+exports.createSales = async (req, res, next) => {
   try {
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ success: false, message: "User not authenticated" });
-    }
-    
+    let { lead, reminders, nextSteps } = req.body;
 
-    // Parse JSON fields manually if sent as text
-    const body = { ...req.body };
-    if (body.documents && typeof body.documents === "string") {
-      body.documents = JSON.parse(body.documents);
+    // Parse reminders if it's a string
+    if (reminders && typeof reminders === "string") {
+      reminders = JSON.parse(reminders);
     }
-    if (body.reminders && typeof body.reminders === "string") {
-      body.reminders = JSON.parse(body.reminders);
-    }
-    if (body.emails && typeof body.emails === "string") {
-      body.emails = JSON.parse(body.emails);
-    }
-    console.log(body);
 
-    const sale = await Sales.create({ ...body, createdBy: req.user.id });
+    // Handle uploaded documents
+    const documents = req.files?.documents?.map(file => ({
+      filename: file.filename,
+      path: file.path,
+    })) || [];
 
-    res.status(201).json({ success: true, data: sale });
+    const sale = await Sales.create({
+      lead,
+      reminders,
+      nextSteps,
+      documents,
+      createdBy: req.user._id,
+    });
+
+    return res.status(201).json({ success: true, data: sale });
   } catch (err) {
-    console.log(err);
-    res.status(400).json({ success: false, message: err.message });
+    console.error(err);
+    return res.status(400).json({ success: false, message: err.message });
   }
 };
 
