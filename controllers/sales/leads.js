@@ -14,6 +14,7 @@ exports.createLead = async (req,res) => {
   exports.listLeads = async (req, res) => {
     try {
       const leads = await Lead.find({ isDeleted: false });
+      console.log(leads);
       res.json({ success: true, data: leads });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });
