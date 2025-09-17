@@ -10,10 +10,14 @@ exports.createLead = async (req,res) => {
       return res.status(400).json({ success:false, message:e.message });
     }
   };
-  
-  exports.listLeads = async (req,res) => {
-    const leads = await Lead.find({ isDeleted:false });
-    return res.json({ success:true, data:leads });
+  // جلب كل الـ Leads (غير المحذوفة)
+  exports.listLeads = async (req, res) => {
+    try {
+      const leads = await Lead.find({ isDeleted: false });
+      res.json({ success: true, data: leads });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
   };
   
   exports.getLead = async (req,res) => {

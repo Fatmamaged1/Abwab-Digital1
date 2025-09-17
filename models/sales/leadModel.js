@@ -86,6 +86,10 @@ const leadSchema = new mongoose.Schema({
     ref: 'User',
     required: [true, 'Lead owner is required']
   },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
 
   // BANT Scoring (0-10 each)
   bant: {
