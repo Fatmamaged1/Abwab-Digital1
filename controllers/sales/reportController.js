@@ -1,6 +1,6 @@
 const Lead = require('../../models/sales/leadModel');
 const Activity = require('../../models/sales/activityModel');
-//const Deal = require('../models/sales/DealModel'); // لو عندك صفقات مبيعات
+const Sale = require('../../models/sales/salesModel'); // لو عندك صفقات مبيعات
 
 // 📊 Generate Report
 exports.generateReport = async (req, res) => {
@@ -34,9 +34,9 @@ exports.generateReport = async (req, res) => {
 
       // ✅ Sales Report
       case "sales":
-        reportData.totalDeals = await Deal.countDocuments(filter);
-        reportData.completedDeals = await Deal.countDocuments({ ...filter, status: "won" });
-        reportData.revenue = await Deal.aggregate([
+        reportData.totalDeals = await Sale.countDocuments(filter);
+        reportData.completedDeals = await Sale.countDocuments({ ...filter, status: "won" });
+        reportData.revenue = await Sale.aggregate([
           { $match: { ...filter, status: "won" } },
           { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
