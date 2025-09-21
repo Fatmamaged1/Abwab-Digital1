@@ -1,4 +1,4 @@
-const Lead = require('../../models/sales/LeadModel');
+const Lead = require('../../models/sales/leadModel');
 const Activity = require('../../models/sales/activityModel');
 //const Deal = require('../models/sales/DealModel'); // لو عندك صفقات مبيعات
 
