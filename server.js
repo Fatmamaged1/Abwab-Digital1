@@ -34,6 +34,7 @@ const leadRoutes = require('./routes/sales/leads');
 const salesRoutes = require('./routes/sales/sales');
 const activityRoutes = require('./routes/sales/activities');
 const reportsReports = require('./routes/sales/reports');
+const analyticsRoutes = require('./routes/sales/analyticsRoutes');
 const documentRoutes = require('./routes/sales/documents');
 
 const app = express();
@@ -82,6 +83,7 @@ async function startServer() {
     app.use("/api/v1/reports", reportsReports);
     app.use("/api/v1/document", documentRoutes);
     app.use("/api/v1/sales", salesRoutes);
+    app.use("/api/v1/analytics", analyticsRoutes);
     app.use("/api/v1/privacy-policy", require("./routes/privacyPolicy"));
     app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
     app.use("/api/v1/career", careerRoutes);
