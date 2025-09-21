@@ -1,7 +1,7 @@
 // controllers/sales/analyticsController.js
 const Lead = require('../../models/sales/leadModel');
 const Activity = require('../../models/sales/activityModel');
-const Sale = require('../../models/sales/SaleModel'); // لو عندك
+const Sale = require('../../models/sales/salesModel'); // لو عندك
 
 // Analytics Dashboard
 exports.getDashboard = async (req, res) => {
