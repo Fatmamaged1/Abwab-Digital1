@@ -36,6 +36,7 @@ const activityRoutes = require('./routes/sales/activities');
 const reportsReports = require('./routes/sales/reports');
 const analyticsRoutes = require('./routes/sales/analyticsRoutes');
 const documentRoutes = require('./routes/sales/documents');
+const seoRoutes = require('./routes/seo');
 
 const app = express();
 
@@ -62,6 +63,7 @@ async function startServer() {
     app.set("views", path.join(__dirname, "views"));
     app.set("view engine", "ejs");
     app.use(express.static(path.join(__dirname, "public")));
+    app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
     // API Routes
     app.use("/api/v1/about", aboutRoutes);
@@ -84,11 +86,12 @@ async function startServer() {
     app.use("/api/v1/document", documentRoutes);
     app.use("/api/v1/sales", salesRoutes);
     app.use("/api/v1/analytics", analyticsRoutes);
+    app.use("/api/v1/seo", seoRoutes);
     app.use("/api/v1/privacy-policy", require("./routes/privacyPolicy"));
     app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
     app.use("/api/v1/career", careerRoutes);
+    
 
-    app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
     // Handle 404 Errors
     app.all("*", (req, res, next) => {
@@ -99,15 +102,18 @@ async function startServer() {
     app.use(globalError);
 
     // Load SSL Certificate
-    const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/privkey.pem"),
-      cert: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/fullchain.pem"),
-    };
+    // const options = {
+    //   key: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/privkey.pem"),
+    //   cert: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/fullchain.pem"),
+    // };
 
     // HTTPS Server
-    https.createServer(options, app).listen(4000, () => {
-      console.log("🚀 HTTPS server is running on port 4000");
-    });
+    // https.createServer(options, app).listen(4000, () => {
+    //   console.log("🚀 HTTPS server is running on port 4000");
+    // });
+  app.listen(4000, () => {
+  console.log("🚀 HTTP server is running on port 4000");
+});
 
     // HTTP to HTTPS Redirection
     http.createServer((req, res) => {

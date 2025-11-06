@@ -3,11 +3,12 @@ const path = require('path');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Specify upload directory
+    // ✅ يحفظ الملفات في فولدر uploads الرئيسي جنب server.js
+    cb(null, path.join(__dirname, '../uploads'));
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const originalName = file.originalname.replace(/\s+/g, "-"); // Replace spaces with dashes
+    const originalName = file.originalname.replace(/\s+/g, "-");
     cb(null, `${uniqueSuffix}-${originalName}`);
   },
 });
@@ -24,7 +25,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 500 * 1024 * 1024 }, // Limit file size to 500MB
+  limits: { fileSize: 500 * 1024 * 1024 },
 });
 
 module.exports = upload;
