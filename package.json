@@ -1,18 +1,65 @@
 {
-  "name": "apiofwibsite",
+  "name": "abwab-digital-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
+  "description": "A comprehensive Node.js/Express REST API for Abwab Digital - a bilingual digital marketing company with complete CRM system",
+  "main": "server.js",
   "engines": {
-    "node": "18"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "set NODE_ENV=development&& nodemon server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "build": "echo 'No build step required'",
+    "seed": "node seed.js",
+    "create-admin": "node createUser.js",
+    "fix-images": "node fixImagePaths.js",
+    "send-test-email": "node sendMail.js",
+    "docker:build": "docker build -t abwab-digital-api .",
+    "docker:run": "docker run -p 4000:4000 abwab-digital-api",
+    "pm2:start": "pm2 start server.js --name abwab-digital-api",
+    "pm2:stop": "pm2 stop abwab-digital-api",
+    "pm2:restart": "pm2 restart abwab-digital-api",
+    "pm2:logs": "pm2 logs abwab-digital-api",
+    "vercel:deploy": "vercel --prod",
+    "health-check": "curl -f http://localhost:4000/health || exit 1"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "mongodb",
+    "mongoose",
+    "api",
+    "rest-api",
+    "bilingual",
+    "arabic",
+    "english",
+    "digital-marketing",
+    "crm",
+    "sales-management",
+    "adminjs",
+    "newsletter",
+    "file-upload",
+    "authentication",
+    "jwt",
+    "swagger"
+  ],
+  "author": "Abwab Digital Development Team",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abwab-digital/abwab-digital-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abwab-digital/abwab-digital-api/issues"
+  },
+  "homepage": "https://github.com/abwab-digital/abwab-digital-api#readme",
   "dependencies": {
     "@adminjs/design-system": "^4.1.1",
     "@adminjs/express": "^6.1.0",
@@ -68,5 +115,26 @@
     "winston": "^3.17.0",
     "xlsx": "^0.18.5",
     "xss": "^1.0.15"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "jest": "^29.0.0",
+    "supertest": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "@types/jest": "^29.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/__tests__/**/*.js", "**/?(*.)+(spec|test).js"],
+    "collectCoverageFrom": [
+      "controllers/**/*.js",
+      "services/**/*.js",
+      "models/**/*.js",
+      "middleware/**/*.js",
+      "utils/**/*.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"]
   }
 }
