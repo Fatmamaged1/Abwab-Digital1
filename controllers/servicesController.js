@@ -1,4 +1,4 @@
-const { createService , getServicesBySlug , getServiceById , getAllServices , getAllServicesDataById , updateService} = require("../services/servicesServices");
+const { createService , getServicesBySlug , getServiceById , getAllServices , updateService} = require("../services/servicesServices");
 
 exports.createService = async (req, res) => {
   try {
@@ -61,7 +61,7 @@ exports.getServiceById = async (req, res) => {
 
 exports.getAllServices = async (req, res) => {
   try {
-    const lang  = req.query.language || req.query.lang || "en";
+    const lang = req.query.language || req.query.lang || "en";
     const result = await getAllServices(lang);
     if (!result) {
       return res.status(404).json({
@@ -79,3 +79,43 @@ exports.getAllServices = async (req, res) => {
     });
   }
 };
+
+exports.updateService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lang = req.query.language || req.query.lang || "en";
+    
+    // Prepare update data
+    let updateData = { ...req.body };
+    
+    // If there are files, add them to updateData
+    if (req.files) {
+      updateData.files = req.files;
+    }
+
+    // If header is a string (happens with form-data), parse it
+    if (typeof updateData.header === 'string') {
+      try {
+        updateData.header = JSON.parse(updateData.header);
+      } catch (e) {
+        console.error('Error parsing header:', e);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid header format. Must be valid JSON"
+        });
+      }
+    }
+
+    const result = await updateService(id, updateData);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in updateService controller:', error);
+    const statusCode = error.message === "Service not found" ? 404 : 500;
+    res.status(statusCode).json({
+      success: false,
+      message: error.message || "Failed to update service",
+      error: error.message
+    });
+  }
+};
+

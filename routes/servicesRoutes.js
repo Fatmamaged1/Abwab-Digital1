@@ -34,15 +34,11 @@ router.post(
 );
 
 
-// router.patch(
-//   "/:id",
-//   serviceUpload,
-//   [
-//     check('title', 'Title cannot be empty').optional().not().isEmpty(),
-//     check('description', 'Description cannot be empty').optional().not().isEmpty()
-//   ],
-//   serviceController.updateService
-// );
+router.put(
+  "/:id",
+  serviceUpload,
+  serviceController.updateService
+);
 
 // router.delete("/:id", serviceController.deleteService);
 

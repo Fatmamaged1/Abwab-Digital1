@@ -255,3 +255,75 @@ exports.getAllServices = async (lang = "en") => {
     throw error;
   }
 };
+
+exports.updateService = async (id, updateData) => {
+  try {
+    // Log the incoming data for debugging
+    console.log('Raw update data:', JSON.stringify(updateData, null, 2));
+    
+    // Parse the update data if it's a string
+    const parsedData = typeof updateData === 'string' ? JSON.parse(updateData) : updateData;
+    
+    // Process the data using parseRequsetFields
+    let processedData = {};
+    try {
+      // For updates, we need to handle both direct fields and nested objects
+      if (parsedData.files) {
+        // Handle file uploads
+        processedData = await parseRequsetFields({
+          ...parsedData,
+          ...parsedData.files
+        });
+        delete processedData.files;
+      } else {
+        // Handle regular updates
+        processedData = await parseRequsetFields(parsedData);
+      }
+      
+      // Log the processed data
+      console.log('Processed data:', JSON.stringify(processedData, null, 2));
+      
+      // Clean up the data - remove any undefined or null values
+      Object.keys(processedData).forEach(key => {
+        if (processedData[key] === undefined || processedData[key] === null) {
+          delete processedData[key];
+        }
+      });
+
+      // Handle array updates (like header, importance, etc.)
+      const arrayFields = ['header', 'importance', 'implementProcess', 'packages', 'faq', 'projects'];
+      arrayFields.forEach(field => {
+        if (parsedData[field] !== undefined) {
+          processedData[field] = parsedData[field];
+        }
+      });
+
+      // Update the service
+      const updatedService = await Service.findByIdAndUpdate(
+  id,
+  { $set: processedData },
+  { new: true, runValidators: true }
+);
+
+const fullService = await Service.findById(updatedService._id)
+  .populate({
+    path: "projects.projectId",
+    select: "name startDate endDate client status image",
+  });
+
+const formatted = await formatService(fullService);
+
+      return {
+        success: true,
+        message: "Service updated successfully",
+        data: formatted,
+      };
+    } catch (parseError) {
+      console.error('Error parsing request data:', parseError);
+      throw new Error(`Invalid request data format: ${parseError.message}`);
+    }
+  } catch (error) {
+    console.error("Error in updateService:", error);
+    throw error;
+  }
+};
