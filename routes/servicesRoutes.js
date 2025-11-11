@@ -15,7 +15,7 @@ const serviceUpload = upload.fields([
 ]);
 
 // Public routes
-// router.get("/", serviceController.getAllServices);
+router.get("/", serviceController.getAllServices);
 router.get("/slug/:slug", serviceController.getServiceBySlug);
 router.get("/:id", serviceController.getServiceById);
 // router.get("/details/:id", serviceController.getAllServicesDataById); // Changed from /All/:id to /details/:id

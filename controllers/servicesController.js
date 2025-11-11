@@ -59,3 +59,23 @@ exports.getServiceById = async (req, res) => {
   }
 };
 
+exports.getAllServices = async (req, res) => {
+  try {
+    const lang  = req.query.language || req.query.lang || "en";
+    const result = await getAllServices(lang);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Services not found",
+      });
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in getAllServices controller:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get all services",
+      error: error.message
+    });
+  }
+};

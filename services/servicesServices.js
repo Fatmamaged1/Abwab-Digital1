@@ -2,6 +2,7 @@
 const Service = require("../models/servicesModel");
 const { processSeoData } = require("./seoService");
 const { formatService } = require("../utils/formatingBody");
+const {getLocalizedText} = require("../utils/formatingBody");
 const { parseRequsetFields ,createDefaultSeo } = require("../utils/reqParser");
 const Project = require("../models/projectModel");
 const slugify = require("slugify");
@@ -230,4 +231,27 @@ exports.getServiceById = async (id , lang="en") => {
   }
 };
 
+exports.getAllServices = async (lang = "en") => {
+  try {
+    const services = await Service.find({}, { slug: 1, header: 1 }).sort({createdAt: -1});
 
+    const formatted = services.map(service => {
+      const header = service.header?.[0] || {};
+      return {
+        id: service._id?.toString(),
+        slug: service.slug,
+        title: getLocalizedText(header?.title, lang),
+        description: getLocalizedText(header?.description, lang),
+      };
+    });
+
+    return {
+      success: true,
+      message: "Services retrieved successfully",
+      data: formatted,
+    };
+  } catch (error) {
+    console.error("Error in getAllServices:", error);
+    throw error;
+  }
+};

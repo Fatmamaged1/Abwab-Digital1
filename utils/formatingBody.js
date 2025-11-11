@@ -150,5 +150,6 @@ module.exports = {
   formatProjects,
   formatPackages,
   formatFaq,
-  formatService
+  formatService,
+  getLocalizedText
 };
