@@ -207,3 +207,27 @@ exports.getServicesBySlug = async (slug , lang="en") => {
     throw error;
   }
 };
+
+exports.getServiceById = async (id , lang="en") => {
+  try {
+    const service = await Service.findById(id)
+    .populate({
+      path: "projects.projectId",
+      select: "name startDate endDate client status image",
+    });
+    if (!service) {
+      throw new Error("Service not found");
+    }
+    const formatted = await formatService(service, lang);
+    return {
+      success: true,
+      message: "Service retrieved successfully",
+      data: formatted,
+    };
+  } catch (error) {
+    console.error("Error in getServiceById:", error);
+    throw error;
+  }
+};
+
+

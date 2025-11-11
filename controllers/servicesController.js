@@ -1,4 +1,4 @@
-const { createService , getServicesBySlug} = require("../services/servicesServices");
+const { createService , getServicesBySlug , getServiceById , getAllServices , getAllServicesDataById , updateService} = require("../services/servicesServices");
 
 exports.createService = async (req, res) => {
   try {
@@ -36,3 +36,26 @@ exports.getServiceBySlug = async (req, res) => {
     });
   }
 };
+
+exports.getServiceById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lang = req.query.language || req.query.lang || "en";
+    const result = await getServiceById(id, lang);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found",
+      });
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in getServiceById controller:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get service by id",
+      error: error.message
+    });
+  }
+};
+
