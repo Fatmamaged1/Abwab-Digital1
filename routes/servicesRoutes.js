@@ -15,13 +15,13 @@ const serviceUpload = upload.fields([
 ]);
 
 // Public routes
-router.get("/", serviceController.getAllServices);
-router.get("/slug/:slug", serviceController.getServiceBySlug);
-router.get("/:id", serviceController.getServiceById);
-router.get("/details/:id", serviceController.getAllServicesDataById); // Changed from /All/:id to /details/:id
+// router.get("/", serviceController.getAllServices);
+// router.get("/slug/:slug", serviceController.getServiceBySlug);
+// router.get("/:id", serviceController.getServiceById);
+// router.get("/details/:id", serviceController.getAllServicesDataById); // Changed from /All/:id to /details/:id
 
 // Protected routes
-router.use(protect);
+// router.use(protect);
 
 router.post(
   "/",
@@ -34,16 +34,16 @@ router.post(
 );
 
 
-router.patch(
-  "/:id",
-  serviceUpload,
-  [
-    check('title', 'Title cannot be empty').optional().not().isEmpty(),
-    check('description', 'Description cannot be empty').optional().not().isEmpty()
-  ],
-  serviceController.updateService
-);
+// router.patch(
+//   "/:id",
+//   serviceUpload,
+//   [
+//     check('title', 'Title cannot be empty').optional().not().isEmpty(),
+//     check('description', 'Description cannot be empty').optional().not().isEmpty()
+//   ],
+//   serviceController.updateService
+// );
 
-router.delete("/:id", serviceController.deleteService);
+// router.delete("/:id", serviceController.deleteService);
 
 module.exports = router;
