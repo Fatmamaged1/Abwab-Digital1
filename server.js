@@ -36,6 +36,23 @@ const activityRoutes = require('./routes/sales/activities');
 const reportsReports = require('./routes/sales/reports');
 const analyticsRoutes = require('./routes/sales/analyticsRoutes');
 const documentRoutes = require('./routes/sales/documents');
+const opportunityRoutes = require('./routes/sales/opportunities');
+const handbookRoutes = require('./routes/sales/handbook');
+const campaignRoutes = require('./routes/sales/campaigns');
+
+// Import Agile routes
+const agileProjectRoutes = require('./routes/agile/projects');
+const agileSprintRoutes = require('./routes/agile/sprints');
+const agileStoryRoutes = require('./routes/agile/stories');
+const agileEpicRoutes = require('./routes/agile/epics');
+const agileTaskRoutes = require('./routes/agile/tasks');
+
+// Import HR routes
+const hrEmployeeRoutes = require('./routes/hr/employees');
+const hrAttendanceRoutes = require('./routes/hr/attendance');
+const hrLeaveRoutes = require('./routes/hr/leaves');
+const hrTimeLogRoutes = require('./routes/hr/timelogs');
+const hrDepartmentRoutes = require('./routes/hr/departments');
 
 const app = express();
 
@@ -84,6 +101,24 @@ async function startServer() {
     app.use("/api/v1/document", documentRoutes);
     app.use("/api/v1/sales", salesRoutes);
     app.use("/api/v1/analytics", analyticsRoutes);
+    app.use("/api/v1/opportunities", opportunityRoutes);
+    app.use("/api/v1/handbook", handbookRoutes);
+    app.use("/api/v1/campaigns", campaignRoutes);
+
+    // Agile routes
+    app.use("/api/v1/agile/projects", agileProjectRoutes);
+    app.use("/api/v1/agile/sprints", agileSprintRoutes);
+    app.use("/api/v1/agile/stories", agileStoryRoutes);
+    app.use("/api/v1/agile/epics", agileEpicRoutes);
+    app.use("/api/v1/agile/tasks", agileTaskRoutes);
+
+    // HR routes
+    app.use("/api/v1/hr/employees", hrEmployeeRoutes);
+    app.use("/api/v1/hr/attendance", hrAttendanceRoutes);
+    app.use("/api/v1/hr/leaves", hrLeaveRoutes);
+    app.use("/api/v1/hr/timelogs", hrTimeLogRoutes);
+    app.use("/api/v1/hr/departments", hrDepartmentRoutes);
+
     app.use("/api/v1/privacy-policy", require("./routes/privacyPolicy"));
     app.use("/api/v1/terms-conditions", require("./routes/TermsAndConditions"));
     app.use("/api/v1/career", careerRoutes);
