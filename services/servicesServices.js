@@ -185,3 +185,25 @@ exports.createService = async (req, res) => {
     throw error;
   }
 };
+
+exports.getServicesBySlug = async (slug , lang="en") => {
+  try {
+    const service = await Service.findOne({ $or: [{ "slug.en": slug }, { "slug.ar": slug }] })
+    .populate({
+      path: "projects.projectId",
+      select: "name startDate endDate client status image",
+    });
+    if (!service) {
+      throw new Error("Service not found");
+    }
+    const formatted = await formatService(service, lang);
+    return {
+      success: true,
+      message: "Service retrieved successfully",
+      data: formatted,
+    };
+  } catch (error) {
+    console.error("Error in getServicesBySlug:", error);
+    throw error;
+  }
+};
