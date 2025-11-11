@@ -1,4 +1,4 @@
-const { createService , getServicesBySlug , getServiceById , getAllServices , updateService} = require("../services/servicesServices");
+const { createService , getServicesBySlug , getServiceById , getAllServices , updateService , deleteService} = require("../services/servicesServices");
 
 exports.createService = async (req, res) => {
   try {
@@ -118,4 +118,26 @@ exports.updateService = async (req, res) => {
     });
   }
 };
+
+exports.deleteService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteService(id);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found",
+      });
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in deleteService controller:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete service",
+      error: error.message
+    });
+  }
+};
+
 

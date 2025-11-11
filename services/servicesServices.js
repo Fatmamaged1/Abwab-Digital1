@@ -327,3 +327,17 @@ const formatted = await formatService(fullService);
     throw error;
   }
 };
+
+exports.deleteService = async (id) => {
+  try {
+    const deletedService = await Service.findByIdAndDelete(id);
+    if (!deletedService) throw new Error("Service not found");
+    return {
+      success: true,
+      message: "Service deleted successfully",
+    };
+  } catch (error) {
+    console.error("Error in deleteService:", error);
+    throw error;
+  }
+};

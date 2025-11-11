@@ -40,6 +40,6 @@ router.put(
   serviceController.updateService
 );
 
-// router.delete("/:id", serviceController.deleteService);
+router.delete("/:id", serviceController.deleteService);
 
 module.exports = router;
