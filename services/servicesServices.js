@@ -110,6 +110,8 @@ exports.createService = async (req, res) => {
       en: firstHeader?.title?.en || defaultTitle.en,
       ar: firstHeader?.title?.ar || firstHeader?.title?.en || defaultTitle.ar,
     };
+    console.log("== Raw SEO input ==", req.body.seo);
+console.log("== Parsed SEO ==", processedData.parsedSeo);
 
     const finalSlug = await ensureUniqueSlug(title);
     const processedDataWithFiles = processFileUploads(files, processedData);
@@ -118,17 +120,74 @@ exports.createService = async (req, res) => {
       metaTitle: title.en,
       metaDescription: firstHeader?.description?.en || "Professional service",
       openGraph: {
-        image: processedDataWithFiles.bannerImage?.url,
         title: title.en,
+        description: firstHeader?.description?.en || "Professional service",
+        image: processedDataWithFiles.bannerImage?.url || '',
+        type: 'website'
       },
       twitter: {
-        image: processedDataWithFiles.bannerImage?.url,
+        card: 'summary_large_image',
         title: title.en,
+        description: firstHeader?.description?.en || "Professional service",
+        image: processedDataWithFiles.bannerImage?.url || ''
       },
       canonicalUrl: `https://abwabdigital.com/services/${finalSlug.en}`,
     };
+    // Process SEO data - create an array with a default English entry
+    let processedSeo = [];
+    const rawSeo = processedData.parsedSeo || req.body.seo || {};
+    
+    // Ensure default values are properly set
+    const finalSeo = {
+      metaTitle: title.en || 'Service',
+      metaDescription: firstHeader?.description?.en || 'Professional service',
+      openGraph: {
+        title: title.en || 'Service',
+        description: firstHeader?.description?.en || 'Professional service',
+        image: processedDataWithFiles.bannerImage?.url || '',
+        type: 'website'
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: title.en || 'Service',
+        description: firstHeader?.description?.en || 'Professional service',
+        image: processedDataWithFiles.bannerImage?.url || ''
+      },
+      canonicalUrl: `https://abwabdigital.com/services/${finalSlug.en}`
+    };
 
-    const processedSeo = processSeoData(processedData.parsedSeo, defaultSeoValues);
+    // Merge with any provided SEO data
+    const mergedSeo = processSeoData(rawSeo, finalSeo);
+    
+    // Create the SEO object in the format expected by the model
+    const seoEntry = {
+      language: 'en', // Default language
+      metaTitle: mergedSeo.metaTitle || finalSeo.metaTitle,
+      metaDescription: mergedSeo.metaDescription || finalSeo.metaDescription,
+      canonicalUrl: mergedSeo.canonicalUrl || finalSeo.canonicalUrl,
+      openGraph: {
+        title: mergedSeo.openGraph?.title || finalSeo.openGraph.title,
+        description: mergedSeo.openGraph?.description || finalSeo.openGraph.description,
+        image: mergedSeo.openGraph?.image || finalSeo.openGraph.image,
+        type: mergedSeo.openGraph?.type || finalSeo.openGraph.type
+      },
+      twitter: {
+        card: mergedSeo.twitter?.card || finalSeo.twitter.card,
+        title: mergedSeo.twitter?.title || finalSeo.twitter.title,
+        description: mergedSeo.twitter?.description || finalSeo.twitter.description,
+        image: mergedSeo.twitter?.image || finalSeo.twitter.image
+      },
+      robots: {
+        noindex: false,
+        nofollow: false,
+        noimageindex: false
+      }
+    };
+    
+    // Add debug logging
+    console.log('Processed SEO Entry:', JSON.stringify(seoEntry, null, 2));
+    processedSeo.push(seoEntry);
+
 
     const projects = [];
     if (Array.isArray(processedData.parsedProjects)) {
@@ -156,15 +215,16 @@ exports.createService = async (req, res) => {
     // Final object for Mongo
     const serviceData = {
       slug: finalSlug,
-      header: processedData.parsedHeaders || [],
-      importance: processedData.parsedImportance || [],
-      implementProcess: processedData.parsedImplementProcess || [],
+      header: processedDataWithFiles.parsedHeaders || [],
+      importance: processedDataWithFiles.parsedImportance || [],
+      implementProcess: processedDataWithFiles.parsedImplementProcess || [],
       bannerImage: processedDataWithFiles.bannerImage,
       packages: processedData.parsedPackages || [],
       faq: processedData.parsedFaq || [],
-      projects: projects, // Use validated projects array
-      seo: processedSeo,
+      projects: projects,
+      seo: processedSeo,  // This will be properly formatted SEO data
     };
+    
 
     const service = await Service.create(serviceData);
     const populatedService = await Service.findById(service._id)
@@ -183,7 +243,11 @@ exports.createService = async (req, res) => {
       
   } catch (error) {
     console.error("Error in createService:", error);
-    throw error;
+    return {
+      success: false,
+      message: "Failed to create service",
+      error: error.message,
+    };
   }
 };
 

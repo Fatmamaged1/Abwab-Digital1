@@ -1,44 +1,76 @@
 // services/seoService.js
-const Service = require('../models/servicesModel');
 const { createDefaultSeo } = require('../utils/reqParser');
 
 class SeoService {
   /**
-   * Process SEO data (array or single object)
-   * @param {Array|Object} seoData - SEO data to process
-   * @param {Object} defaultValues - Default values to use
-   * @returns {Array} Array of processed SEO items
+   * Process and merge SEO data safely
+   * @param {Object} incomingSeo - Incoming SEO data from request
+   * @param {Object} defaultValues - Default fallback values
+   * @returns {Object} - Clean merged SEO object
    */
-  static processSeoData(seoData, defaultValues = {}) {
-    if (!seoData) {
-      return createDefaultSeo(
-        defaultValues.metaTitle || 'Default Title',
-        defaultValues.metaDescription || 'Default Description',
-        defaultValues.image || ''
-      );
-    }
+  static processSeoData(incomingSeo = {}, defaultValues = {}) {
+    const safe = (val, def) =>
+      val === undefined || val === null || val === "" ? def : val;
 
-    // If seoData is already processed or has the required structure, return as is
-    if (seoData.metaTitle && seoData.metaDescription) {
-      return seoData;
-    }
+    // Build base defaults (if helper exists)
+    const baseDefaults = createDefaultSeo
+      ? createDefaultSeo(
+          defaultValues.metaTitle || "Default Title",
+          defaultValues.metaDescription || "Default Description",
+          defaultValues.openGraph?.image || ""
+        )
+      : {};
 
-    // Process the SEO data with the provided defaults
+    const defaults = { ...baseDefaults, ...defaultValues };
+
+    // Start merging safely
     return {
-      metaTitle: seoData.metaTitle || defaultValues.metaTitle || 'Default Title',
-      metaDescription: seoData.metaDescription || defaultValues.metaDescription || 'Default Description',
+      metaTitle: safe(incomingSeo.metaTitle, defaults.metaTitle || "Default Title"),
+      metaDescription: safe(
+        incomingSeo.metaDescription,
+        defaults.metaDescription || "Default Description"
+      ),
+
       openGraph: {
-        title: seoData.openGraph?.title || seoData.metaTitle || defaultValues.metaTitle || 'Default Title',
-        description: seoData.openGraph?.description || seoData.metaDescription || defaultValues.metaDescription || 'Default Description',
-        image: seoData.openGraph?.image || defaultValues.image || '',
-        type: 'website'
+        title: safe(
+          incomingSeo.openGraph?.title,
+          defaults.openGraph?.title || defaults.metaTitle
+        ),
+        description: safe(
+          incomingSeo.openGraph?.description,
+          defaults.openGraph?.description || defaults.metaDescription
+        ),
+        image: safe(
+          incomingSeo.openGraph?.image,
+          defaults.openGraph?.image || ""
+        ),
+        type: safe(incomingSeo.openGraph?.type, "website"),
       },
+
       twitter: {
-        card: 'summary_large_image',
-        title: seoData.twitter?.title || seoData.metaTitle || defaultValues.metaTitle || 'Default Title',
-        description: seoData.twitter?.description || seoData.metaDescription || defaultValues.metaDescription || 'Default Description',
-        image: seoData.twitter?.image || defaultValues.image || ''
-      }
+        card: safe(
+          incomingSeo.twitter?.card,
+          defaults.twitter?.card || "summary_large_image"
+        ),
+        title: safe(
+          incomingSeo.twitter?.title,
+          defaults.twitter?.title || defaults.metaTitle
+        ),
+        description: safe(
+          incomingSeo.twitter?.description,
+          defaults.twitter?.description || defaults.metaDescription
+        ),
+        image: safe(
+          incomingSeo.twitter?.image,
+          defaults.twitter?.image || ""
+        ),
+      },
+
+      canonicalUrl: safe(
+        incomingSeo.canonicalUrl,
+        defaults.canonicalUrl ||
+          `https://abwabdigital.com/services/default`
+      ),
     };
   }
 }

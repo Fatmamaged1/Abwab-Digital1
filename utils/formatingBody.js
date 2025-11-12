@@ -117,6 +117,7 @@ const formatService = async (service, lang = "en") => {
   if (!service) return null;
 
   try {
+ 
     const formattedService = {
       id: service._id?.toString() || service.id,
       slug: service.slug || { en: '', ar: '' },
@@ -133,6 +134,70 @@ const formatService = async (service, lang = "en") => {
       packages: formatPackages(service.packages || [], lang),
       faq: formatFaq(service.faq || [], lang),
       ...(service.bannerImage && { bannerImage: formatImage(service.bannerImage, lang, "Banner Image") }),
+      // Handle SEO data - ensure it's always an object with all required fields
+seo: (() => {
+  try {
+    const seoData = Array.isArray(service.seo)
+      ? ((service.seo[0] && service.seo[0].toObject?.()) || service.seo[0] || {})
+      : (service.seo?.toObject?.() || service.seo || {});
+
+    return {
+      metaTitle: seoData.metaTitle || '',
+      metaDescription: seoData.metaDescription || '',
+      openGraph: seoData.openGraph ? {
+        title: seoData.openGraph.title || seoData.metaTitle || '',
+        description: seoData.openGraph.description || seoData.metaDescription || '',
+        image: seoData.openGraph.image
+          ? typeof seoData.openGraph.image === "string"
+            ? { url: seoData.openGraph.image, alt: "Open Graph Image" }
+            : seoData.openGraph.image
+          : null,
+        type: seoData.openGraph.type || 'website'
+      } : {
+        title: '',
+        description: '',
+        image: null,
+        type: 'website'
+      },
+      twitter: seoData.twitter ? {
+        card: seoData.twitter.card || 'summary_large_image',
+        title: seoData.twitter.title || seoData.metaTitle || '',
+        description: seoData.twitter.description || seoData.metaDescription || '',
+        image: seoData.twitter.image
+          ? typeof seoData.twitter.image === "string"
+            ? { url: seoData.twitter.image, alt: "Twitter Card Image" }
+            : seoData.twitter.image
+          : null
+      } : {
+        card: 'summary_large_image',
+        title: '',
+        description: '',
+        image: null
+      },
+      canonicalUrl: seoData.canonicalUrl || ''
+    };
+  } catch (error) {
+    console.error('Error formatting SEO data:', error);
+    return {
+      metaTitle: '',
+      metaDescription: '',
+      openGraph: {
+        title: '',
+        description: '',
+        image: null,
+        type: 'website'
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: '',
+        description: '',
+        image: null
+      },
+      canonicalUrl: ''
+    };
+  }
+})(),
+
       ...(service.createdAt && { createdAt: service.createdAt }),
       ...(service.updatedAt && { updatedAt: service.updatedAt })
     };

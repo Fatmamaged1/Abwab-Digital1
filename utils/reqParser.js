@@ -42,6 +42,11 @@ const createDefaultSeo = (title, description, imageUrl) => ({
 
 const parseRequsetFields = async (body = {}) => {
   try {
+    // Validate required fields
+    if (!body.seo) {
+      throw new Error('SEO data is required');
+    }
+
     const ParsedBody = {
       parsedHeaders: parseField(body.headerSections, []).map(section => ({
         ...parseLocalizedFields(section, ['title', 'description']),
@@ -126,13 +131,22 @@ const parseRequsetFields = async (body = {}) => {
         })
       )).filter(Boolean),
 
-      parsedSeo: body.seo 
-        ? parseField(body.seo)
-        : createDefaultSeo(
-            body.title || 'Default Title',
-            body.description || 'Default Description',
-            body.image?.url || body.image || ''
-          )
+      parsedSeo: parseField(body.seo, {
+        metaTitle: body.seo.metaTitle || 'Default Title',
+        metaDescription: body.seo.metaDescription || 'Default Description',
+        openGraph: {
+          title: body.seo.openGraph?.title || body.seo.metaTitle || 'Default Title',
+          description: body.seo.openGraph?.description || body.seo.metaDescription || 'Default Description',
+          image: body.seo.openGraph?.image || body.image?.url || body.image || '',
+          type: body.seo.openGraph?.type || 'website'
+        },
+        twitter: {
+          card: body.seo.twitter?.card || 'summary_large_image',
+          title: body.seo.twitter?.title || body.seo.metaTitle || 'Default Title',
+          description: body.seo.twitter?.description || body.seo.metaDescription || 'Default Description',
+          image: body.seo.twitter?.image || body.seo.openGraph?.image || body.image?.url || body.image || ''
+        }
+      })
     };
 
     return ParsedBody;

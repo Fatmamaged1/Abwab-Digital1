@@ -1,92 +1,44 @@
 const mongoose = require("mongoose");
 
-// Constants for reuse
+// Reusable constraints
 const SEO_CONSTRAINTS = {
   META_TITLE_MAX: 70,
   META_DESC_MAX: 160,
-  KEYWORD_MAX: 10,
   URL_PATTERN: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/
 };
 
+// Social media sub-schema (OpenGraph / Twitter)
 const SocialMediaSchema = new mongoose.Schema({
-  title: { 
-    type: String, 
-    trim: true,
-    maxlength: [100, "Title cannot exceed 100 characters"]
-  },
-  description: { 
-    type: String, 
-    trim: true,
-    maxlength: [200, "Description cannot exceed 200 characters"]
-  },
-  image: { 
-    type: String, 
-    trim: true,
-    match: [SEO_CONSTRAINTS.URL_PATTERN, "Please provide a valid URL"]
-  },
-  imageAlt: { 
-    type: String, 
-    trim: true,
-    maxlength: [125, "Alt text cannot exceed 125 characters"]
-  }
+  title: { type: String, trim: true, maxlength: 100 },
+  description: { type: String, trim: true, maxlength: 200 },
+  image: { type: String, trim: true, match: [SEO_CONSTRAINTS.URL_PATTERN, "Invalid image URL"] },
+  type: { type: String, trim: true, default: "website" },
+  card: { type: String, trim: true, default: "summary_large_image" } // used for twitter
 }, { _id: false });
 
+// Main SEO schema
 const seoSchema = new mongoose.Schema({
-  // Language and Basic Info
-  language: {
-    type: String,
-    enum: {
-      values: ["en", "ar"],
-      message: "Language must be either 'en' or 'ar'"
-    },
-    required: [true, "Language is required"],
-    default: "en",
-    index: true
-  },
-
-  // Core Meta
   metaTitle: {
     type: String,
-    required: [true, "Meta title is required"],
     trim: true,
-    maxlength: [
-      SEO_CONSTRAINTS.META_TITLE_MAX, 
-      `Meta title cannot exceed ${SEO_CONSTRAINTS.META_TITLE_MAX} characters`
-    ]
+    maxlength: [SEO_CONSTRAINTS.META_TITLE_MAX, `Meta title can't exceed ${SEO_CONSTRAINTS.META_TITLE_MAX} chars`],
+    default: ""
   },
 
   metaDescription: {
     type: String,
-    required: [true, "Meta description is required"],
     trim: true,
-    maxlength: [
-      SEO_CONSTRAINTS.META_DESC_MAX, 
-      `Meta description cannot exceed ${SEO_CONSTRAINTS.META_DESC_MAX} characters`
-    ]
+    maxlength: [SEO_CONSTRAINTS.META_DESC_MAX, `Meta description can't exceed ${SEO_CONSTRAINTS.META_DESC_MAX} chars`],
+    default: ""
   },
 
-  // Search Engine Directives automatically set to false
-  robots: {
-    noindex: { type: Boolean, default: false },
-    nofollow: { type: Boolean, default: false },
-    noimageindex: { type: Boolean, default: false }
-  },
-
-  // Content
-  keywords: [{
-    type: String,
-    trim: true,
-    maxlength: [50, "Keyword cannot exceed 50 characters"]
-  }],
-
-  // Canonical URL
   canonicalUrl: {
     type: String,
     trim: true,
-    match: [SEO_CONSTRAINTS.URL_PATTERN, "Please provide a valid URL"]
+    match: [SEO_CONSTRAINTS.URL_PATTERN, "Please provide a valid URL"],
+    default: ""
   },
 
-  // Social Media
   openGraph: {
     type: SocialMediaSchema,
     default: () => ({})
@@ -97,64 +49,45 @@ const seoSchema = new mongoose.Schema({
     default: () => ({})
   },
 
-  // Structured Data
+  robots: {
+    noindex: { type: Boolean, default: false },
+    nofollow: { type: Boolean, default: false },
+    noimageindex: { type: Boolean, default: false }
+  },
+
+  keywords: {
+    type: [String],
+    default: []
+  },
+
   structuredData: {
     type: mongoose.Schema.Types.Mixed,
-    validate: {
-      validator: function(v) {
-        try {
-          return typeof v === 'object' && v !== null;
-        } catch (e) {
-          return false;
-        }
-      },
-      message: "Structured data must be a valid object"
-    }
+    default: {}
   }
 }, {
-  // Schema Options
-  timestamps: true,
+  _id: false,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 
-// Indexes
-seoSchema.index({ language: 1 });
-
-// Virtual for robots meta content
-seoSchema.virtual('robotsMeta').get(function() {
-  const directives = [];
-  if (this.robots.noindex) directives.push('noindex');
-  if (this.robots.nofollow) directives.push('nofollow');
-  if (this.robots.noimageindex) directives.push('noimageindex');
-  return directives.length > 0 ? directives.join(', ') : 'index, follow';
-});
-
-// Pre-save hook to clean and validate keywords
-seoSchema.pre('save', function(next) {
-  if (this.keywords) {
-    // Handle both string (comma-separated) and array inputs
-    let keywordsArray = [];
-    
-    if (typeof this.keywords === 'string') {
-      // Split by comma and clean up
-      keywordsArray = this.keywords
-        .split(',')
-        .map(k => k.trim())
-        .filter(k => k.length > 0);
-    } else if (Array.isArray(this.keywords)) {
-      // Already an array, just clean it up
-      keywordsArray = this.keywords
-        .map(k => typeof k === 'string' ? k.trim() : String(k).trim())
-        .filter(k => k.length > 0);
-    }
-    
-    // Remove duplicates and limit to max number of keywords
-    this.keywords = [...new Set(keywordsArray)].slice(0, SEO_CONSTRAINTS.KEYWORD_MAX);
+// 🧹 Pre-save: clean keywords array
+seoSchema.pre("save", function(next) {
+  if (Array.isArray(this.keywords)) {
+    this.keywords = [...new Set(this.keywords.map(k => k.trim()).filter(Boolean))];
   } else {
     this.keywords = [];
   }
   next();
+});
+
+// 🧠 Virtual robots meta string
+seoSchema.virtual("robotsMeta").get(function() {
+  const r = this.robots || {};
+  const directives = [];
+  if (r.noindex) directives.push("noindex");
+  if (r.nofollow) directives.push("nofollow");
+  if (r.noimageindex) directives.push("noimageindex");
+  return directives.length ? directives.join(", ") : "index, follow";
 });
 
 module.exports = seoSchema;
