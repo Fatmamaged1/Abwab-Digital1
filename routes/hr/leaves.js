@@ -16,7 +16,7 @@ const {
   getPendingLeaveRequests,
 } = require('../../controllers/hr/leaveController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
 
 const router = express.Router();
 

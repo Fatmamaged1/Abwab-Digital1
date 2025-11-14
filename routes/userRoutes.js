@@ -10,6 +10,11 @@ const {
 } = require('../validator/userValidator');
 
 const {
+  changePasswordValidator,
+  updateProfileValidator,
+} = require('../validators/authValidator');
+
+const {
   getUsers,
   getUser,
   createUser,
@@ -33,8 +38,8 @@ const router = express.Router();
 router.use(authService.protect);
 
 router.get('/getMe', getLoggedUserData, getUser);
-router.put('/changeMyPassword', updateLoggedUserPassword);
-router.put('/updateMe', updateLoggedUserValidator, updateLoggedUserData);
+router.put('/changeMyPassword', changePasswordValidator, updateLoggedUserPassword);
+router.put('/updateMe', updateProfileValidator, updateLoggedUserData);
 router.delete('/deleteMe', deleteLoggedUserData);
 // Logout route (requires authentication)
 router.post('/logout', logoutUser);

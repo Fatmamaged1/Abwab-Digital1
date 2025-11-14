@@ -15,7 +15,12 @@ const {
   cloneOpportunity
 } = require('../../controllers/sales/opportunityController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
+const {
+  createOpportunityValidator,
+  updateOpportunityValidator,
+  idValidator,
+} = require('../../validators/salesValidator');
 
 const router = express.Router();
 
@@ -30,12 +35,12 @@ router.get('/metrics/forecast', getForecast);
 // Main CRUD routes
 router.route('/')
   .get(getOpportunities)
-  .post(authorize('admin', 'sales'), createOpportunity);
+  .post(authorize('admin', 'sales'), createOpportunityValidator, createOpportunity);
 
 router.route('/:id')
-  .get(getOpportunity)
-  .put(authorize('admin', 'sales'), updateOpportunity)
-  .delete(authorize('admin', 'sales'), deleteOpportunity);
+  .get(idValidator, getOpportunity)
+  .put(authorize('admin', 'sales'), updateOpportunityValidator, updateOpportunity)
+  .delete(authorize('admin', 'sales'), idValidator, deleteOpportunity);
 
 // Stage management
 router.put('/:id/stage', authorize('admin', 'sales'), moveToStage);

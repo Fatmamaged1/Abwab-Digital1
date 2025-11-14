@@ -16,7 +16,12 @@ const {
   getTeamVelocity
 } = require('../../controllers/agile/sprintController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
+const {
+  createSprintValidator,
+  updateSprintValidator,
+  idValidator,
+} = require('../../validators/agileValidator');
 
 const router = express.Router();
 
@@ -30,12 +35,12 @@ router.get('/project/:projectId/velocity', getTeamVelocity);
 // Main CRUD routes
 router.route('/')
   .get(getSprints)
-  .post(authorize('admin', 'manager', 'scrum_master', 'product_owner'), createSprint);
+  .post(authorize('admin', 'manager', 'scrum_master', 'product_owner'), createSprintValidator, createSprint);
 
 router.route('/:id')
-  .get(getSprint)
-  .put(authorize('admin', 'manager', 'scrum_master'), updateSprint)
-  .delete(authorize('admin', 'manager'), deleteSprint);
+  .get(idValidator, getSprint)
+  .put(authorize('admin', 'manager', 'scrum_master'), updateSprintValidator, updateSprint)
+  .delete(authorize('admin', 'manager'), idValidator, deleteSprint);
 
 // Sprint lifecycle
 router.put('/:id/start', authorize('admin', 'manager', 'scrum_master'), startSprint);

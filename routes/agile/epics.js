@@ -8,7 +8,12 @@ const {
   updateProgress
 } = require('../../controllers/agile/epicController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
+const {
+  createEpicValidator,
+  updateEpicValidator,
+  idValidator,
+} = require('../../validators/agileValidator');
 
 const router = express.Router();
 
@@ -18,12 +23,12 @@ router.use(protect);
 // Main CRUD routes
 router.route('/')
   .get(getEpics)
-  .post(authorize('admin', 'manager', 'product_owner'), createEpic);
+  .post(authorize('admin', 'manager', 'product_owner'), createEpicValidator, createEpic);
 
 router.route('/:id')
-  .get(getEpic)
-  .put(authorize('admin', 'manager', 'product_owner'), updateEpic)
-  .delete(authorize('admin', 'manager'), deleteEpic);
+  .get(idValidator, getEpic)
+  .put(authorize('admin', 'manager', 'product_owner'), updateEpicValidator, updateEpic)
+  .delete(authorize('admin', 'manager'), idValidator, deleteEpic);
 
 // Progress
 router.put('/:id/progress', updateProgress);

@@ -2,19 +2,43 @@
 const redis = require('redis');
 const client = redis.createClient();
 
-client.connect();
+let isRedisConnected = false;
+
+client.connect().then(() => {
+   isRedisConnected = true;
+   console.log('✅ Redis connected');
+}).catch((err) => {
+   console.warn('⚠️  Redis not available, caching disabled:', err.message);
+   isRedisConnected = false;
+});
 
 async function setCache(key, value, expirationInSeconds = 3600) {
-   await client.setEx(key, expirationInSeconds, JSON.stringify(value));
+   if (!isRedisConnected) return;
+   try {
+      await client.setEx(key, expirationInSeconds, JSON.stringify(value));
+   } catch (err) {
+      console.warn('Redis setCache error:', err.message);
+   }
 }
 
 async function getCache(key) {
-   const cachedData = await client.get(key);
-   return cachedData ? JSON.parse(cachedData) : null;
+   if (!isRedisConnected) return null;
+   try {
+      const cachedData = await client.get(key);
+      return cachedData ? JSON.parse(cachedData) : null;
+   } catch (err) {
+      console.warn('Redis getCache error:', err.message);
+      return null;
+   }
 }
 
 async function deleteCache(key) {
-   await client.del(key);
+   if (!isRedisConnected) return;
+   try {
+      await client.del(key);
+   } catch (err) {
+      console.warn('Redis deleteCache error:', err.message);
+   }
 }
 
 module.exports = {

@@ -8,7 +8,7 @@ const {
   getDepartmentStats,
 } = require('../../controllers/hr/departmentController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
 
 const router = express.Router();
 

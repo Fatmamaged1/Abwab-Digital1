@@ -14,7 +14,7 @@ const {
   getTeamMembers,
 } = require('../../controllers/hr/employeeController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
 
 const router = express.Router();
 

@@ -15,7 +15,7 @@ const {
   getTeamAttendanceToday,
 } = require('../../controllers/hr/attendanceController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
 
 const router = express.Router();
 

@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
-    isAdmin: { type: Boolean, default: true },
+    isAdmin: { type: Boolean, default: false },
     phone: String,
     profileImg: String,
 

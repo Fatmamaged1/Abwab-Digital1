@@ -64,6 +64,14 @@ async function setupAdminJS() {
     },
   });
 
+  // Validate SESSION_SECRET exists
+  if (!process.env.SESSION_SECRET) {
+    throw new Error(
+      'SESSION_SECRET environment variable is required for admin panel security. ' +
+      'Please add SESSION_SECRET to your .env file with a strong random string.'
+    );
+  }
+
   const router = AdminJSExpress.buildAuthenticatedRouter(
     adminJs,
     {
@@ -78,12 +86,18 @@ async function setupAdminJS() {
         }
         return null;
       },
-      cookiePassword: process.env.SESSION_SECRET || "some-secret",
+      cookiePassword: process.env.SESSION_SECRET,
     },
     null,
     {
       resave: false,
       saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        sameSite: 'strict',
+      },
     }
   );
 

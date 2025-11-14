@@ -341,6 +341,4 @@ employeeSchema.methods.addPerformanceRating = function (rating, reviewer, commen
 employeeSchema.set('toJSON', { virtuals: true });
 employeeSchema.set('toObject', { virtuals: true });
 
-const Employee = mongoose.model('Employee', employeeSchema);
-
-module.exports = Employee;
+module.exports = mongoose.models.Employee || mongoose.model('Employee', employeeSchema);

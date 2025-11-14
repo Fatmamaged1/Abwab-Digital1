@@ -3,7 +3,7 @@ const express = require("express");
 const morgan = require("morgan");
 const path = require("path");
 const cors = require("cors");
-//const helmet = require("helmet");
+const helmet = require("helmet");
 const fs = require("fs");
 const https = require("https");
 const http = require("http");
@@ -65,15 +65,47 @@ async function startServer() {
     await connectDB();
     console.log("✅ Connected to MongoDB");
 
-    // Enable CORS for all origins
+    // Enable CORS for specific origins
+    const allowedOrigins = [];
+
+    // Add development origins in development mode
+    if (process.env.NODE_ENV === 'development') {
+      allowedOrigins.push('http://localhost:3000', 'http://localhost:3001');
+    }
+
+    // Add production/custom frontend URL if specified
+    if (process.env.FRONTEND_URL) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+    }
+
+    // Add additional allowed origins from environment (comma-separated)
+    if (process.env.ALLOWED_ORIGINS) {
+      const customOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
+      allowedOrigins.push(...customOrigins);
+    }
+
     app.use(cors({
-      origin: '*', // أي دومين
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1 && process.env.NODE_ENV === 'production') {
+          const msg = 'The CORS policy does not allow access from the specified Origin.';
+          return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+      },
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+      optionsSuccessStatus: 200
     }));
 
     // Security & Middleware
-  //  app.use(helmet());
+    app.use(helmet({
+      contentSecurityPolicy: false, // Disable CSP for now, configure as needed
+      crossOriginEmbedderPolicy: false,
+    }));
     app.use(express.json());
     app.use(morgan("dev"));
     app.set("views", path.join(__dirname, "views"));
@@ -133,26 +165,49 @@ async function startServer() {
     // Global Error Handler
     app.use(globalError);
 
-    // Load SSL Certificate
-    const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/privkey.pem"),
-      cert: fs.readFileSync("/etc/letsencrypt/live/backend.abwabdigital.com/fullchain.pem"),
-    };
+    // SSL Configuration - Only use HTTPS if certs are provided
+    const useHTTPS = process.env.SSL_CERT_PATH && process.env.SSL_KEY_PATH;
 
-    // HTTPS Server
-    https.createServer(options, app).listen(4000, () => {
-      console.log("🚀 HTTPS server is running on port 4000");
-    });
+    if (useHTTPS) {
+      try {
+        const options = {
+          key: fs.readFileSync(process.env.SSL_KEY_PATH),
+          cert: fs.readFileSync(process.env.SSL_CERT_PATH),
+        };
 
-    // HTTP to HTTPS Redirection
-    http.createServer((req, res) => {
-      res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
-      res.end();
-    }).listen(8080, () => {
-      console.log("🌐 HTTP server is redirecting to HTTPS on port 8080");
-    });
+        // HTTPS Server
+        https.createServer(options, app).listen(process.env.PORT || 4000, () => {
+          console.log(`🚀 HTTPS server is running on port ${process.env.PORT || 4000}`);
+        });
+
+        // HTTP to HTTPS Redirection
+        http.createServer((req, res) => {
+          res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+          res.end();
+        }).listen(process.env.HTTP_PORT || 8080, () => {
+          console.log(`🌐 HTTP server is redirecting to HTTPS on port ${process.env.HTTP_PORT || 8080}`);
+        });
+      } catch (sslError) {
+        console.error("❌ SSL Error:", sslError.message);
+        console.error("Could not load SSL certificates. Make sure SSL_CERT_PATH and SSL_KEY_PATH are correct.");
+        process.exit(1);
+      }
+    } else {
+      // No SSL - Run HTTP only (development mode)
+      console.log("⚠️  Running in HTTP mode (no SSL certificates configured)");
+      app.listen(process.env.PORT || 4000, () => {
+        console.log(`🚀 HTTP server is running on port ${process.env.PORT || 4000}`);
+        console.log("💡 For production, configure SSL_CERT_PATH and SSL_KEY_PATH in .env");
+      });
+    }
+
+    // Setup AdminJS
+    const { adminJs, router } = await setupAdminJS();
+    app.use(adminJs.options.rootPath, router);
+    console.log(`✅ AdminJS is available at http://localhost:${process.env.PORT || 4000}${adminJs.options.rootPath}`);
+
   } catch (err) {
-    console.error("❌ Server startup failed:", err);
+    console.error("❌ Server startup failed:", err.message);
     process.exit(1);
   }
 }

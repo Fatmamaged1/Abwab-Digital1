@@ -1,9 +1,10 @@
-
 const express = require('express');
 const {
-  signupValidator,
+  registerValidator,
   loginValidator,
-} = require('../validator/authValidator');
+  forgotPasswordValidator,
+  resetPasswordValidator,
+} = require('../validators/authValidator');
 
 const {
   signup,
@@ -15,10 +16,10 @@ const {
 
 const router = express.Router();
 
-router.post('/signup', signupValidator, signup);
+router.post('/signup', registerValidator, signup);
 router.post('/login', loginValidator, login);
-router.post('/forgotPassword', forgotPassword);
+router.post('/forgotPassword', forgotPasswordValidator, forgotPassword);
 router.post('/verifyResetCode', verifyPassResetCode);
-router.put('/resetPassword', resetPassword);
+router.put('/resetPassword', resetPasswordValidator, resetPassword);
 
 module.exports = router;

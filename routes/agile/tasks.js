@@ -6,7 +6,12 @@ const {
   deleteTask
 } = require('../../controllers/agile/taskController');
 
-const { protect } = require('../../middleware/authMiddleware');
+const { protect } = require('../../middleware/auth');
+const {
+  createTaskValidator,
+  updateTaskValidator,
+  idValidator,
+} = require('../../validators/agileValidator');
 
 const router = express.Router();
 
@@ -16,10 +21,10 @@ router.use(protect);
 // Main CRUD routes
 router.route('/')
   .get(getTasks)
-  .post(createTask);
+  .post(createTaskValidator, createTask);
 
 router.route('/:id')
-  .put(updateTask)
-  .delete(deleteTask);
+  .put(updateTaskValidator, updateTask)
+  .delete(idValidator, deleteTask);
 
 module.exports = router;

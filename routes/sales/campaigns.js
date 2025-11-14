@@ -19,7 +19,12 @@ const {
   deleteSequenceStep
 } = require('../../controllers/sales/outreachCampaignController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
+const {
+  createCampaignValidator,
+  updateCampaignValidator,
+  idValidator,
+} = require('../../validators/salesValidator');
 
 const router = express.Router();
 
@@ -33,12 +38,12 @@ router.get('/stats', getCampaignStats);
 // Main CRUD routes
 router.route('/')
   .get(getCampaigns)
-  .post(authorize('admin', 'sales', 'marketing'), createCampaign);
+  .post(authorize('admin', 'sales', 'marketing'), createCampaignValidator, createCampaign);
 
 router.route('/:id')
-  .get(getCampaign)
-  .put(authorize('admin', 'sales', 'marketing'), updateCampaign)
-  .delete(authorize('admin', 'sales', 'marketing'), deleteCampaign);
+  .get(idValidator, getCampaign)
+  .put(authorize('admin', 'sales', 'marketing'), updateCampaignValidator, updateCampaign)
+  .delete(authorize('admin', 'sales', 'marketing'), idValidator, deleteCampaign);
 
 // Recipients management
 router.post('/:id/recipients', authorize('admin', 'sales', 'marketing'), addRecipients);

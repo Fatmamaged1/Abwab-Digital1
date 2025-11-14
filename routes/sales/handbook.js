@@ -17,7 +17,7 @@ const {
   getHandbookStats
 } = require('../../controllers/sales/salesHandbookController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
 
 const router = express.Router();
 

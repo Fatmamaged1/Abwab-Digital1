@@ -15,7 +15,12 @@ const {
   moveToSprint
 } = require('../../controllers/agile/userStoryController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
+const {
+  createStoryValidator,
+  updateStoryValidator,
+  idValidator,
+} = require('../../validators/agileValidator');
 
 const router = express.Router();
 
@@ -29,12 +34,12 @@ router.get('/sprint/:sprintId/stories', getSprintStories);
 // Main CRUD routes
 router.route('/')
   .get(getUserStories)
-  .post(createUserStory);
+  .post(createStoryValidator, createUserStory);
 
 router.route('/:id')
-  .get(getUserStory)
-  .put(updateUserStory)
-  .delete(authorize('admin', 'manager', 'product_owner'), deleteUserStory);
+  .get(idValidator, getUserStory)
+  .put(updateStoryValidator, updateUserStory)
+  .delete(authorize('admin', 'manager', 'product_owner'), idValidator, deleteUserStory);
 
 // Comments
 router.post('/:id/comments', addComment);

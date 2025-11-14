@@ -17,7 +17,7 @@ const {
   getMyWeeklyReport,
 } = require('../../controllers/hr/timeLogController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
 
 const router = express.Router();
 

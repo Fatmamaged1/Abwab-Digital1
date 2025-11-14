@@ -13,7 +13,13 @@ const {
   getProjectStats
 } = require('../../controllers/agile/projectController');
 
-const { protect, authorize } = require('../../middleware/authMiddleware');
+const { protect, authorize } = require('../../middleware/auth');
+const {
+  createProjectValidator,
+  updateProjectValidator,
+  getProjectValidator,
+  deleteProjectValidator,
+} = require('../../validators/agileValidator');
 
 const router = express.Router();
 
@@ -26,12 +32,12 @@ router.get('/my/projects', getMyProjects);
 // Main CRUD routes
 router.route('/')
   .get(getProjects)
-  .post(authorize('admin', 'manager', 'product_owner'), createProject);
+  .post(authorize('admin', 'manager', 'product_owner'), createProjectValidator, createProject);
 
 router.route('/:id')
-  .get(getProject)
-  .put(authorize('admin', 'manager', 'product_owner'), updateProject)
-  .delete(authorize('admin', 'manager'), deleteProject);
+  .get(getProjectValidator, getProject)
+  .put(authorize('admin', 'manager', 'product_owner'), updateProjectValidator, updateProject)
+  .delete(authorize('admin', 'manager'), deleteProjectValidator, deleteProject);
 
 // Team management
 router.post('/:id/team', authorize('admin', 'manager', 'product_owner'), addTeamMember);
